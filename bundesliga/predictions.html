@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="league" content="BL1" />
+  <title>FansBetLiga — Predictions</title>
+  <link rel="stylesheet" href="/styles/styles.css" />
+ 
+</head>
+<body>
+  <header class="topbar2">
+    <h1 class="logo2">FANSBETLIGA</h1>
+    <a href="#" class="about2">About</a>
+  </header>
+
+  <nav class="navbar2">
+    <div class="nav-item active2"><span>🏠</span><p>Home</p></div>
+    <div class="nav-item2"><span>📊</span><p>Results</p></div>
+    <div class="nav-item2"><span>🏆</span><p>Winners</p></div>
+    <div class="nav-item2"><span>⚙️</span><p>Rules</p></div>
+  </nav>
+
+  <main>
+    <section class="matches-section">
+      <div class="matches-header">
+        <div class="left"><a href="index.html" class="back-arrow">&lt;</a><h2>Matches</h2></div>
+        <a href="signin.html" id="done" class="done">Done</a>
+      </div>
+      <div class="contain">
+        <h1 class="subtitle"><span class="bold">Bundesliga </span> Matches</span> - Matchday </h1>
+        <div class="page-controls2">
+          <button id="prev-day" class="arrow2">&lt;</button><span id="day-number2">1</span><button id="next-day" class="arrow2">&gt;</button>
+        </div>
+      </div>
+      <!-- match cards injected here --><div id="predictions-list"></div>
+    </section>
+  </main>
+
+  <!-- Confirmation modal (your design) -->
+  <div id="gprompt-overlay" aria-hidden="true">
+    <div class="gprompt__backdrop"></div>
+    <div class="gprompt__dialog" role="dialog" aria-modal="true" aria-labelledby="gprompt-title">
+      <button id="gprompt-close" class="gprompt__x" type="button" aria-label="Close">×</button>
+      <h3 id="gprompt-title" class="gprompt__title">Are you sure you want to submit these scores? Please confirm that all the information is correct.</h3>
+      <div class="gprompt__subtitle"><span class="gprompt__badge">Premier League Matches</span> – Matchday <span id="gprompt-matchday">1 of 3</span></div>
+      <div id="confirmList" class="gprompt__list" role="list"></div>
+      <div class="gprompt__actions">
+        <button id="gprompt-cancel" class="gprompt__btn" type="button">Cancel</button>
+        <button id="gprompt-confirm" class="gprompt__btn gprompt__btn--primary" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="../scripts/config.js"></script>
+<script src="../scripts/api.js"></script>
+<script src="../scripts/predictionsPage.js"></script>
+
+
+
+</body></html>

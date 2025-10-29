@@ -1,0 +1,183 @@
+body {
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+  background-color: #f9fafc;
+  color: #333;
+}
+
+/* Top bar */
+.topbar {
+  background-color: #00c49a;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+}
+
+.logo {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.about {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Navigation */
+.navbar {
+  display: flex;
+  justify-content: space-around;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 8px 0;
+}
+
+.nav-item {
+  text-align: center;
+  color: gray;
+  font-size: 0.8em;
+}
+
+.nav-item.active {
+  color: #00c49a;
+  border-bottom: 3px solid #00c49a;
+}
+
+/* League tabs */
+.league-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px;
+ 
+}
+
+.tab {
+   
+  border: none;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-weight: 500;
+  cursor: pointer;
+  background-color:  #FFF4E3;
+}
+
+
+/* Matches */
+.matches {
+  padding: 10px 20px;
+}
+
+.matches-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-controls {
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1em;
+  color: #00c49a;
+}
+.arrow {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  color: #00c49a;
+  cursor: pointer;
+}
+
+/* Match cards */
+.day {
+  margin-top: 15px;
+}
+
+.day h4 {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.match-card {
+  border-radius: 10px;
+  margin-top: 6px;
+  padding: 10px 15px;
+}
+
+.cyan {
+  background-color: #c0fff4;
+}
+
+.blue {
+  background-color: #dce8ff;
+}
+
+/* Match layout */
+.match-info {
+  display: flex;
+  align-items: flex-start;
+}
+
+.time {
+  width: 50px;
+  font-weight: bold;
+  color: #333;
+  font-size: 0.9em;
+  margin-top: 50px;
+}
+
+.teams {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+}
+
+.team img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.fixed-button {
+  position: fixed;         /* makes the button stay in place even when scrolling */
+  bottom: 20px;            /* distance from the bottom of the page */
+  right: 20px;             /* distance from the right side */
+  background-color: #007BFF; /* bright blue background */
+  color: white;            /* white text */
+  padding: 12px 24px;      /* button size */
+  border: none;
+  border-radius: 8px;      /* rounded corners */
+  text-decoration: none;   /* removes underline since it's a link */
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* subtle shadow */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  z-index: 1000;           /* ensures it stays above other elements */
+}
+
+.fixed-button:hover {
+  background-color: #0056b3; /* darker blue when hovered */
+}
+
+
+
+
+
+
+
+
+

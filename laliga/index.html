@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <meta name="league" content="PD">
+  <title>FansBetLiga — Premier League</title>
+ 
+  
+<link rel="stylesheet" href="/styles/styleindex.css">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+</head>
+<body data-league="LALIGA">
+  <header class="topbar">
+    <h1 class="logo">FANSBETLIGA</h1>
+    <a href="#" class="about">About</a>
+  </header>
+
+  <nav class="navbar">
+    <div class="nav-item active"><span>🏠</span><p>Home</p></div>
+    <div class="nav-item"><span>📊</span><p>Results</p></div>
+    <div class="nav-item"><span>🏆</span><p>Winners</p></div>
+    <div class="nav-item"><span>⚙️</span><p>Rules</p></div>
+  </nav>
+
+  <!-- League tabs -->
+  <div class="league-tabs">
+    <button class="tab" data-href="/laliga/index.html">La Liga</button>
+    <button class="tab" data-href="/bundesliga/index.html">Bundesliga</button>
+    <button class="tab active" data-href="/premier/index.html">Premier League</button>
+  </div>
+<script>
+  // works even if the buttons are created later
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.league-tabs .tab');
+    if (!btn) return;
+    const href = btn.dataset.href;
+    if (href) location.assign(href);
+  });
+</script>
+
+<section class="matches">
+  <div class="matches-header">
+    <h3 id="matchday-title">Matches</h3>
+    <div class="page-controls">
+      <button id="prev-day" class="arrow">&lt;</button>
+      <span id="day-number"></span>
+      <button id="next-day" class="arrow">&gt;</button>
+    </div>
+  </div>
+  <div id="matches-container"></div>
+</section>
+
+
+<a id="bet-button-main" class="fixed-button" href="/laliga/predictions.html">Bet</a>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
+<script src="../scripts/config.js"></script>
+<script src="../scripts/api.js"></script>
+<script src="../scripts/leaguePage.js"></script>
+
+<!-- MUST be first -->
+
+
+
+<script>
+  // Make the league tabs navigate
+  (function(){
+    function go(btn){ var url = btn.getAttribute('data-href'); if(url){ location.href = url; } }
+    document.querySelectorAll('.league-tabs .tab').forEach(function(btn){
+      btn.addEventListener('click', function(){ go(btn); });
+    });
+  })();
+</script>
+
+
+
+</body></html>

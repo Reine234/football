@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="league" content="BLI" />
+  <title>FansBetLiga - Results</title>
+  <link rel="stylesheet" href="/styles/styless.css" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+</head>
+<body>
+  <header class="header"><div class="logo">FANSBETLIGA</div><div class="about">About</div></header>
+
+  <nav class="nav">
+    <div class="nav-item active"><img src="/img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item selected"><img src="/img/person.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="/img/books.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="/img/3 dots.png" alt="Rules"><span>Rules</span></div>
+  </nav>
+
+  <div class="league-tabs">
+    <button class="tab" data-href="../laliga/results.html">La Liga</button>
+    <button class="tab" data-href="../bundesliga/results.html">Bundesliga</button>
+    <button class="tab active" data-href="../premier/results.html">Premier League</button>
+  </div>
+
+  <div class="season-title"><span class="back-arrow">&lt;</span><h2>Preseason 2025 - 2026</h2></div>
+
+  <div class="user-info"><span>–</span><span class="points">Points: 0</span></div>
+
+  <section class="matches">
+    <div class="matches-header"><h3>Matches - Matchday 1 of 3</h3><span class="arrow">&gt;</span></div>
+    <!-- result cards injected here --><div id="results-list"></div>
+
+  </section>
+
+  <script>
+    (function(){
+      function go(btn){ var url = btn.getAttribute('data-href'); if(url){ location.href = url; } }
+      document.querySelectorAll('.league-tabs .tab').forEach(function(btn){
+        btn.addEventListener('click', function(){ go(btn); });
+      });
+    })();
+  </script>
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="../scripts/config.js"></script>
+<script src="../scripts/api.js"></script>
+<script src="../scripts/resultsPage.js"></script>
+
+
+
+</body></html>

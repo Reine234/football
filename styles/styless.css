@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f7f8f9;
+  color: #222;
+  padding-bottom: 80px;
+}
+
+/* Header */
+.header {
+  background: #05a081;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  font-weight: 600;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  justify-content: space-around;
+  background: #fff;
+ 
+  padding: 15px 0;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+
+}
+.nav-item, img{
+    width: 25px;
+    height: 25px;
+}
+.nav-item.selected {
+  color: #05a081;
+}
+
+/* League Tabs */
+.league-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.tab {
+  border: none;
+  background: #eee;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #f2c94c;
+}
+
+/* Title + Navigation */
+.season-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.season-title .back-arrow {
+  font-size: 18px;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  margin: 12px 15px;
+  padding: 10px 15px;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.points {
+  font-weight: 600;
+}
+
+/* Matches Section */
+.matches {
+  padding: 0 15px;
+}
+
+.matches-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0;
+  font-weight: 600;
+}
+
+/* Match Card */
+.match-card {
+  background: #b8f8ef;
+  border-radius: 14px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.match-header {
+  background: #05a081;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 10px;
+  display: inline-block;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.match-time {
+  font-size: 13px;
+  margin: 8px 0;
+  color: #333;
+}
+
+/* Teams */
+.teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.team {
+  text-align: center;
+  flex: 1;
+}
+
+.team img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.team p {
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+/* Score Section */
+.score-section {
+  flex: 2;
+  text-align: center;
+}
+
+.score-section .label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+.score-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px; /* spacing between the inputs and dash */
+}
+
+.score-box input {
+  width: 30px;             /* smaller size */
+  height: 28px;
+  text-align: center;      /* center the number */
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff; /* green background */
+  color: #000;
+  font-weight: bold;
+  outline: none;
+}
+
+.score-box span {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.points-earned {
+  text-align: right;
+  color: #05a081;
+  font-weight: 500;
+  font-size: 13px;
+}
