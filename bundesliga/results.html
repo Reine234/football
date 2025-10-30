@@ -11,7 +11,7 @@
   <header class="header"><div class="logo">FANSBETLIGA</div><div class="about">About</div></header>
 
   <nav class="nav">
-    <div class="nav-item active"><img src="/img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item active"><img src="/img/home.png" alt="Home"><a href="/bundesliga/index.html"></a><span >Home</span></div>
     <div class="nav-item selected"><img src="/img/person.png" alt="Results"><span>Results</span></div>
     <div class="nav-item"><img src="/img/books.png" alt="Winners"><span>Winners</span></div>
     <div class="nav-item"><img src="/img/3 dots.png" alt="Rules"><span>Rules</span></div>
@@ -49,6 +49,56 @@
 <script src="../scripts/api.js"></script>
 <script src="../scripts/resultsPage.js"></script>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Detect which league the page belongs to based on its path
+  const path = window.location.pathname.toLowerCase();
+  let league = "";
+  if (path.includes("laliga")) league = "laliga";
+  else if (path.includes("bundesliga")) league = "bundesliga";
+  else if (path.includes("premier")) league = "premier";
 
+  // ====== TOP NAV BAR ======
+  const navItems = document.querySelectorAll(".nav-item");
+  navItems.forEach(item => {
+    const label = item.querySelector("span").textContent.trim().toLowerCase();
+
+    item.addEventListener("click", () => {
+      switch (label) {
+        case "home":
+          window.location.href = `../${league}/index.html`;
+          break;
+        case "results":
+          window.location.href = `../${league}/results.html`;
+          break;
+        case "winners":
+          alert("🏆 Winners page coming soon!");
+          break;
+        case "rules":
+          alert("📘 Rules page coming soon!");
+          break;
+      }
+    });
+  });
+
+  // ====== LEAGUE TAB BUTTONS ======
+  const tabs = document.querySelectorAll(".league-tabs .tab");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.getAttribute("data-href");
+      if (target) window.location.href = target;
+    });
+  });
+
+  // ====== AUTO HIGHLIGHT ACTIVE TAB ======
+  tabs.forEach(tab => {
+    const href = tab.getAttribute("data-href").toLowerCase();
+    if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
+    else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
+    else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else tab.classList.remove("active");
+  });
+});
+</script>
 
 </body></html>

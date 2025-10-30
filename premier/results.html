@@ -39,6 +39,55 @@
 
 
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Determine which league this page belongs to
+  const path = window.location.pathname.toLowerCase();
+  let league = "";
+  if (path.includes("laliga")) league = "laliga";
+  else if (path.includes("bundesliga")) league = "bundesliga";
+  else if (path.includes("premier")) league = "premier";
+
+  // Handle top nav clicks
+  const navItems = document.querySelectorAll(".nav-item");
+  navItems.forEach(item => {
+    const label = item.querySelector("span").textContent.trim().toLowerCase();
+
+    item.addEventListener("click", () => {
+      if (label === "home") {
+        window.location.href = `../${league}/index.html`;
+      } 
+      else if (label === "results") {
+        window.location.href = `../${league}/results.html`;
+      } 
+      else if (label === "winners") {
+        alert("Winners page coming soon!");
+      } 
+      else if (label === "rules") {
+        alert("Rules page coming soon!");
+      }
+    });
+  });
+
+  // Handle league tab switching (La Liga / Bundesliga / Premier)
+  const tabs = document.querySelectorAll(".league-tabs .tab");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.getAttribute("data-href");
+      if (target) window.location.href = target;
+    });
+  });
+
+  // Optional: visually mark active tab automatically
+  tabs.forEach(tab => {
+    const href = tab.getAttribute("data-href").toLowerCase();
+    if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
+    else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
+    else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else tab.classList.remove("active");
+  });
+});
+</script>
 
 
  

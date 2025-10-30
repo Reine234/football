@@ -55,7 +55,7 @@ const SD_BASE = "https://www.thesportsdb.com/api/v1/json";
 const SD_KEY  = process.env.TSD_API_KEY || "3"; // public key
 
 // API-Football config
-const AF_KEY       = process.env.AF_KEY || "";        // <-- you'll set this before running
+const AF_KEY       = process.env.AF_KEY || "62984cfa9f22094e6c24ef4e50779442";        // <-- you'll set this before running
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "";  // optional
 const USE_RAPID    = !!RAPIDAPI_KEY;
 

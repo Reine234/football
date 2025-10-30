@@ -59,5 +59,61 @@
 <script src="../scripts/predictionsPage.js"></script>
 
 
+<!-- Your content here -->
+<footer>...</footer>
+
+<!-- Paste this before </body> -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const path = window.location.pathname.toLowerCase();
+  let league = "";
+  if (path.includes("laliga")) league = "laliga";
+  else if (path.includes("bundesliga")) league = "bundesliga";
+  else if (path.includes("premier")) league = "premier";
+
+  // ====== NAVBAR LINKS ======
+  const navItems = document.querySelectorAll(".navbar .nav-item");
+  navItems.forEach(item => {
+    const label = item.querySelector("p").textContent.trim().toLowerCase();
+
+    item.addEventListener("click", () => {
+      switch (label) {
+        case "home":
+          window.location.href = `/${league}/index.html`;
+          break;
+        case "results":
+          window.location.href = `/${league}/results.html`;
+          break;
+        case "winners":
+          alert("🏆 Winners page coming soon!");
+          break;
+        case "rules":
+          alert("⚙️ Rules page coming soon!");
+          break;
+      }
+    });
+  });
+
+  // ====== LEAGUE TABS ======
+  const tabs = document.querySelectorAll(".league-tabs .tab");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.getAttribute("data-href");
+      if (target) window.location.href = target;
+    });
+  });
+
+  // ====== HIGHLIGHT ACTIVE LEAGUE TAB ======
+  tabs.forEach(tab => {
+    const href = tab.getAttribute("data-href").toLowerCase();
+    if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
+    else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
+    else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else tab.classList.remove("active");
+  });
+});
+</script>
+</body>
+</html>
 
 </body></html>
