@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    container_name: fansbetliga_app
+    # For local testing on your machine:
+    ports:
+      - "5000:5000"
+    # On a production Windows server behind IIS, prefer binding to loopback only:
+    # ports:
+    #   - "127.0.0.1:5000:5000"
+    env_file:
+      - ./.env
+    restart: unless-stopped
