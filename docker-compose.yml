@@ -11,3 +11,9 @@ services:
     env_file:
       - ./.env
     restart: unless-stopped
+services:
+  football-proxy:
+    image: yourimage
+    environment:
+      - FOOTBALL_DATA_TOKEN=${FOOTBALL_DATA_TOKEN}
+      
