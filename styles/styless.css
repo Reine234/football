@@ -76,11 +76,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .season-title .back-arrow {
-  font-size: 18px;
+  font-size: 19px;
 }
 
 /* User Info */
@@ -96,7 +96,7 @@ body {
 }
 
 .points {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* Matches Section */

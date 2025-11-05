@@ -26,25 +26,58 @@ body {
   font-weight: 500;
 }
 
-/* Navigation */
-.navbar2 {
+
+
+/* Navigation bar container */
+.nav {
   display: flex;
-  justify-content: space-around;
-  background: white;
-  border-bottom: 1px solid #ddd;
-  padding: 8px 0;
+  justify-content: space-around; /* equal spacing between items */
+  align-items: center;
+  margin-top: 10px; /* pushes it down below the topbar */
+  width: 100%;
+  
+  padding: 15px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-.nav-item2 {
-  text-align: center;
-  color: gray;
-  font-size: 0.8em;
+/* Each navigation item */
+.nav-item {
+  display: flex;
+  flex-direction: column; /* image above text */
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.3s ease;
 }
 
-.nav-item.active2 {
-  color: #00c49a;
-  border-bottom: 3px solid #00c49a;
+/* Icon styling */
+.nav-item img {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 5px;
+  transition: transform 0.3s ease;
 }
+
+/* Text styling */
+.nav-item span {
+  font-size: 14px;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+/* Hover and active states */
+.nav-item:hover span,
+.nav-item.active span,
+.nav-item.selected span {
+  color: #00B894;
+}
+
+.nav-item:hover img,
+.nav-item.active img,
+.nav-item.selected img {
+  transform: scale(1.1);
+}
+
+
 
 /* League tabs */
 .league-tabs {

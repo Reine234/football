@@ -11,13 +11,15 @@
     <h1 class="logo2">FANSBETLIGA</h1>
     <a href="#" class="about2">About</a>
   </header>
-
-  <nav class="navbar2">
-    <div class="nav-item active2"><span>🏠</span><p>Home</p></div>
-    <div class="nav-item2"><span>📊</span><p>Results</p></div>
-    <div class="nav-item2"><span>🏆</span><p>Winners</p></div>
-    <div class="nav-item2"><span>⚙️</span><p>Rules</p></div>
+  
+  <nav class="nav">
+    <div class="nav-item "><img src="/img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item "><img src="/img/person.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="/img/books.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="/img/3 dots.png" alt="Rules"><span>Rules</span></div>
   </nav>
+
+ 
 
   <main>
     <section class="predictions">
@@ -73,42 +75,39 @@
 <script src="../scripts/predictionsPage.js"></script>
 
 
-  <!-- Your content here -->
-<footer>...</footer>
 
-<!-- Paste this before </body> -->
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  // Determine which league this page belongs to
   const path = window.location.pathname.toLowerCase();
   let league = "";
   if (path.includes("laliga")) league = "laliga";
   else if (path.includes("bundesliga")) league = "bundesliga";
   else if (path.includes("premier")) league = "premier";
 
-  // ====== NAVBAR LINKS ======
-  const navItems = document.querySelectorAll(".navbar .nav-item");
+  // Handle top nav clicks
+  const navItems = document.querySelectorAll(".nav-item");
   navItems.forEach(item => {
-    const label = item.querySelector("p").textContent.trim().toLowerCase();
+    const label = item.querySelector("span").textContent.trim().toLowerCase();
 
     item.addEventListener("click", () => {
-      switch (label) {
-        case "home":
-          window.location.href = `/${league}/index.html`;
-          break;
-        case "results":
-          window.location.href = `/${league}/results.html`;
-          break;
-        case "winners":
-          alert("🏆 Winners page coming soon!");
-          break;
-        case "rules":
-          alert("⚙️ Rules page coming soon!");
-          break;
+      if (label === "home") {
+        window.location.href = `../${league}/index.html`;
+      } 
+      else if (label === "results") {
+        window.location.href = `../${league}/results.html`;
+      } 
+      else if (label === "winners") {
+        alert("Winners page coming soon!");
+      } 
+      else if (label === "rules") {
+        alert("Rules page coming soon!");
       }
     });
   });
 
-  // ====== LEAGUE TABS ======
+  // Handle league tab switching (La Liga / Bundesliga / Premier)
   const tabs = document.querySelectorAll(".league-tabs .tab");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
@@ -117,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ====== HIGHLIGHT ACTIVE LEAGUE TAB ======
+  // Optional: visually mark active tab automatically
   tabs.forEach(tab => {
     const href = tab.getAttribute("data-href").toLowerCase();
     if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
@@ -127,6 +126,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+
+
+
+
+  
 
 
 </body></html>

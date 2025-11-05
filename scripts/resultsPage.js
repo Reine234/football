@@ -5,12 +5,30 @@
   // - selected fixtures for that round (saved earlier by predictions flow)
   // - the user's predictions for each fixture
   //
-
   const leagueKey   = sessionStorage.getItem("FBL_leagueKey");
   const selected    = window.FBL.loadSelectedRound();   // { leagueKey, roundNum, fixtures }
   const predictions = window.FBL.loadPredictions();     // { [fixtureId]: { homeScore, awayScore, homeTeam, awayTeam } }
 
   const listEl = document.getElementById("results-list"); // <-- must exist in results.html
+
+  // 1) set the "Matches - Matchday X of Y" header from what was selected earlier
+  const headerEl = document.querySelector(".matches-header h3");
+  if (selected && headerEl) {
+    const leagueInfo =
+      window.FBL.LEAGUE_MAP[selected.leagueKey] ||
+      window.FBL.LEAGUE_MAP[leagueKey] ||
+      null;
+    const totalRounds = leagueInfo ? leagueInfo.totalRounds : "?";
+    headerEl.textContent = `Matches - Matchday ${selected.roundNum} of ${totalRounds}`;
+  }
+
+  // 2) fill logged in user
+  const userInfoEl   = document.querySelector(".user-info span");
+  const userPointsEl = document.querySelector(".user-info .points");
+  const loggedInUser = sessionStorage.getItem("FBL_loggedInUser");
+  if (loggedInUser && userInfoEl) {
+    userInfoEl.textContent = loggedInUser;
+  }
 
   if (!listEl) {
     console.error("results-list container is missing in this results.html");
@@ -21,10 +39,8 @@
   if (!leagueKey || !selected || !selected.fixtures) {
     console.error("Missing leagueKey/fixtures for results page");
     if (leagueKey && window.FBL.LEAGUE_MAP && window.FBL.LEAGUE_MAP[leagueKey]) {
-      // We know what league folder we're in, just go back to its index
       window.location.href = "./index.html";
     } else {
-      // Fallback to premier home page
       window.location.href = "../premier/index.html";
     }
     return;
@@ -39,12 +55,9 @@
   // 1 pt  = correct outcome (win/draw/loss) but not exact
   // 0     = wrong outcome OR match not finished
   function calcPoints(predHome, predAway, realHome, realAway) {
-    // if we don't have a final/ongoing score yet -> 0 for now
     if (
-      realHome === null ||
-      realHome === undefined ||
-      realAway === null ||
-      realAway === undefined
+      realHome === null || realHome === undefined ||
+      realAway === null || realAway === undefined
     ) {
       return 0;
     }
@@ -54,7 +67,6 @@
       return 3;
     }
 
-    // compare outcome direction (home win / draw / away win)
     const predDiff = predHome - predAway;
     const realDiff = realHome - realAway;
 
@@ -70,30 +82,25 @@
   }
 
   // Format kickoff time like "12:30pm, Sat 18th Oct"
-  // We’ll convert the fixture's UTC date to the user's local time.
   function formatMatchDateTime(utcISO) {
     if (!utcISO) return "";
 
-    const d = new Date(utcISO); // browser will interpret it as UTC if it's an ISO with Z
-    // time, 12h with am/pm
+    const d = new Date(utcISO);
     let hours   = d.getHours();
     const mins  = d.getMinutes().toString().padStart(2, "0");
     const ampm  = hours >= 12 ? "pm" : "am";
     hours       = hours % 12;
     if (hours === 0) hours = 12;
 
-    // weekday short
     const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const weekday = weekdayNames[d.getDay()];
 
-    // month short
     const monthNamesShort = [
       "Jan","Feb","Mar","Apr","May","Jun",
       "Jul","Aug","Sep","Oct","Nov","Dec"
     ];
     const month = monthNamesShort[d.getMonth()];
 
-    // day with "st/nd/rd/th"
     const dayNum = d.getDate();
     const suffix =
       dayNum === 1 || dayNum === 21 || dayNum === 31
@@ -112,61 +119,22 @@
   // --------------------------
 
   function renderResults() {
-    // We'll loop all fixtures from that round and build a card for each.
-    // Your layout looks like this:
-    //
-    // <div class="match-card">
-    //   <div class="match-header">MATCH 1</div>
-    //   <p class="match-time">12:30pm, Sat 18th Oct</p>
-    //
-    //   <div class="teams">
-    //     <div class="team">
-    //       <img src="..." alt="">
-    //       <p>Home Team</p>
-    //     </div>
-    //
-    //     <div class="score-section">
-    //       <p class="label">Your prediction</p>
-    //       <div class="score-box">
-    //         <span><input type="number" value="0" min="0" readonly /></span>
-    //         <span>–</span>
-    //         <span><input type="number" value="0" min="0" readonly /></span>
-    //       </div>
-    //       <p class="label">Final score</p>
-    //       <div class="score-box">
-    //         <span><input type="number" value="1" min="0" readonly /></span>
-    //         <span>–</span>
-    //         <span><input type="number" value="2" min="0" readonly /></span>
-    //       </div>
-    //     </div>
-    //
-    //     <div class="team">
-    //       <img src="..." alt="">
-    //       <p>Away Team</p>
-    //     </div>
-    //   </div>
-    //
-    //   <p class="points-earned">Points: 1</p>
-    // </div>
-    //
+    if (!selected.fixtures || !selected.fixtures.length) {
+      listEl.innerHTML = "<p>No results yet.</p>";
+      return;
+    }
+
+    let totalPointsThisRound = 0;
 
     const cardsHtml = selected.fixtures
       .map(function (fixture, idx) {
-        // user prediction for this fixture:
-        // predictions[fixture.id] = { homeScore, awayScore, homeTeam, awayTeam }
-        const guess = predictions[fixture.id] || {
-          homeScore: 0,
-          awayScore: 0,
-          homeTeam: fixture.home,
-          awayTeam: fixture.away
-        };
+        const hasPrediction = !!predictions[fixture.id];
 
-        const predHomeVal = guess.homeScore ?? 0;
-        const predAwayVal = guess.awayScore ?? 0;
+        // only show prediction values if user actually predicted
+        const predHomeVal = hasPrediction ? (predictions[fixture.id].homeScore ?? "") : "";
+        const predAwayVal = hasPrediction ? (predictions[fixture.id].awayScore ?? "") : "";
 
         // Final / live score from API data
-        // We expect fixture.goals = { home: number|null, away: number|null }
-        // If match not started yet, these may be null
         const realHome =
           fixture.goals && fixture.goals.home !== null && fixture.goals.home !== undefined
             ? fixture.goals.home
@@ -176,18 +144,20 @@
             ? fixture.goals.away
             : "";
 
-        // Points so far
-        const pts = calcPoints(
-          Number(predHomeVal),
-          Number(predAwayVal),
-          realHome === "" ? null : Number(realHome),
-          realAway === "" ? null : Number(realAway)
-        );
+        // Points only if user predicted AND we have a real score
+        let pts = 0;
+        if (hasPrediction && realHome !== "" && realAway !== "") {
+          pts = calcPoints(
+            Number(predHomeVal),
+            Number(predAwayVal),
+            Number(realHome),
+            Number(realAway)
+          );
+          totalPointsThisRound += pts;
+        }
 
-        // kickoff display
         const niceDateTime = formatMatchDateTime(fixture.utcDate);
 
-        // Build card HTML for this fixture
         return `
           <div class="match-card" data-fixture="${fixture.id}">
             <div class="match-header">MATCH ${idx + 1}</div>
@@ -224,7 +194,7 @@
               </div>
             </div>
 
-            <p class="points-earned">Points: ${pts}</p>
+            ${hasPrediction ? `<p class="points-earned">Points: ${pts}</p>` : `<p class="points-earned"></p>`}
           </div>
         `;
       })
@@ -232,7 +202,7 @@
 
     listEl.innerHTML = cardsHtml || "<p>No results yet.</p>";
 
-    // After injecting HTML, fill the logos using the same helper we used before
+    // fill logos after rendering
     selected.fixtures.forEach(function (fixture) {
       const row = listEl.querySelector('.match-card[data-fixture="' + fixture.id + '"]');
       if (!row) return;
@@ -240,16 +210,16 @@
       const homeLogoEl = row.querySelector(".home-logo");
       const awayLogoEl = row.querySelector(".away-logo");
 
-      // fixture.home and fixture.away are objects like { id, name, logo? }
-      // ensureLogo(teamObj, imgElement) tries API-Football / SportsDB and assigns img.src
       window.FBL.ensureLogo(fixture.home, homeLogoEl);
       window.FBL.ensureLogo(fixture.away, awayLogoEl);
     });
+
+    // 4) put total points into the user header
+    if (userPointsEl) {
+      userPointsEl.textContent = "Points: " + totalPointsThisRound;
+    }
   }
 
   // Do it
   renderResults();
 })();
-
-
-
