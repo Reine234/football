@@ -15,5 +15,5 @@ services:
   football-proxy:
     image: yourimage
     environment:
-      - FOOTBALL_DATA_TOKEN=${FOOTBALL_DATA_TOKEN}
+      - FOOTBALL_DATA_TOKEN=${bfa51b952c62440d8ea8f1abca0e0151}
       
