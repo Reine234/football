@@ -1,135 +1,147 @@
+// /scripts/auth.js
+(function () {
+const API_BASE  = (window.FBL_CFG && window.FBL_CFG.API_BASE) || "";
+const API_USERS = API_BASE + "/api/users.php";
+
+async function apiPost(body) {
+  const res = await fetch(API_USERS, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",      // <-- important for cookie session
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { throw new Error(`API not JSON (status ${res.status}). Body: ${text.slice(0,120)}…`); }
+}
+
+async function apiGet(q) {
+  const res = await fetch(API_USERS + (q ? `?${q}` : ""), {
+    method: "GET",
+    headers: { "Accept": "application/json" },
+    credentials: "include",      // <-- important
+  });
+  return res.json();
+}
 
 
-(function (global) {
-  // We expose two globals:
-  //   window.FBL_AUTH  -> signup/signin + redirect
-  //   (we do NOT touch window.FBL here, that's your match/fixture logic)
+  function getPending() {
+    try { return JSON.parse(sessionStorage.getItem("pending_predictions") || "[]"); }
+    catch { return []; }
+  }
+  function clearPending() { sessionStorage.removeItem("pending_predictions"); }
 
-  //
-  // -- "XML database" helpers (stored in localStorage) --
-  //
-  function loadUsersXMLDoc() {
-    let xmlStr = localStorage.getItem("FBL_usersXML");
-    if (!xmlStr) {
-      // first time ever: create empty root
-      xmlStr = "<users></users>";
-      localStorage.setItem("FBL_usersXML", xmlStr);
+  async function flushPendingIfAny() {
+    const arr = getPending();
+    if (!arr.length) return;
+    for (const p of arr) {
+      await apiPost({ action: "save_prediction", prediction: p });
     }
-    return new DOMParser().parseFromString(xmlStr, "text/xml");
+    clearPending();
   }
 
-  function saveUsersXMLDoc(doc) {
-    const xmlStr = new XMLSerializer().serializeToString(doc);
-    localStorage.setItem("FBL_usersXML", xmlStr);
+  function leagueFolderFromKey(key) {
+    if (key === "LALIGA") return "laliga";
+    if (key === "BUNDESLIGA") return "bundesliga";
+    return "premier";
   }
 
-  function findUserNode(doc, usernameOrEmail) {
-    const users = doc.getElementsByTagName("user");
-    for (let i = 0; i < users.length; i++) {
-      const u = users[i];
-      const uname = u.getAttribute("username") || "";
-      const email = u.getAttribute("email") || "";
-      if (
-        uname.toLowerCase() === usernameOrEmail.toLowerCase() ||
-        email.toLowerCase() === usernameOrEmail.toLowerCase()
-      ) {
-        return u;
+  function redirectAfterAuth() {
+    const url = new URL(location.href);
+    const next = url.searchParams.get("next");
+    if (next) { location.href = next; return; }
+    const key = sessionStorage.getItem("FBL_leagueKey") || "PREMIER_LEAGUE";
+    const folder = leagueFolderFromKey(key);
+    location.href = `/${folder}/results.html`;
+  }
+
+  // ---------- public API (used by your pages) ----------
+  const FBL_AUTH = {
+    // returns true on success, throws on error
+    async signUp(username, email, password) {
+      if (!username || !email || !password) throw new Error("Missing fields");
+      await apiPost({ action: "signup", name: username, email, password });
+      await flushPendingIfAny();
+      return true;
+    },
+
+    async signIn(userOrEmail, password) {
+      if (!userOrEmail || !password) throw new Error("Missing fields");
+      await apiPost({ action: "login", email: userOrEmail, password });
+      await flushPendingIfAny();
+      return true;
+    },
+
+    async signOut() {
+      try { await apiPost({ action: "logout" }); } catch {}
+      location.reload();
+    },
+
+    async hasSession() {
+      try {
+        const j = await apiGet("action=session");
+        return !!(j && j.success);
+      } catch { return false; }
+    },
+
+    redirectAfterAuth,
+
+    // -------- Google Identity --------
+    _googleInitDone: false,
+    _googleClientId: null,
+
+    googleInitOnce() {
+      if (this._googleInitDone) return;
+      // try to read client id from your existing markup
+      const el = document.getElementById("g_id_onload");
+      const cid = el?.dataset?.client_id || window.FBL_GOOGLE_CLIENT_ID || null;
+      if (!cid) { console.warn("Google Client ID missing."); return; }
+
+      this._googleClientId = cid;
+
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        console.warn("Google Identity script not loaded yet.");
+        return;
       }
-    }
-    return null;
-  }
+      google.accounts.id.initialize({
+        client_id: cid,
+        callback: window.fblGoogleOneTap, // defined below
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        context: "signin",
+      });
+      this._googleInitDone = true;
+    },
 
-  //
-  // -- SIGN UP --
-  //
-  function signUp(username, email, password) {
-    if (!username || !email || !password) {
-      return { ok: false, error: "All fields are required." };
-    }
-
-    const doc = loadUsersXMLDoc();
-
-    // check duplicate via username or email
-    if (findUserNode(doc, username) || findUserNode(doc, email)) {
-      return { ok: false, error: "User already exists." };
-    }
-
-    // <user username="..." email="..." password="..."/>
-    const newUser = doc.createElement("user");
-    newUser.setAttribute("username", username);
-    newUser.setAttribute("email", email);
-    newUser.setAttribute("password", password);
-
-    doc.documentElement.appendChild(newUser);
-    saveUsersXMLDoc(doc);
-
-    // mark them logged in for this session
-    sessionStorage.setItem("FBL_loggedInUser", username);
-
-    return { ok: true };
-  }
-
-  //
-  // -- SIGN IN --
-  //
-  function signIn(usernameOrEmail, password) {
-    if (!usernameOrEmail || !password) {
-      return { ok: false, error: "All fields are required." };
-    }
-
-    const doc  = loadUsersXMLDoc();
-    const node = findUserNode(doc, usernameOrEmail);
-    if (!node) {
-      return { ok: false, error: "User not found." };
-    }
-
-    if (node.getAttribute("password") !== password) {
-      return { ok: false, error: "Wrong password." };
-    }
-
-    // mark active session user
-    sessionStorage.setItem(
-      "FBL_loggedInUser",
-      node.getAttribute("username") || usernameOrEmail
-    );
-
-    return { ok: true };
-  }
-
-  //
-  // -- REDIRECT AFTER AUTH (THIS WAS MISSING) --
-  //
-  function redirectToResultsForCurrentLeague() {
-    // predictionsPage.js sets this before sending user to signin.html:
-    // sessionStorage.setItem("FBL_leagueKey", leagueKey);
-    //
-    // Expected values:
-    //   "PREMIER_LEAGUE"
-    //   "LALIGA"
-    //   "BUNDESLIGA"
-    //
-    const leagueKey = sessionStorage.getItem("FBL_leagueKey") || "PREMIER_LEAGUE";
-
-    let folder = "premier";
-    if (leagueKey === "LALIGA") {
-      folder = "laliga";
-    } else if (leagueKey === "BUNDESLIGA") {
-      folder = "bundesliga";
-    }
-
-    // Send them to that league's results page
-    window.location.href = "./" + folder + "/results.html";
-  }
-
-  //
-  // -- EXPOSE PUBLIC API --
-  //
-  global.FBL_AUTH = {
-    signUp,
-    signIn,
-    redirectToResultsForCurrentLeague,
+    googlePrompt() {
+      this.googleInitOnce();
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        alert("Google sign-in not ready yet."); return;
+      }
+      google.accounts.id.prompt(); // show one-tap or account chooser
+    },
   };
-})(window);
 
+  window.FBL_AUTH = FBL_AUTH;
 
+  // Global callback used by the Google script tag
+  window.fblGoogleOneTap = async function (response) {
+    try {
+      const credential = response && (response.credential || response.id_token || response.idToken);
+      if (!credential) throw new Error("No Google credential");
+      await apiPost({ action: "google_login", credential });
+      await flushPendingIfAny();
+      FBL_AUTH.redirectAfterAuth();
+    } catch (e) {
+      alert(e.message || "Google sign-in failed");
+    }
+  };
 
+  // Optional: auto-warm Google init when the SDK loads
+  window.addEventListener("load", () => {
+    if (document.getElementById("g_id_onload")) {
+      // try a little later to ensure SDK finished parsing
+      setTimeout(() => FBL_AUTH.googleInitOnce(), 200);
+    }
+  });
+})();

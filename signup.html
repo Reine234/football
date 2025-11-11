@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FansBetLiga — Sign up</title>
 
-  <!-- this stylesheet exists in /styles -->
+  <!-- keep your stylesheet -->
   <link rel="stylesheet" href="./styles/style.css" />
 </head>
 <body>
@@ -34,8 +34,13 @@
         <button type="submit" class="btn-primary">Sign up</button>
       </form>
 
-<div class="social-row">
-        <button class="social-btn" type="button" aria-label="Sign up with Google">
+      <!-- SOCIAL row (kept exactly as your HTML) -->
+      <div class="social-row" id="g_id_onload"
+           data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+           data-context="signin"
+           data-callback="fblGoogleOneTap"
+           data-auto_prompt="false">
+        <button id="g_id_signin" class="social-btn" type="button" aria-label="Sign up with Google">
           <!-- Google G -->
           <svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true">
             <path fill="#FFC107" d="M43 24c0-1.3-.1-2.6-.4-3.8H24v7.3h10.7c-.5 2.7-2 5-4.3 6.5v5.4h7c4.1-3.8 6.6-9.4 6.6-15.4z"/>
@@ -53,7 +58,6 @@
         </button>
       </div>
 
-
       <p class="switch">
         Already have an account?
         <a href="signin.html">Sign in</a>
@@ -61,14 +65,14 @@
     </section>
   </main>
 
-  <!-- scripts -->
+  <!-- keep your script order; add Google SDK -->
   <script src="./scripts/config.js"></script>
   <script src="./scripts/api.js"></script>
   <script src="./scripts/auth.js"></script>
 
   <script>
-    // intercept form submit so the browser NEVER does a POST
-    document.getElementById("signup-form").addEventListener("submit", function (e) {
+    // 1) Email/password signup – keep your CSS, just use FBL_AUTH
+    document.getElementById("signup-form").addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const username = document.querySelector('#signup-form input[name="username"]').value.trim();
@@ -76,27 +80,24 @@
       const pass     = document.querySelector('#signup-form input[name="password"]').value.trim();
       const confirm  = document.querySelector('#signup-form input[name="confirm"]').value.trim();
 
-      if (!username || !email || !pass || !confirm) {
-        alert("Please fill all fields.");
-        return;
-      }
-      if (pass !== confirm) {
-        alert("Passwords do not match.");
-        return;
-      }
+      if (!username || !email || !pass || !confirm) return alert("Please fill all fields.");
+      if (pass !== confirm) return alert("Passwords do not match.");
 
-      const result = window.FBL_AUTH.signUp(username, email, pass);
-      if (!result.ok) {
-        alert(result.error || "Sign up failed.");
-        return;
+      try {
+        await window.FBL_AUTH.signUp(username, email, pass);
+        window.FBL_AUTH.redirectAfterAuth();
+      } catch (err) {
+        alert(err.message || "Sign up failed.");
       }
+    });
 
-      // send user to correct league results
-      window.FBL_AUTH.redirectToResultsForCurrentLeague();
+    // 2) Your custom Google button → trigger Google One Tap prompt
+    document.getElementById("g_id_signin").addEventListener("click", function () {
+      window.FBL_AUTH.googlePrompt();
     });
   </script>
+
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
-
-
-

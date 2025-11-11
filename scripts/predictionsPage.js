@@ -1,12 +1,7 @@
+// /scripts/predictionsPage.js
 (function () {
-  //
-  // 1. LOAD CONTEXT SAVED FROM THE LEAGUE PAGE
-  //
-  // When the user clicked Bet on the league index page, we stored:
-  // - the leagueKey ("PREMIER_LEAGUE"/"LALIGA"/"BUNDESLIGA")
-  // - the selected roundNum and fixtures[] in sessionStorage via FBL.persistSelectedRound()
-  //
-  const selected = window.FBL.loadSelectedRound(); // { leagueKey, roundNum, fixtures }
+  // 1) Load context provided by league page
+  const selected  = window.FBL.loadSelectedRound(); // { leagueKey, roundNum, fixtures }
   const leagueKey = sessionStorage.getItem("FBL_leagueKey");
 
   if (!selected || !leagueKey) {
@@ -19,137 +14,67 @@
     return;
   }
 
-  const leagueInfo   = window.FBL.LEAGUE_MAP[leagueKey];
-  const roundNum     = selected.roundNum || 1;
-  const totalRounds  = leagueInfo.totalRounds || "?";
-  const fixtures     = selected.fixtures || [];
+  const leagueInfo  = window.FBL.LEAGUE_MAP[leagueKey];
+  const roundNum    = selected.roundNum || 1;
+  const totalRounds = leagueInfo.totalRounds || "?";
+  const allFixtures = selected.fixtures || [];
 
-  //
-  // 2. GRAB ELEMENTS FROM predictions.html
-  //
-  // Top header / subtitle
-  const subtitleEl      = document.querySelector(".subtitle");    // "Premier League Matches - Matchday X of Y"
-  const dayNumWrapEl    = document.getElementById("day-number2"); // number in page-controls2
-  const prevDayBtn      = document.getElementById("prev-day");
-  const nextDayBtn      = document.getElementById("next-day");
+  // 2) Single vs all mode
+  const mode = sessionStorage.getItem("FBL_mode") || "all";
+  const selFixtureId = sessionStorage.getItem("FBL_selectedFixture");
+  const pageFixtures = (mode === "single" && selFixtureId)
+    ? allFixtures.filter(f => String(f.id) === String(selFixtureId))
+    : allFixtures.slice();
 
-  // Container where all .match-card blocks will be injected
-  // Make sure predictions.html has ONE <div id="predictions-list"></div>
-  const listEl          = document.getElementById("predictions-list");
+  // 3) DOM
+  const subtitleEl   = document.querySelector(".subtitle");
+  const dayNumWrapEl = document.getElementById("day-number2");
+  const prevDayBtn   = document.getElementById("prev-day");
+  const nextDayBtn   = document.getElementById("next-day");
+  const listEl       = document.getElementById("predictions-list");
 
-  // "Done" controls
-  const topDoneLink     = document.getElementById("done");         // link in the header row
-  const bottomDoneBtn   = document.getElementById("done-button");  // big button at the bottom
+  const topDoneLink  = document.getElementById("done");
+  const bottomDoneBtn= document.getElementById("done-button");
 
-  // Modal elements (the confirmation popup)
-  const overlayEl       = document.getElementById("gprompt-overlay");
-  const closeBtn        = document.getElementById("gprompt-close");
-  const cancelBtn       = document.getElementById("gprompt-cancel");
-  const confirmBtn      = document.getElementById("gprompt-confirm");
+  const overlayEl    = document.getElementById("gprompt-overlay");
+  const closeBtn     = document.getElementById("gprompt-close");
+  const cancelBtn    = document.getElementById("gprompt-cancel");
+  const confirmBtn   = document.getElementById("gprompt-confirm");
 
-  const confirmListEl   = document.getElementById("confirmList");
-  const badgeEl         = document.querySelector(".gprompt__badge");
-  const matchdayTextEl  = document.getElementById("gprompt-matchday");
+  const confirmListEl  = document.getElementById("confirmList");
+  const badgeEl        = document.querySelector(".gprompt__badge");
+  const matchdayTextEl = document.getElementById("gprompt-matchday");
 
-  //
-  // 3. USER PREDICTIONS STATE
-  //
-  // We'll track what the user enters for each match:
-  // userPredictions[fixtureId] = { homeScore, awayScore, homeTeam, awayTeam }
-  //
-  const userPredictions = {};
+  // 4) Predictions state (start BLANK = null, not 0)
+  // userPred[fixtureId] = { homeScore: null|number, awayScore: null|number, homeTeam, awayTeam }
+  const userPred = {};
 
-  function clamp(val) {
-    if (val < 0) return 0;
-    if (val > 20) return 20;
-    return val;
-  }
+  const clamp = v => (v < 0 ? 0 : v > 20 ? 20 : v);
+  const display = (el, val) => { el.value = (val === null ? "" : String(val)); };
+  const isSet = p => p && p.homeScore !== null && p.awayScore !== null;
 
-  //
-  // 4. RENDER THE MATCH CARDS
-  //
-  // We are matching YOUR EXACT structure and classes:
-  //
-  // <div class="match-card">
-  //   <div class="teams">
-  //     <div class="team left">
-  //       <img class="team-logo home-logo" />
-  //       <p>Home Team</p>
-  //     </div>
-  //
-  //     <div class="match-center">
-  //       <p class="vs">VS</p>
-  //       <p class="time">15:00</p>
-  //     </div>
-  //
-  //     <div class="team right">
-  //       <img class="team-logo away-logo" />
-  //       <p>Away Team</p>
-  //     </div>
-  //   </div>
-  //
-  //   <hr class="hr">
-  //
-  //   <p class="prediction-label">Enter your prediction score</p>
-  //
-  //   <div class="score-inputs">
-  //     <div class="score-box home-box">
-  //       <button class="minus home-minus">-</button>
-  //       <input class="home-val" type="number" value="0" min="0" readonly />
-  //       <button class="plus home-plus">+</button>
-  //     </div>
-  //     <div class="score-box away-box">
-  //       <button class="minus away-minus">-</button>
-  //       <input class="away-val" type="number" value="0" min="0" readonly />
-  //       <button class="plus away-plus">+</button>
-  //     </div>
-  //   </div>
-  // </div>
-  //
   function renderFixtures() {
-    // Update heading to correct league + matchday
     if (subtitleEl) {
-      subtitleEl.innerHTML = `
-        <span class="bold">${leagueInfo.name} Matches</span> - Matchday ${roundNum} of ${totalRounds}
-      `;
+      subtitleEl.innerHTML = `<span class="bold">${leagueInfo.name} Matches</span> - Matchday ${roundNum} of ${totalRounds}`;
     }
-    if (dayNumWrapEl) {
-      dayNumWrapEl.textContent = roundNum;
-    }
-
-    // Predictions page only covers THIS one matchday, so lock arrows
+    if (dayNumWrapEl) dayNumWrapEl.textContent = roundNum;
     if (prevDayBtn) prevDayBtn.disabled = true;
     if (nextDayBtn) nextDayBtn.disabled = true;
 
-    // Build all cards HTML
-    const cardsHtml = fixtures.map(function (f) {
-      // Init default prediction 0-0
-      userPredictions[f.id] = {
-        homeScore: 0,
-        awayScore: 0,
-        homeTeam: f.home,
-        awayTeam: f.away
-      };
-
-      // Local kickoff time string, goes in .time
-      const kickoffTime = window.FBL.formatKickoffLocal(f.utcDate); // e.g. "15:00"
-
+    const html = pageFixtures.map(f => {
+      userPred[f.id] = { homeScore: null, awayScore: null, homeTeam: f.home, awayTeam: f.away };
+      const ko = window.FBL.formatKickoffLocal(f.utcDate);
       return `
         <div class="match-card" data-fixture="${f.id}">
           <div class="teams">
-            <!-- HOME -->
             <div class="team left">
               <img class="team-logo home-logo" />
               <p>${f.home.name}</p>
             </div>
-
-            <!-- CENTER -->
             <div class="match-center">
               <p class="vs">VS</p>
-              <p class="time">${kickoffTime}</p>
+              <p class="time">${ko}</p>
             </div>
-
-            <!-- AWAY -->
             <div class="team right">
               <img class="team-logo away-logo" />
               <p>${f.away.name}</p>
@@ -162,120 +87,103 @@
 
           <div class="score-inputs">
             <div class="score-box home-box">
-              <button class="minus home-minus">-</button>
-              <input class="home-val" type="number" value="0" min="0" readonly />
-              <button class="plus home-plus">+</button>
+              <button class="minus home-minus" type="button">-</button>
+              <input class="home-val" type="number" min="0" readonly />
+              <button class="plus home-plus" type="button">+</button>
             </div>
 
             <div class="score-box away-box">
-              <button class="minus away-minus">-</button>
-              <input class="away-val" type="number" value="0" min="0" readonly />
-              <button class="plus away-plus">+</button>
+              <button class="minus away-minus" type="button">-</button>
+              <input class="away-val" type="number" min="0" readonly />
+              <button class="plus away-plus" type="button">+</button>
             </div>
           </div>
         </div>
       `;
     }).join("");
+    listEl.innerHTML = html;
 
-    listEl.innerHTML = cardsHtml;
-
-    // After injecting HTML:
-    // 1. Inject logos
-    fixtures.forEach(function (f) {
-      const row = listEl.querySelector('.match-card[data-fixture="' + f.id + '"]');
+    // logos
+    pageFixtures.forEach(f => {
+      const row = listEl.querySelector(`.match-card[data-fixture="${f.id}"]`);
       if (!row) return;
-
-      const homeLogoEl = row.querySelector(".home-logo");
-      const awayLogoEl = row.querySelector(".away-logo");
-      window.FBL.ensureLogo(f.home, homeLogoEl);
-      window.FBL.ensureLogo(f.away, awayLogoEl);
+      window.FBL.ensureLogo(f.home, row.querySelector(".home-logo"));
+      window.FBL.ensureLogo(f.away, row.querySelector(".away-logo"));
     });
 
-    // 2. Attach +/- logic for each fixture
-    fixtures.forEach(function (f) {
-      const row = listEl.querySelector('.match-card[data-fixture="' + f.id + '"]');
+    // +/- handlers (null-aware; blanks by default)
+    pageFixtures.forEach(f => {
+      const row = listEl.querySelector(`.match-card[data-fixture="${f.id}"]`);
       if (!row) return;
 
-      const homeMinus = row.querySelector(".home-minus");
-      const homePlus  = row.querySelector(".home-plus");
-      const awayMinus = row.querySelector(".away-minus");
-      const awayPlus  = row.querySelector(".away-plus");
+      const hMinus = row.querySelector(".home-minus");
+      const hPlus  = row.querySelector(".home-plus");
+      const aMinus = row.querySelector(".away-minus");
+      const aPlus  = row.querySelector(".away-plus");
+      const hVal   = row.querySelector(".home-val");
+      const aVal   = row.querySelector(".away-val");
 
-      const homeValEl = row.querySelector(".home-val");
-      const awayValEl = row.querySelector(".away-val");
+      display(hVal, null);
+      display(aVal, null);
 
-      homeMinus.addEventListener("click", function () {
-        let cur = clamp(userPredictions[f.id].homeScore - 1);
-        userPredictions[f.id].homeScore = cur;
-        homeValEl.value = cur;
+      hMinus.addEventListener("click", () => {
+        let cur = userPred[f.id].homeScore;
+        if (cur === null || Number.isNaN(cur)) cur = 0;
+        cur = clamp(cur - 1);
+        userPred[f.id].homeScore = cur;
+        display(hVal, cur);
       });
-
-      homePlus.addEventListener("click", function () {
-        let cur = clamp(userPredictions[f.id].homeScore + 1);
-        userPredictions[f.id].homeScore = cur;
-        homeValEl.value = cur;
+      hPlus.addEventListener("click", () => {
+        let cur = userPred[f.id].homeScore;
+        if (cur === null || Number.isNaN(cur)) cur = 0;
+        cur = clamp(cur + 1);
+        userPred[f.id].homeScore = cur;
+        display(hVal, cur);
       });
-
-      awayMinus.addEventListener("click", function () {
-        let cur = clamp(userPredictions[f.id].awayScore - 1);
-        userPredictions[f.id].awayScore = cur;
-        awayValEl.value = cur;
+      aMinus.addEventListener("click", () => {
+        let cur = userPred[f.id].awayScore;
+        if (cur === null || Number.isNaN(cur)) cur = 0;
+        cur = clamp(cur - 1);
+        userPred[f.id].awayScore = cur;
+        display(aVal, cur);
       });
-
-      awayPlus.addEventListener("click", function () {
-        let cur = clamp(userPredictions[f.id].awayScore + 1);
-        userPredictions[f.id].awayScore = cur;
-        awayValEl.value = cur;
+      aPlus.addEventListener("click", () => {
+        let cur = userPred[f.id].awayScore;
+        if (cur === null || Number.isNaN(cur)) cur = 0;
+        cur = clamp(cur + 1);
+        userPred[f.id].awayScore = cur;
+        display(aVal, cur);
       });
     });
   }
 
-  //
-  // 5. OPEN THE CONFIRM PROMPT WHEN USER PRESSES "DONE"
-  //
-  // We build #confirmList rows using your .gprompt__row layout
-  //
   function openConfirmPrompt() {
-    // Update green badge + matchday text
-    if (badgeEl) {
-      badgeEl.textContent = leagueInfo.name + " Matches";
-    }
-    if (matchdayTextEl) {
-      matchdayTextEl.textContent = roundNum + " of " + totalRounds;
-    }
+    if (badgeEl)        badgeEl.textContent = leagueInfo.name + " Matches";
+    if (matchdayTextEl) matchdayTextEl.textContent = `${roundNum} of ${totalRounds}`;
 
-    // Build rows
-    const rowsHtml = fixtures.map(function (f) {
-      const pred = userPredictions[f.id] || { homeScore: 0, awayScore: 0 };
+    const touched = pageFixtures.filter(f => isSet(userPred[f.id]));
+    if (!touched.length) { alert("Please enter at least one prediction."); return; }
 
-      return (
-        '<div class="gprompt__row">' +
-          '<img class="gprompt__logo gprompt__logo--home" />' +
-          '<div class="gprompt__team">' + f.home.name + '</div>' +
-          '<div class="gprompt__score">' +
-            pred.homeScore + ' - ' + pred.awayScore +
-          '</div>' +
-          '<img class="gprompt__logo gprompt__logo--away" />' +
-          '<div class="gprompt__team">' + f.away.name + '</div>' +
-        '</div>'
-      );
+    const rows = touched.map(f => {
+      const p = userPred[f.id];
+      return `
+        <div class="gprompt__row">
+          <img class="gprompt__logo gprompt__logo--home" />
+          <div class="gprompt__team">${f.home.name}</div>
+          <div class="gprompt__score">${p.homeScore} - ${p.awayScore}</div>
+          <img class="gprompt__logo gprompt__logo--away" />
+          <div class="gprompt__team">${f.away.name}</div>
+        </div>`;
     }).join("");
+    confirmListEl.innerHTML = rows;
 
-    confirmListEl.innerHTML = rowsHtml;
-
-    // Add logos in popup
-    fixtures.forEach(function (f, idx) {
-      const row = confirmListEl.querySelectorAll(".gprompt__row")[idx];
-      if (!row) return;
-
-      const homeLogoEl = row.querySelector(".gprompt__logo--home");
-      const awayLogoEl = row.querySelector(".gprompt__logo--away");
-
-      window.FBL.ensureLogo(f.home, homeLogoEl);
-      window.FBL.ensureLogo(f.away, awayLogoEl);
+    touched.forEach((f, i) => {
+      const r = confirmListEl.querySelectorAll(".gprompt__row")[i];
+      if (!r) return;
+      window.FBL.ensureLogo(f.home, r.querySelector(".gprompt__logo--home"));
+      window.FBL.ensureLogo(f.away, r.querySelector(".gprompt__logo--away"));
     });
 
-    // Show popup
     overlayEl.classList.add("is-open");
     overlayEl.setAttribute("aria-hidden", "false");
   }
@@ -285,65 +193,108 @@
     overlayEl.setAttribute("aria-hidden", "true");
   }
 
-  //
-  // 6. AFTER USER PRESSES CONFIRM IN THE PROMPT
-  //
-  // NEW: we now go to the GLOBAL signin.html in the ROOT, not per-league.
-  //
-  
 
-
-function finalizeAndContinue() {
-  // 1. Save the user's predictions so results.html can read them later
-  //    (this stores them in sessionStorage/localStorage via your FBL helpers)
-  window.FBL.savePredictions(userPredictions);
-
-  // 2. Run your jQuery validation hook (your "test" logic) if it exists
-  if (window.jQuery) {
-    jQuery("body").trigger("fblPredictionValidate", [userPredictions]);
-  }
-
-  // 3. Remember which league the user was playing in
-  //    example values: "PREMIER_LEAGUE", "LALIGA", "BUNDESLIGA"
-  sessionStorage.setItem("FBL_leagueKey", leagueKey);
-
-  // 4. Close the confirmation popup visually
-  closeConfirmPrompt();
-
-  // 5. Send the user to the shared signin page in the ROOT of the project
-  //    NOTE: predictions.html is inside /premier/ or /laliga/ or /bundesliga/,
-  //    so "../signin.html" means "go up one level to the root"
-  window.location.href = "../signin.html";
+async function hasSession() {
+  try {
+    const r = await fetch((window.FBL_API_BASE||"") + "/api/users.php?action=session", { credentials: "include" });
+    const j = await r.json();
+    return !!(j && j.success);
+  } catch { return false; }
 }
 
 
-  //
-  // 7. HOOK UP EVENTS
-  //
-  function onDoneClick(e) {
-    e.preventDefault();
-    openConfirmPrompt();
+
+
+
+  function buildServerPayloads(touchedFixtures) {
+    // server wants: { league, fixtureId, matchday, home:{id,name,score}, away:{id,name,score}, timestamp }
+    return touchedFixtures.map(f => ({
+      league: leagueKey,
+      fixtureId: f.id,
+      matchday: roundNum,
+      home: { id: f.home.id, name: f.home.name, score: userPred[f.id].homeScore },
+      away: { id: f.away.id, name: f.away.name, score: userPred[f.id].awayScore },
+      timestamp: new Date().toISOString()
+    }));
   }
 
-  if (topDoneLink) {
-    topDoneLink.addEventListener("click", onDoneClick);
+ const API_USERS = (window.FBL_API_BASE || "") + "/api/users.php";
+
+async function saveToServer(predArray) {
+  for (const p of predArray) {
+    const res = await fetch(API_USERS, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ action: "save_prediction", prediction: p }),
+    });
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) {
+      const text = await res.text();
+      throw new Error("Save failed (not JSON). " + res.status + " " + text.slice(0,200));
+    }
+    const j = await res.json();
+    if (!j.success) throw new Error(j.message || "Save failed");
   }
-  if (bottomDoneBtn) {
-    bottomDoneBtn.addEventListener("click", onDoneClick);
+}
+
+
+  async function finalizeAndContinue() {
+    const touched = pageFixtures.filter(f => isSet(userPred[f.id]));
+    if (!touched.length) { alert("Please enter at least one prediction."); return; }
+
+    // Save locally so your client-side results also work
+    const filtered = {};
+    touched.forEach(f => { filtered[f.id] = userPred[f.id]; });
+    window.FBL.savePredictions(filtered);
+
+    // Try cookie session
+    if (await hasSession()) {
+      try {
+        await saveToServer(buildServerPayloads(touched));
+        closeConfirmPrompt();
+        // Go to results in the same league folder
+        window.location.href = 'results.html';
+        return;
+      } catch (e) {
+        console.warn('Server save failed, falling back to signup...', e);
+      }
+    }
+
+    // No session → stash and send to signup once
+    sessionStorage.setItem('pending_predictions', JSON.stringify(buildServerPayloads(touched)));
+    closeConfirmPrompt();
+
+    // Redirect to signup (user can switch to Sign In); return to this league's results
+    const nextUrl = location.pathname.replace(/predictions\.html$/i, 'results.html');
+    window.location.href = '../signup.html?next=' + encodeURIComponent(nextUrl);
   }
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeConfirmPrompt);
-  }
-  if (cancelBtn) {
-    cancelBtn.addEventListener("click", closeConfirmPrompt);
-  }
-  if (confirmBtn) {
-    confirmBtn.addEventListener("click", finalizeAndContinue);
-  }
+  // Events
+  const onDone = e => { e.preventDefault(); openConfirmPrompt(); };
+  if (topDoneLink)   topDoneLink.addEventListener('click', onDone);
+  if (bottomDoneBtn) bottomDoneBtn.addEventListener('click', onDone);
+  if (closeBtn)      closeBtn.addEventListener('click', closeConfirmPrompt);
+  if (cancelBtn)     cancelBtn.addEventListener('click', closeConfirmPrompt);
+  if (confirmBtn)    confirmBtn.addEventListener('click', (e) => { e.preventDefault(); finalizeAndContinue(); });
 
-  //
-  // 8. START
-  //
+  // Start
   renderFixtures();
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

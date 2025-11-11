@@ -102,4 +102,30 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+<script>
+(function(){
+  const h3 = document.querySelector('.matches-header h3');
+  if (!h3) return;
+
+  let rounds = [];
+  try { rounds = JSON.parse(sessionStorage.getItem('FBL_rounds') || '[]') || []; } catch {}
+  const idxStr = sessionStorage.getItem('FBL_roundIndex');
+  const idx = (idxStr !== null && idxStr !== '' && !Number.isNaN(Number(idxStr))) ? parseInt(idxStr, 10) : -1;
+
+  let num = 1, total = rounds.length || 38;
+  try {
+    const ctx = JSON.parse(sessionStorage.getItem('FBL_selectedRound') || 'null');
+    if (ctx) {
+      if (idx < 0 && Number.isInteger(ctx.roundNum)) num = ctx.roundNum;
+      if (!rounds.length && Number.isInteger(ctx.roundTotal)) total = ctx.roundTotal;
+    }
+    if (idx >= 0) num = idx + 1;
+  } catch {}
+
+  // Keep your exact wording/layout:
+  h3.textContent = `Matches - Matchday ${num} of ${total}`;
+})();
+</script>
+
 </body></html>

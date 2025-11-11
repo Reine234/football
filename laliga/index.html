@@ -1,142 +1,135 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <meta name="league" content="PD">
-  <title>FansBetLiga — Premier League</title>
- 
-  
-<link rel="stylesheet" href="/styles/styleindex.css">
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- If this file is /laliga/index.html, keep PD; for PL use PL; for BL1 use BL1 -->
+  <meta name="league" content="PD">
+  <title>FansBetLiga — La Liga</title>
+
+  <link rel="stylesheet" href="/styles/styleindex.css">
   
 </head>
+
+<!-- If this is La Liga page, keep LALIGA; for Premier use PREMIER; for Bundesliga use BUNDESLIGA -->
 <body data-league="LALIGA">
   <header class="topbar">
     <h1 class="logo">FANSBETLIGA</h1>
     <a href="#" class="about">About</a>
   </header>
 
-
- <nav class="nav">
-    <div class="nav-item "><img src="/img/home.png" alt="Home"><span>Home</span></div>
-    <div class="nav-item "><img src="/img/person.png" alt="Results"><span>Results</span></div>
+  <nav class="nav">
+    <div class="nav-item"><img src="/img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item"><img src="/img/person.png" alt="Results"><span>Results</span></div>
     <div class="nav-item"><img src="/img/books.png" alt="Winners"><span>Winners</span></div>
     <div class="nav-item"><img src="/img/3 dots.png" alt="Rules"><span>Rules</span></div>
   </nav>
 
-
-
   <!-- League tabs -->
   <div class="league-tabs">
+    <!-- make these ROOT-ABSOLUTE to avoid doubled folders -->
     <button class="tab" data-href="/laliga/index.html">La Liga</button>
     <button class="tab" data-href="/bundesliga/index.html">Bundesliga</button>
-    <button class="tab active" data-href="/premier/index.html">Premier League</button>
+    <button class="tab" data-href="/premier/index.html">Premier League</button>
   </div>
-<script>
-  // works even if the buttons are created later
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.league-tabs .tab');
-    if (!btn) return;
-    const href = btn.dataset.href;
-    if (href) location.assign(href);
-  });
-</script>
 
-<section class="matches">
-  <div class="matches-header">
-    <h3 id="matchday-title">Matches</h3>
-    <div class="page-controls">
-      <button id="prev-day" class="arrow">&lt;</button>
-      <span id="day-number"></span>
-      <button id="next-day" class="arrow">&gt;</button>
+  <section class="matches">
+    <div class="matches-header">
+      <h3 id="matchday-title">Matches</h3>
+      <div class="page-controls">
+        <button id="prev-day" class="arrow">&lt;</button>
+        <span id="day-number"></span>
+        <button id="next-day" class="arrow">&gt;</button>
+      </div>
     </div>
-  </div>
-  <div id="matches-container"></div>
-</section>
+    <div id="matches-container"></div>
+  </section>
 
-
-<a id="bet-button-main" class="fixed-button" href="/laliga/predictions.html">Bet +</a>
-
-
+  <!-- IMPORTANT: Let the anchor do the navigation relative to the current folder -->
+  <a id="bet-button-main" class="fixed-button" href="predictions.html">Bet +</a>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="../scripts/config.js"></script>
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/leaguePage.js"></script>
 
-
-
-<script src="../scripts/config.js"></script>
-<script src="../scripts/api.js"></script>
-<script src="../scripts/leaguePage.js"></script>
-
-<!-- MUST be first -->
-
-
-
-<script>
-  // Make the league tabs navigate
-  (function(){
-    function go(btn){ var url = btn.getAttribute('data-href'); if(url){ location.href = url; } }
-    document.querySelectorAll('.league-tabs .tab').forEach(function(btn){
-      btn.addEventListener('click', function(){ go(btn); });
-    });
-  })();
-</script>
-
-<!-- Your content here -->
-<footer>...</footer>
-
-<!-- Paste this before </body> -->
-<script>
+  <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const path = window.location.pathname.toLowerCase();
-  let league = "";
-  if (path.includes("laliga")) league = "laliga";
-  else if (path.includes("bundesliga")) league = "bundesliga";
-  else if (path.includes("premier")) league = "premier";
+  // Helper: detect the current league folder from the URL path
+  function currentLeagueFolder() {
+    const parts = location.pathname.split('/').filter(Boolean);
+    const i = parts.findIndex(p => ['premier','bundesliga','laliga'].includes(p));
+    return i >= 0 ? parts[i] : 'premier';
+  }
 
-  // ====== NAVBAR LINKS ======
-  const navItems = document.querySelectorAll(".navbar .nav-item");
-  navItems.forEach(item => {
-    const label = item.querySelector("p").textContent.trim().toLowerCase();
+  const leagueFolder = currentLeagueFolder();
 
+  // Top nav buttons
+  document.querySelectorAll(".nav-item").forEach(item => {
+    const label = item.querySelector("span")?.textContent.trim().toLowerCase();
     item.addEventListener("click", () => {
-      switch (label) {
-        case "home":
-          window.location.href = `/${league}/index.html`;
-          break;
-        case "results":
-          window.location.href = `/${league}/results.html`;
-          break;
-        case "winners":
-          alert("🏆 Winners page coming soon!");
-          break;
-        case "rules":
-          alert("⚙️ Rules page coming soon!");
-          break;
-      }
+      if (label === "home")     location.href = "index.html";         // relative -> stays in this folder
+      if (label === "results")  location.href = "results.html";       // relative -> /<league>/results.html
+      if (label === "winners")  alert("Winners page coming soon!");
+      if (label === "rules")    alert("Rules page coming soon!");
     });
   });
 
-  // ====== LEAGUE TABS ======
-  const tabs = document.querySelectorAll(".league-tabs .tab");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      const target = tab.getAttribute("data-href");
-      if (target) window.location.href = target;
-    });
+  // League tabs (always go to the specific folder root)
+  document.querySelectorAll(".league-tabs .tab").forEach(tab => {
+    const target = tab.getAttribute("data-href");
+    if (target) {
+      tab.addEventListener("click", () => location.href = target);
+    }
   });
 
-  // ====== HIGHLIGHT ACTIVE LEAGUE TAB ======
-  tabs.forEach(tab => {
-    const href = tab.getAttribute("data-href").toLowerCase();
-    if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
-    else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
-    else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
-    else tab.classList.remove("active");
+  // Bet button – ALWAYS within the current folder
+  const betButton = document.getElementById("bet-button-main");
+  if (betButton) {
+    betButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "predictions.html"; // relative -> /<league>/predictions.html
+    });
+  }
+
+  // If you also click match cards to go to predictions:
+  document.addEventListener("click", (e) => {
+    const card = e.target.closest(".match-card");
+    if (!card) return;
+    // (Optionally store selected match id in localStorage here)
+    location.href = "predictions.html";
   });
 });
+</script>
+
+
+<!-- NEW: match-card + Bet button hooks -->
+<script>
+  // When user clicks a match card → SINGLE mode
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.match-card');
+    if (!card) return;
+    const fixtureId = String(card.dataset.fixture || card.dataset.fixtureId || '').trim();
+    if (!fixtureId) return;
+    sessionStorage.setItem('FBL_mode', 'single');
+    sessionStorage.setItem('FBL_selectedFixture', fixtureId);
+    // predictions.html lives in the same league folder
+    location.href = 'predictions.html';
+  });
+
+  // Bet button → ALL mode
+  const betBtn = document.getElementById('bet-button-main');
+  if (betBtn) {
+    betBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      sessionStorage.setItem('FBL_mode', 'all');
+      sessionStorage.removeItem('FBL_selectedFixture'); // avoid sticky single-match
+      location.href = 'predictions.html';
+    });
+  }
 </script>
 </body>
 </html>
 
-
-</body></html>
+</body>
+</html>
