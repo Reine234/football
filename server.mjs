@@ -131,12 +131,14 @@ function mapLeagueToFDCode(input) {
   if (s === "39")  return "PL";   // Premier League
   if (s === "78")  return "BL1";  // Bundesliga
   if (s === "140") return "PD";   // LaLiga
+  if (s === "61")  return "FL1";  // Ligue 1
 
   if (["premier","epl","premierleague","england","pl"].includes(s)) return "PL";
   if (["bundesliga","germany","de","bl1"].includes(s))               return "BL1";
   if (["laliga","la liga","spain","pd"].includes(s))                 return "PD";
+  if (["ligue1","ligue 1","france","fl1"].includes(s))            return "FL1";
 
-  if (["pl","bl1","pd"].includes(s)) return s.toUpperCase();
+  if (["pl","bl1","pd","fl1"].includes(s)) return s.toUpperCase();
   return "PL";
 }
 
@@ -507,12 +509,12 @@ app.get("/health", (_req, res) => {
 // ------------------------
 // Normalize accidental double segments like /bundesliga/bundesliga/...
 app.use((req, res, next) => {
-  const fixed = req.url.replace(/\/(premier|bundesliga|laliga)\/\1\//, "/$1/");
+  const fixed = req.url.replace(/\/(premier|bundesliga|laliga|ligue1)\/\1\//, "/$1/");
   if (fixed !== req.url) return res.redirect(302, fixed);
   next();
 });
 
-const leagues = ["premier","bundesliga","laliga"];
+const leagues = ["premier","bundesliga","laliga","ligue1"];
 for (const L of leagues) {
   app.get(`/${L}/`, (_req, res) => res.sendFile(join(__dirname, L, "index.html")));
   app.get(`/${L}/index.html`, (_req, res) => res.sendFile(join(__dirname, L, "index.html")));

@@ -78,7 +78,7 @@
 
     matchesContainer.innerHTML = html;
 
-    // Attach logos to each card + click handler for SINGLE-match betting
+    // Attach logos + SINGLE-match click
     fixtures.forEach(f => {
       const card = matchesContainer.querySelector(`.match-card[data-fixture="${f.id}"]`);
       if (!card) return;
@@ -92,27 +92,23 @@
         if (awayLogoEl && f.away && f.away.logo) awayLogoEl.src = f.away.logo;
       }
 
-      // >>> TWEAK #1: make match cards clickable → SINGLE match on predictions
+      // Make each card open predictions in SINGLE mode
       card.style.cursor = "pointer";
       card.addEventListener("click", () => {
-        // Persist current round & fixtures so predictions page can render
+        // Persist current round & fixtures for predictions
         if (window.FBL && window.FBL.persistSelectedRound) {
           window.FBL.persistSelectedRound(leagueKey, roundNum, fixtures);
         } else {
           sessionStorage.setItem("FBL_selectedRound", JSON.stringify({ leagueKey, roundNum, fixtures }));
         }
-        // Identify this one fixture as the target
         sessionStorage.setItem("FBL_leagueKey", leagueKey);
-        sessionStorage.setItem("FBL_selectedFixture", String(f.id)); // mark single
-        // (Optional mode flag)
+        sessionStorage.setItem("FBL_selectedFixture", String(f.id));
         sessionStorage.setItem("FBL_mode", "single");
-
-        // Go to predictions inside the SAME league folder
         window.location.href = "predictions.html";
       });
     });
 
-    // Always persist current round so floating Bet + also works (ALL matches)
+    // Persist current round for Bet+ (ALL mode)
     if (window.FBL && window.FBL.persistSelectedRound) {
       window.FBL.persistSelectedRound(leagueKey, roundNum, fixtures);
     } else {
@@ -171,9 +167,9 @@
   if (betBtn) {
     betBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      // ALL matches for the round
+      // ALL matches
       sessionStorage.setItem("FBL_leagueKey", leagueKey);
-      sessionStorage.removeItem("FBL_selectedFixture"); // ensure not single
+      sessionStorage.removeItem("FBL_selectedFixture");
       sessionStorage.setItem("FBL_mode", "all");
       window.location.href = "predictions.html";
     });
@@ -181,15 +177,6 @@
 
   init();
 })();
-
-
-
-
-
-
-
-
-
 
 
 

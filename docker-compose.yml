@@ -1,11 +1,9 @@
-version: "3.8"
-
 services:
   frontend:
     build: .
     container_name: fansbetliga_app
     ports:
-      - "5000:5000"         # your existing JS/CSS/HTML app
+      - "5000:5000"
     env_file:
       - ./.env
     restart: unless-stopped
@@ -16,21 +14,12 @@ services:
     image: php:8.2-apache
     container_name: fbl-php
     ports:
-      - "8080:80"           # PHP/Apache will be at http://localhost:8080
+      - "8080:80"           # API at http://localhost:8080
     volumes:
-      - .:/var/www/html     # serve your project as the web root
+      - .:/var/www/html     # serve your project root
     environment:
       APACHE_DOCUMENT_ROOT: /var/www/html
-
-  # (optional) your football proxy, fix env var usage if you keep it
-  football-proxy:
-    image: yourimage
-    env_file:
-      - ./.env              # put FOOTBALL_DATA_TOKEN=... in .env
-    environment:
-      - FOOTBALL_DATA_TOKEN=${FOOTBALL_DATA_TOKEN}
     restart: unless-stopped
-
 
 
 

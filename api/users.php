@@ -1,297 +1,387 @@
 <?php
-// /api/users.php
-declare(strict_types=1);
+// =============================
+//  CORS SETUP
+// =============================
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-// ---------- Headers / CORS ----------
-header('Content-Type: application/json');
-header('Cache-Control: no-store');
-header('Pragma: no-cache');
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
-header('Access-Control-Allow-Origin: ' . $origin);
-header('Access-Control-Allow-Credentials: true);
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+$allowedOrigins = [
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+    'https://fansbetliga.com',
+    'https://www.fansbetliga.com',
+    'https://api.fansbetliga.com',
+];
 
-// ---------- Optional config ----------
-$cfg = __DIR__ . '/config.php';
-if (file_exists($cfg)) require_once $cfg;
-
-// Fallbacks if not defined in config.php
-if (!defined('USERS_XML_PATH'))        define('USERS_XML_PATH',        __DIR__ . '/../data/users.xml');
-if (!defined('PREDICTIONS_XML_PATH'))  define('PREDICTIONS_XML_PATH',  __DIR__ . '/../data/predictions.xml');
-if (!defined('SESSION_SECRET'))        define('SESSION_SECRET',        'PLEASE_CHANGE_ME_TO_A_LONG_RANDOM_SECRET');
-if (!defined('GOOGLE_CLIENT_ID'))      define('GOOGLE_CLIENT_ID',      'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
-
-// ---------- Small helpers (only define if missing) ----------
-if (!function_exists('now_iso')) {
-  function now_iso(): string { return gmdate('c'); }
-}
-if (!function_exists('read_xml')) {
-  function read_xml(string $path, string $rootTag = 'root'): SimpleXMLElement {
-    if (!file_exists($path)) {
-      $xml = new SimpleXMLElement("<{$rootTag}/>");
-      $xml->asXML($path);
-    }
-    $xml = simplexml_load_file($path);
-    if ($xml === false) {
-      // recreate if corrupted
-      $xml = new SimpleXMLElement("<{$rootTag}/>");
-      $xml->asXML($path);
-    }
-    return $xml;
-  }
-}
-if (!function_exists('save_xml')) {
-  function save_xml(SimpleXMLElement $xml, string $path): void {
-    $tmp = $path . '.tmp';
-    $xml->asXML($tmp);
-    rename($tmp, $path);
-  }
+if (in_array($origin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: $origin");
+    header("Access-Control-Allow-Credentials: true");
 }
 
-// ---------- Session (cookie) ----------
-function b64(string $s){ return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
-function b64d(string $s){ return base64_decode(strtr($s, '-_', '+/')); }
-
-function sign_session(string $userId, int $ttlSec = 2592000): string { // 30 days
-  $payload = json_encode(['uid'=>$userId,'exp'=>time()+$ttlSec], JSON_UNESCAPED_SLASHES);
-  $sig = hash_hmac('sha256', $payload, SESSION_SECRET, true);
-  return b64($payload) . '.' . b64($sig);
-}
-function verify_session(?string $cookie): ?string {
-  if (!$cookie || strpos($cookie, '.') === false) return null;
-  [$p64,$s64] = explode('.', $cookie, 2);
-  $payload = b64d($p64); $sig = b64d($s64);
-  $calc = hash_hmac('sha256', $payload, SESSION_SECRET, true);
-  if (!hash_equals($calc, $sig)) return null;
-  $data = json_decode($payload, true);
-  if (!$data || empty($data['uid']) || empty($data['exp']) || $data['exp'] < time()) return null;
-  return $data['uid'];
-}
-function set_session_cookie(string $userId): void {
-  $tok = sign_session($userId);
-  setcookie('fbl_sid', $tok, [
-    'expires'  => time()+60*60*24*30,
-    'path'     => '/',
-    'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
-    'httponly' => true,
-    'samesite' => 'Lax',
-  ]);
-}
-function clear_session_cookie(): void {
-  setcookie('fbl_sid', '', [
-    'expires'  => time()-3600,
-    'path'     => '/',
-    'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
-    'httponly' => true,
-    'samesite' => 'Lax',
-  ]);
+// Handle preflight for POST/credentials
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+    exit;
 }
 
-// ---------- Users.xml helpers ----------
-function find_user_by_email(SimpleXMLElement $xml, string $email): ?SimpleXMLElement {
-  foreach ($xml->user as $u) {
-    if (strcasecmp((string)$u->email, $email) === 0) return $u;
-  }
-  return null;
-}
-function find_user_by_name(SimpleXMLElement $xml, string $name): ?SimpleXMLElement {
-  foreach ($xml->user as $u) {
-    if (strcasecmp((string)$u->name, $name) === 0) return $u;
-  }
-  return null;
-}
-function find_user_by_google_sub(SimpleXMLElement $xml, string $sub): ?SimpleXMLElement {
-  foreach ($xml->user as $u) {
-    if ((string)$u->googleSub === $sub) return $u;
-  }
-  return null;
-}
-function add_user(SimpleXMLElement $xml, array $data): SimpleXMLElement {
-  $u = $xml->addChild('user');
-  $u->addAttribute('id', $data['id']);
-  $u->addChild('email', $data['email']);
-  $u->addChild('name',  $data['name']);
-  $u->addChild('passwordHash', $data['passwordHash'] ?? '');
-  $u->addChild('provider', $data['provider'] ?? 'local');
-  $u->addChild('googleSub', $data['googleSub'] ?? '');
-  $u->addChild('createdAt', now_iso());
-  return $u;
-}
 
-// ---------- Predictions.xml helpers ----------
-function save_prediction_xml(string $userId, array $pred): void {
-  $xml = read_xml(PREDICTIONS_XML_PATH, 'predictions');
-  $p = $xml->addChild('prediction');
-  $p->addAttribute('userId', $userId);
-  $p->addChild('league', htmlspecialchars((string)($pred['league'] ?? ''), ENT_QUOTES));
-  $p->addChild('fixtureId', (string)($pred['fixtureId'] ?? ''));
-  $p->addChild('matchday', htmlspecialchars((string)($pred['matchday'] ?? ''), ENT_QUOTES));
-  $home = $p->addChild('home');
-  $home->addChild('id', (string)($pred['home']['id'] ?? ''));
-  $home->addChild('name', htmlspecialchars((string)($pred['home']['name'] ?? ''), ENT_QUOTES));
-  $home->addChild('score', (string)($pred['home']['score'] ?? ''));
-  $away = $p->addChild('away');
-  $away->addChild('id', (string)($pred['away']['id'] ?? ''));
-  $away->addChild('name', htmlspecialchars((string)($pred['away']['name'] ?? ''), ENT_QUOTES));
-  $away->addChild('score', (string)($pred['away']['score'] ?? ''));
-  $p->addChild('timestamp', now_iso());
-  save_xml($xml, PREDICTIONS_XML_PATH);
-}
-function load_my_predictions_xml(string $userId): array {
-  $xml = read_xml(PREDICTIONS_XML_PATH, 'predictions');
-  $out = [];
-  foreach ($xml->prediction as $p) {
-    if ((string)$p['userId'] !== $userId) continue;
-    $out[] = [
-      'league'   => (string)$p->league,
-      'fixtureId'=> (string)$p->fixtureId,
-      'matchday' => (string)$p->matchday,
-      'home'     => ['id'=>(string)$p->home->id, 'name'=>(string)$p->home->name, 'score'=>(int)$p->home->score],
-      'away'     => ['id'=>(string)$p->away->id, 'name'=>(string)$p->away->name, 'score'=>(int)$p->away->score],
-      'timestamp'=> (string)$p->timestamp,
-    ];
-  }
-  return $out;
-}
 
-// ---------- Input / Session ----------
-$raw = file_get_contents('php://input');
-$body = json_decode($raw, true) ?: [];
-$action = $_GET['action'] ?? ($body['action'] ?? '');
-$sessionUserId = verify_session($_COOKIE['fbl_sid'] ?? null);
 
-// ---------- Actions ----------
-try {
-  // Check current session
-  if ($action === 'session') {
-    if (!$sessionUserId) { echo json_encode(['success'=>false]); exit; }
-    $uxml = read_xml(USERS_XML_PATH, 'users');
-    $me = null;
-    foreach ($uxml->user as $u) if ((string)$u['id'] === $sessionUserId) { $me = $u; break; }
-    if (!$me) { echo json_encode(['success'=>false]); exit; }
-    echo json_encode(['success'=>true,'user'=>[
-      'id'=>(string)$me['id'],
-      'email'=>(string)$me->email,
-      'name'=>(string)$me->name,
-      'provider'=>(string)$me->provider
-    ]]); exit;
-  }
 
-  // Logout
-  if ($action === 'logout') {
-    clear_session_cookie();
-    echo json_encode(['success'=>true]); exit;
-  }
+// =============================
+//  SESSION (cookie settings for local + prod)
+// =============================
+$host        = $_SERVER['HTTP_HOST'] ?? '';
+$isLocalhost = ($host === 'localhost' || $host === '127.0.0.1');
 
-  // Signup (accepts name or username)
-  if ($action === 'signup') {
-    $name  = trim((string)($body['name'] ?? $body['username'] ?? ''));
-    $email = trim((string)($body['email'] ?? ''));
-    $pass  = (string)($body['password'] ?? '');
-    if (!$name || !$email || !$pass) throw new Exception('Missing fields');
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) throw new Exception('Invalid email');
-
-    $uxml = read_xml(USERS_XML_PATH, 'users');
-    if (find_user_by_email($uxml, $email)) throw new Exception('Email already exists');
-
-    $userId = 'u-'.bin2hex(random_bytes(8));
-    $hash   = password_hash($pass, PASSWORD_DEFAULT);
-    add_user($uxml, [
-      'id'=>$userId, 'email'=>strtolower($email), 'name'=>$name,
-      'passwordHash'=>$hash, 'provider'=>'local'
+// For PHP 7.3+ we can pass an array with samesite
+if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        // In production make sure this matches your real domain:
+        // e.g. ".fansbetliga.com"
+        'domain'   => $isLocalhost ? '' : '.fansbetliga.com',
+        'secure'   => $isLocalhost ? false : true,   // must be true for HTTPS in prod
+        'httponly' => true,
+        // Localhost → Lax (works fine).
+        // Prod (subdomain api.<domain> called from <domain>) → None so cross-site XHR sends cookies.
+        'samesite' => $isLocalhost ? 'Lax' : 'None',
     ]);
-    save_xml($uxml, USERS_XML_PATH);
-
-    set_session_cookie($userId);
-    echo json_encode(['success'=>true, 'userId'=>$userId]); exit;
-  }
-
-  // Signin/Login (accepts 'signin' or 'login'; username can be email or name)
-  if ($action === 'signin' || $action === 'login') {
-    $username = trim((string)($body['username'] ?? $body['email'] ?? ''));
-    $pass     = (string)($body['password'] ?? '');
-    if (!$username || !$pass) throw new Exception('Missing fields');
-
-    $uxml = read_xml(USERS_XML_PATH, 'users');
-    $u = (strpos($username,'@') !== false)
-      ? find_user_by_email($uxml, strtolower($username))
-      : find_user_by_name($uxml, $username);
-
-    if (!$u) throw new Exception('User not found');
-    if ((string)$u->provider !== 'local') throw new Exception('Use Google sign-in for this account');
-
-    $hash = (string)$u->passwordHash;
-    if (!password_verify($pass, $hash)) throw new Exception('Wrong password');
-
-    set_session_cookie((string)$u['id']);
-    echo json_encode(['success'=>true]); exit;
-  }
-
-  // Google sign-in (accepts 'google_signin' or 'google_login'; param 'id_token' or 'credential')
-  if ($action === 'google_signin' || $action === 'google_login') {
-    $idToken = (string)($body['id_token'] ?? $body['credential'] ?? '');
-    if (!$idToken) throw new Exception('Missing id_token');
-
-    $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($idToken);
-    $resp = @file_get_contents($url);
-    if (!$resp) throw new Exception('Google verify failed');
-    $data = json_decode($resp, true) ?: [];
-
-    if (($data['aud'] ?? '') !== GOOGLE_CLIENT_ID) throw new Exception('Audience mismatch');
-    if (($data['exp'] ?? 0) < time()) throw new Exception('Token expired');
-    if (($data['email_verified'] ?? 'true') !== 'true' && ($data['email_verified'] ?? true) !== true) {
-      throw new Exception('Email not verified');
-    }
-
-    $email = strtolower((string)($data['email'] ?? ''));
-    $name  = (string)($data['name']  ?? ($data['given_name'] ?? 'User'));
-    $sub   = (string)($data['sub']   ?? '');
-
-    if (!$email || !$sub) throw new Exception('Invalid Google payload');
-
-    $uxml = read_xml(USERS_XML_PATH, 'users');
-    $u = find_user_by_google_sub($uxml, $sub);
-    if (!$u) {
-      $existing = find_user_by_email($uxml, $email);
-      if ($existing) {
-        $existing->provider  = 'google';
-        $existing->googleSub = $sub;
-        $u = $existing;
-      } else {
-        $userId = 'u-'.bin2hex(random_bytes(8));
-        $u = add_user($uxml, [
-          'id'=>$userId, 'email'=>$email, 'name'=>$name,
-          'passwordHash'=>'', 'provider'=>'google', 'googleSub'=>$sub
-        ]);
-      }
-      save_xml($uxml, USERS_XML_PATH);
-    }
-
-    set_session_cookie((string)$u['id']);
-    echo json_encode(['success'=>true]); exit;
-  }
-
-  // Save prediction (requires session)
-  if ($action === 'save_prediction') {
-    if (!$sessionUserId) { http_response_code(401); echo json_encode(['success'=>false,'message'=>'unauthorized']); exit; }
-    $pred = $body['prediction'] ?? null;
-    if (!$pred) throw new Exception('Missing prediction');
-    save_prediction_xml($sessionUserId, $pred);
-    echo json_encode(['success'=>true]); exit;
-  }
-
-  // Get my predictions (requires session)
-  if ($action === 'get_my_predictions') {
-    if (!$sessionUserId) { http_response_code(401); echo json_encode(['success'=>false,'message'=>'unauthorized']); exit; }
-    $preds = load_my_predictions_xml($sessionUserId);
-    echo json_encode(['success'=>true,'predictions'=>$preds]); exit;
-  }
-
-  throw new Exception('Unknown action');
-} catch (Exception $e) {
-  http_response_code(400);
-  echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+} else {
+    // Older PHP fallback – keep it simple
+    $params = session_get_cookie_params();
+    $path   = $params['path'] . '; samesite=' . ($isLocalhost ? 'Lax' : 'None');
+    $domain = $isLocalhost ? '' : '.fansbetliga.com';
+    $secure = $isLocalhost ? false : true;
+    session_set_cookie_params(0, $path, $domain, $secure, true);
 }
-?>
+
+session_start();
+
+
+
+// =============================
+//  FILE PATHS  (POINT TO /data)
+// =============================
+$baseDir = dirname(__DIR__);         // FOOTBALL/
+$dataDir = $baseDir . '/data';       // FOOTBALL/data
+
+if (!is_dir($dataDir)) {
+    // directory should already exist, but just in case:
+    @mkdir($dataDir, 0775, true);
+}
+
+$usersFile       = $dataDir . '/users.xml';
+$predictionsFile = $dataDir . '/predictions.xml';
+
+// =============================
+//  HELPERS
+// =============================
+function respondJson(array $payload) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload);
+    exit;
+}
+
+function ensureXmlFile($path, $rootName) {
+    if (!file_exists($path) || trim((string)@file_get_contents($path)) === '') {
+        $xml = new SimpleXMLElement('<?xml version="1.0"?><' . $rootName . '/>');
+        $xml->asXML($path);
+    }
+}
+
+function loadUsersXml() {
+    global $usersFile;
+    ensureXmlFile($usersFile, 'users');
+    return simplexml_load_file($usersFile);
+}
+
+function saveUsersXml(SimpleXMLElement $xml) {
+    global $usersFile;
+    $xml->asXML($usersFile);
+}
+
+function loadPredictionsXml() {
+    global $predictionsFile;
+    ensureXmlFile($predictionsFile, 'predictions');
+    return simplexml_load_file($predictionsFile);
+}
+
+function savePredictionsXml(SimpleXMLElement $xml) {
+    global $predictionsFile;
+    $xml->asXML($predictionsFile);
+}
+
+function nextUserId(SimpleXMLElement $users) {
+    $max = 0;
+    foreach ($users->user as $u) {
+        $id = (int)($u['id'] ?? 0);
+        if ($id > $max) $max = $id;
+    }
+    return $max + 1;
+}
+
+// relaxed matching for leagues (XML may use slightly different labels)
+function leaguesMatchBackend($pLeagueRaw, $leagueKeyRaw) {
+    $pl = strtoupper((string)$pLeagueRaw);
+    $lk = strtoupper((string)$leagueKeyRaw);
+    if (!$pl || !$lk) return false;
+    if ($pl === $lk) return true;
+
+    if (strpos($lk, 'PREMIER') !== false && strpos($pl, 'PREMIER') !== false) return true;
+    if ((strpos($lk, 'LALIGA') !== false || strpos($lk, 'LA LIGA') !== false) &&
+        (strpos($pl, 'LALIGA') !== false || strpos($pl, 'LA LIGA') !== false)) return true;
+    if (strpos($lk, 'BUNDES') !== false && strpos($pl, 'BUNDES') !== false) return true;
+    if (strpos($lk, 'LIGUE') !== false && strpos($pl, 'LIGUE') !== false) return true;
+
+    return false;
+}
+
+// =============================
+//  READ REQUEST / ACTION
+// =============================
+$method   = $_SERVER['REQUEST_METHOD'];
+$rawBody  = file_get_contents('php://input');
+$jsonBody = json_decode($rawBody, true);
+if (!is_array($jsonBody)) $jsonBody = [];
+
+$action = '';
+if ($method === 'GET') {
+    $action = $_GET['action'] ?? '';
+} elseif ($method === 'POST') {
+    $action = $jsonBody['action'] ?? ($_POST['action'] ?? '');
+}
+$action = strtolower((string)$action);
+
+// =============================
+//  ROUTING
+// =============================
+
+// ---------- SESSION ----------
+if ($method === 'GET' && $action === 'session') {
+    if (!empty($_SESSION['user_id'])) {
+        respondJson([
+            'success' => true,
+            'user' => [
+                'id'       => (int)$_SESSION['user_id'],
+                'username' => $_SESSION['username'] ?? '',
+                'email'    => $_SESSION['email'] ?? '',
+            ]
+        ]);
+    }
+    respondJson(['success' => false, 'message' => 'No active session.']);
+}
+
+// ---------- SIGN UP ----------
+if ($method === 'POST' && $action === 'signup') {
+    $username = trim((string)($jsonBody['username'] ?? ''));
+    $email    = trim(strtolower((string)($jsonBody['email'] ?? '')));
+    $password = (string)($jsonBody['password'] ?? '');
+
+    if ($username === '' || $email === '' || $password === '') {
+        respondJson(['success' => false, 'message' => 'All fields are required.']);
+    }
+
+    $users = loadUsersXml();
+
+    // check if email already exists
+    foreach ($users->user as $u) {
+      if (strtolower((string)$u->email) === $email) {
+        respondJson(['success' => false, 'message' => 'Email is already registered.']);
+      }
+    }
+
+    $id = nextUserId($users);
+    $user = $users->addChild('user');
+    $user->addAttribute('id', $id);
+    $user->addChild('username', htmlspecialchars($username, ENT_QUOTES, 'UTF-8'));
+    $user->addChild('email',    htmlspecialchars($email,    ENT_QUOTES, 'UTF-8'));
+    $user->addChild('password', password_hash($password, PASSWORD_DEFAULT));
+    $user->addChild('created_at', date('c'));
+
+    saveUsersXml($users);
+
+    $_SESSION['user_id']  = $id;
+    $_SESSION['username'] = $username;
+    $_SESSION['email']    = $email;
+
+    respondJson([
+        'success' => true,
+        'user' => [
+            'id'       => $id,
+            'username' => $username,
+            'email'    => $email,
+        ]
+    ]);
+}
+
+// ---------- LOGIN ----------
+if ($method === 'POST' && ($action === 'login' || $action === 'signin')) {
+    $email    = trim(strtolower((string)($jsonBody['email'] ?? '')));
+    $password = (string)($jsonBody['password'] ?? '');
+
+    if ($email === '' || $password === '') {
+        respondJson(['success' => false, 'message' => 'Email and password are required.']);
+    }
+
+    $users = loadUsersXml();
+    foreach ($users->user as $u) {
+        if (strtolower((string)$u->email) === $email) {
+            $hash = (string)$u->password;
+            if ($hash !== '' && password_verify($password, $hash)) {
+                $id       = (int)$u['id'];
+                $username = (string)$u->username;
+
+                $_SESSION['user_id']  = $id;
+                $_SESSION['username'] = $username;
+                $_SESSION['email']    = $email;
+
+                respondJson([
+                    'success' => true,
+                    'user' => [
+                        'id'       => $id,
+                        'username' => $username,
+                        'email'    => $email,
+                    ]
+                ]);
+            }
+            respondJson(['success' => false, 'message' => 'Invalid password.']);
+        }
+    }
+
+    respondJson(['success' => false, 'message' => 'Account not found.']);
+}
+
+// ---------- LOGOUT ----------
+if ($method === 'POST' && $action === 'logout') {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params['path'], $params['domain'],
+            $params['secure'], $params['httponly']
+        );
+    }
+    session_destroy();
+    respondJson(['success' => true]);
+}
+
+// ---------- SAVE PREDICTION ----------
+if ($method === 'POST' && $action === 'save_prediction') {
+    if (empty($_SESSION['user_id'])) {
+        respondJson(['success' => false, 'message' => 'Not logged in.']);
+    }
+    $userId = (int)$_SESSION['user_id'];
+
+    $prediction = $jsonBody['prediction'] ?? null;
+    if (!$prediction || !is_array($prediction)) {
+        respondJson(['success' => false, 'message' => 'Invalid prediction payload.']);
+    }
+
+    $league    = (string)($prediction['league'] ?? '');
+    $fixtureId = (string)($prediction['fixtureId'] ?? '');
+    $matchday  = (string)($prediction['matchday'] ?? '');
+
+    $home      = $prediction['home'] ?? [];
+    $away      = $prediction['away'] ?? [];
+
+    $homeId    = (string)($home['id'] ?? '');
+    $homeName  = (string)($home['name'] ?? '');
+    $homeScore = $home['score'] === null ? '' : (string)($home['score'] ?? '');
+
+    $awayId    = (string)($away['id'] ?? '');
+    $awayName  = (string)($away['name'] ?? '');
+    $awayScore = $away['score'] === null ? '' : (string)($away['score'] ?? '');
+
+    $timestamp = (string)($prediction['timestamp'] ?? date('c'));
+
+    $xml = loadPredictionsXml();
+
+    // update existing prediction for same user+league+fixture if it exists
+    $target = null;
+    foreach ($xml->prediction as $node) {
+        if ((int)$node->user_id === $userId &&
+            (string)$node->league === $league &&
+            (string)$node->fixture_id === $fixtureId) {
+            $target = $node;
+            break;
+        }
+    }
+
+    if ($target === null) {
+        $target = $xml->addChild('prediction');
+    }
+
+    $target->user_id    = $userId;
+    $target->league     = $league;
+    $target->fixture_id = $fixtureId;
+    $target->matchday   = $matchday;
+
+    $target->home_id    = $homeId;
+    $target->home_name  = $homeName;
+    $target->home_score = $homeScore;
+
+    $target->away_id    = $awayId;
+    $target->away_name  = $awayName;
+    $target->away_score = $awayScore;
+
+    $target->timestamp  = $timestamp;
+
+    savePredictionsXml($xml);
+
+    respondJson(['success' => true]);
+}
+
+// ---------- GET MY PREDICTIONS ----------
+if ($method === 'GET' && $action === 'get_my_predictions') {
+    if (empty($_SESSION['user_id'])) {
+        respondJson(['success' => true, 'predictions' => []]);
+    }
+    $userId = (int)$_SESSION['user_id'];
+
+    $xml = loadPredictionsXml();
+    $out = [];
+
+    foreach ($xml->prediction as $p) {
+        if ((int)$p->user_id !== $userId) continue;
+
+        $recordLeague = (string)$p->league;
+
+        $out[] = [
+            'league'    => $recordLeague,
+            'fixtureId' => (string)$p->fixture_id,
+            'matchday'  => (string)$p->matchday,
+            'home'      => [
+                'id'    => (string)$p->home_id,
+                'name'  => (string)$p->home_name,
+                'score' => ((string)$p->home_score === '' ? null : (int)$p->home_score),
+            ],
+            'away'      => [
+                'id'    => (string)$p->away_id,
+                'name'  => (string)$p->away_name,
+                'score' => ((string)$p->away_score === '' ? null : (int)$p->away_score),
+            ],
+            'timestamp' => (string)$p->timestamp,
+        ];
+    }
+
+    respondJson(['success' => true, 'predictions' => $out]);
+}
+
+// ---------- GOOGLE LOGIN DISABLED ----------
+if ($action === 'google_login' || $action === 'google_callback') {
+    respondJson([
+        'success' => false,
+        'message' => 'Google login is currently disabled on the server.',
+    ]);
+}
+
+// ---------- DEFAULT ----------
+respondJson([
+    'success' => false,
+    'message' => 'Unknown or unsupported action.',
+    'action'  => $action,
+]);
+
+

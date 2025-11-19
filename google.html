@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Signing In…</title>
+</head>
+<body>
+  <script>
+    // Extract the authorization code from Google
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
+    const redirect = sessionStorage.getItem("fbl_redirect_after_login") || "/";
+
+    if (!code) {
+      document.body.innerHTML = "<h3>Google sign-in failed.</h3>";
+    } else {
+      // Send the code to the backend
+      fetch("/api/users.php?action=google_oauth", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "code=" + encodeURIComponent(code)
+      })
+        .then(r => r.json())
+        .then(j => {
+          if (j.success) {
+            // Save user in session and redirect
+            sessionStorage.setItem("fbl_current_user", j.user.email);
+            window.location.href = redirect;
+          } else {
+            document.body.innerHTML = "<h3>Login failed: " + j.message + "</h3>";
+          }
+        })
+        .catch(() => {
+          document.body.innerHTML = "<h3>Error occurred</h3>";
+        });
+    }
+  </script>
+</body>
+</html>
