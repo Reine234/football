@@ -9,6 +9,96 @@
     LIGUE1:         { name: "Ligue 1",        totalRounds: 34 },
   };
 
+
+  // /scripts/predictionsStore.js
+(function () {
+  // compat-safe handles
+  const auth = (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) || (window.firebase && firebase.auth());
+  const db   = (window.FBL_FIREBASE && window.FBL_FIREBASE.db)   || (window.firebase && firebase.firestore());
+
+  function getUidNow() {
+    try {
+      return auth.currentUser ? auth.currentUser.uid : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function waitForUid() {
+    const uid = getUidNow();
+    if (uid) return Promise.resolve(uid);
+
+    return new Promise((resolve, reject) => {
+      const unsub = auth.onAuthStateChanged(
+        (user) => {
+          unsub();
+          resolve(user ? user.uid : null);
+        },
+        (err) => {
+          unsub();
+          reject(err);
+        }
+      );
+    });
+  }
+
+ // ✅ SAVE (keeps your structure, just ensures uid is present and stable doc ids)
+async function savePredictionsForRound(leagueKey, roundNum, pending) {
+  const uid = await waitForUid();
+  if (!uid) throw new Error("Not logged in");
+
+  console.log("[STORE] saving", pending.length, "for", leagueKey, "round", roundNum);
+
+  const batch = db.batch();
+
+  pending.forEach((p) => {
+    const fixtureId = String(p.fixtureId);
+    const docId = `${uid}_${leagueKey}_${fixtureId}`; // stable per user+league+fixture
+    const ref = db.collection("predictions").doc(docId);
+
+    batch.set(
+      ref,
+      {
+        ...p,
+        uid,
+        league: leagueKey,
+        matchday: String(roundNum),
+        fixtureId,
+        timestamp: p.timestamp || new Date().toISOString(),
+      },
+      { merge: true }
+    );
+  });
+
+  await batch.commit();
+  console.log("[STORE] saved OK");
+  return true;
+}
+
+  // ✅ READ (THIS is what fixes your permissions error)
+  async function loadPredictionsForLeague(leagueKey) {
+    const uid = await waitForUid();
+    if (!uid) return [];
+
+    const snap = await db
+      .collection("predictions")
+      .where("uid", "==", uid)          // <-- REQUIRED for rules
+      .where("league", "==", leagueKey)
+      .get();
+
+    const out = [];
+    snap.forEach((doc) => out.push(doc.data()));
+
+    // keep them in saved-time order
+    out.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    return out;
+  }
+
+  window.FBL_STORE = window.FBL_STORE || {};
+  window.FBL_STORE.savePredictionsForRound = savePredictionsForRound;
+  window.FBL_STORE.loadPredictionsForLeague = loadPredictionsForLeague;
+})();
+
   // ---- 1) Pull league context first (so leagueKey exists) ----
   const selected  = window.FBL.loadSelectedRound(); // { leagueKey, roundNum, fixtures }
   const leagueKey = sessionStorage.getItem("FBL_leagueKey");
@@ -273,79 +363,116 @@
   sessionStorage.setItem("redirectLock", "true");
   setTimeout(() => sessionStorage.removeItem("redirectLock"), 5000);
 
-  
-  function finalizeAndContinue() {
-    // 1) collect only fixtures where the user actually set a prediction
-    const touched = pageFixtures.filter((f) => isSet(userPred[f.id]));
-    if (!touched.length) {
-      alert("Please enter at least one prediction.");
-      return;
+  // ✅ ADDED: tiny helper to get current Firebase uid (compat-safe)
+  function getFirebaseUid() {
+    try {
+      if (
+        window.FBL_FIREBASE &&
+        window.FBL_FIREBASE.auth &&
+        window.FBL_FIREBASE.auth.currentUser
+      ) {
+        return window.FBL_FIREBASE.auth.currentUser.uid || null;
+      }
+      if (window.firebase && firebase.auth && firebase.auth().currentUser) {
+        return firebase.auth().currentUser.uid || null;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+// ✅ ADDED: wait for firebase user (compat-safe)
+function waitForFirebaseUser() {
+  try {
+    if (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) {
+      const u = window.FBL_FIREBASE.auth.currentUser;
+      if (u) return Promise.resolve(u);
+
+      return new Promise((resolve) => {
+        const unsub = window.FBL_FIREBASE.auth.onAuthStateChanged((user) => {
+          unsub();
+          resolve(user || null);
+        });
+      });
     }
 
-    const pending = buildServerPayloads(touched);
+    if (window.firebase && firebase.auth) {
+      const u = firebase.auth().currentUser;
+      if (u) return Promise.resolve(u);
 
-    // Save array in sessionStorage
-    sessionStorage.setItem(
-      "pending_predictions",
-      JSON.stringify(pending)
+      return new Promise((resolve) => {
+        const unsub = firebase.auth().onAuthStateChanged((user) => {
+          unsub();
+          resolve(user || null);
+        });
+      });
+    }
+  } catch (_) {}
+
+  return Promise.resolve(null);
+}
+
+
+async function finalizeAndContinue() {
+  const touched = pageFixtures.filter((f) => isSet(userPred[f.id]));
+  if (!touched.length) {
+    alert(".");
+    return;
+  }
+
+  let pending = buildServerPayloads(touched);
+
+  // still keep as safety
+  sessionStorage.setItem("pending_predictions", JSON.stringify(pending));
+  sessionStorage.setItem("FBL_leagueKey", leagueKey);
+
+  closeConfirmPrompt();
+
+  const folder = leagueFolderFromKey(leagueKey);
+  const resultsPath = `../${folder}/results.html`;
+
+  console.log("[PredictionsPage] confirm clicked. waiting for auth...");
+
+  const user = await waitForFirebaseUser();
+  if (!user) {
+    console.warn("[PredictionsPage] No firebase user -> redirect signup");
+    window.location.href =
+      "../signup.html?next=" + encodeURIComponent(resultsPath);
+    return;
+  }
+
+  // attach uid for Firestore rules
+  pending = pending.map((p) => (p.uid ? p : { ...p, uid: user.uid }));
+
+  if (
+    !window.FBL_STORE ||
+    typeof window.FBL_STORE.savePredictionsForRound !== "function"
+  ) {
+    console.error("[PredictionsPage] FBL_STORE.savePredictionsForRound missing");
+    alert("Storage not ready. Please refresh.");
+    return;
+  }
+
+  try {
+    console.log(
+      "[PredictionsPage] saving",
+      pending.length,
+      "predictions to Firestore..."
     );
 
-    // remember league
-    sessionStorage.setItem("FBL_leagueKey", leagueKey);
+    await window.FBL_STORE.savePredictionsForRound(
+      leagueKey,
+      roundNum,
+      pending
+    );
 
-    // close visual prompt
-    closeConfirmPrompt();
-
-    // --- helper to compute base for /api/users.php ---
-    const apiBase =
-      (
-        window.FBL_API_BASE ||
-        (window.FBL_CFG && window.FBL_CFG.API_BASE) ||
-        window.location.origin
-      ).replace(/\/$/, "");
-
-    function goToResults() {
-      const folder = leagueFolderFromKey(leagueKey);
-      window.location.href = `../${folder}/results.html`;
-    }
-
-    function goToSignup() {
-      redirectToSignup(); // ../signup.html?next=/.../results.html
-    }
-
-    // 2) Check PHP session DIRECTLY
-    fetch(`${apiBase}/api/users.php?action=session`, {
-      credentials: "include",
-    })
-      .then((r) => r.json())
-      .then((j) => {
-        console.log("[finalizeAndContinue] session check:", j);
-
-        if (j && j.success && j.user) {
-          // ✅ already logged in → flush pending predictions to server, then results
-          flushPendingPredictionsToServer()
-            .then(() => {
-              goToResults();
-            })
-            .catch((err) => {
-              console.error("Failed to save pending predictions:", err);
-              alert(
-                "Unable to save predictions right now. Please try again."
-              );
-            });
-        } else {
-          // ❌ not logged in → go to signup
-          goToSignup();
-        }
-      })
-      .catch((err) => {
-        console.warn(
-          "[finalizeAndContinue] session check failed, sending to signup:",
-          err
-        );
-        goToSignup();
-      });
+    console.log("[PredictionsPage] saved OK. going to results:", resultsPath);
+    window.location.href = resultsPath;
+  } catch (err) {
+    console.error("[PredictionsPage] save failed:", err);
+    alert("Unable to save predictions right now. Please try again.");
   }
+}
+
 
 
 
@@ -362,7 +489,7 @@
 
     const touched = pageFixtures.filter((f) => isSet(userPred[f.id]));
     if (!touched.length) {
-      alert("Please enter at least one prediction.");
+      alert(".");
       return;
     }
 
@@ -432,7 +559,7 @@
     if (document.getElementById("fbl-tests-style")) return;
     const css = `
       .fbl-input-error { outline: ; border-radius: 6px; }
-      .fbl-err-msg { margin-top:6px; font-size:12px; color:#dc3545; }
+      .fbl-err-msg { margin-top:6px; font-size:12px; color:#C4FFF4; }
       .match-card .fbl-err-msg { margin-left: 4px; }
     `;
     const el = document.createElement("style");
@@ -637,8 +764,6 @@
     },
   };
 })();
-
-
 
 
 

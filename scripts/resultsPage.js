@@ -312,72 +312,109 @@
     if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
   }
 
-  // ---------- MAIN ----------
-  async function render() {
-    // loading message
-    let loading = root.querySelector(".loading");
-    if (!loading) {
-      loading = document.createElement("div");
-      loading.className = "loading";
-      loading.textContent = "Loading…";
-      root.appendChild(loading);
-    } else {
-      loading.style.display = "block";
-      loading.textContent = "Loading…";
-    }
+   // ---------- MAIN ----------
+  async function renderResultsPage() {
+    // auth is ready here (boot calls after onAuthStateChanged)
+    const user = firebase.auth().currentUser;
 
-    const user = await getSessionUser();
-    const name =
-      (user && (user.username || user.name || user.email)) || "Guest";
-    const totalSpan = ensureUserHeader(name);
+    const displayName =
+      (user && (user.displayName || (user.email ? user.email.split("@")[0] : ""))) ||
+      "Guest";
 
-    let allPreds = await loadAllMyPredictions();
+    // build/update header (your existing helper)
+    const totalSpan = ensureUserHeader(displayName);
 
-    // keep only this league
-    const wanted = leagueKey.toUpperCase();
-    let preds = allPreds.filter(
-      (p) => (p.league || "").toUpperCase() === wanted
-    );
-
-    // sort by timestamp (when you saved the prediction)
-    preds = preds.slice().sort((a, b) => {
-      const ta = Date.parse(a.timestamp || "") || 0;
-      const tb = Date.parse(b.timestamp || "") || 0;
-      return ta - tb;
-    });
-
-    loading.style.display = "none";
-    container.innerHTML = ""; // remove any previous cards
-
-    if (!preds.length) {
-      updateMatchdayHeader("?");
-      if (totalSpan) totalSpan.textContent = "0";
-      return; // nothing to show
-    }
-
-    // figure out first matchday for header
-    const firstMatchday =
-      preds.find((p) => p.matchday != null && p.matchday !== "")?.matchday ??
-      "?";
-    updateMatchdayHeader(String(firstMatchday));
-
-    // fixtures for this league (for final scores + exact KO time + logos)
+    // get fixtures for THIS league
     const fixturesById = await fetchFixturesForCurrentLeague();
 
-    let totalPoints = 0;
-    let idx = 1;
+    // load predictions for THIS league
+    let preds = [];
+    try {
+      if (window.FBL_STORE && typeof window.FBL_STORE.loadPredictionsForLeague === "function") {
+        preds = await window.FBL_STORE.loadPredictionsForLeague(leagueKey);
+      } else {
+        // fallback (in case store file isn't loaded on results page)
+        const uid = user && user.uid;
+        if (uid && firebase.firestore) {
+          const snap = await firebase.firestore()
+            .collection("predictions")
+            .where("uid", "==", uid)
+            .where("league", "==", leagueKey)
+            .get();
 
-    preds.forEach((pred) => {
-      const fixture = fixturesById[String(pred.fixtureId)] || null;
-      const { html, pts } = buildCardHTML(idx++, pred, fixture);
-      container.insertAdjacentHTML("beforeend", html);
-      const card = container.lastElementChild;
-      attachLogos(card, pred, fixture);
-      if (pts != null) totalPoints += pts;
+          snap.forEach((doc) => preds.push(doc.data()));
+          preds.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+        }
+      }
+    } catch (e) {
+      console.warn("resultsPage: failed to load predictions", e);
+      preds = [];
+    }
+
+    // safety filter by league
+    preds = (preds || []).filter((p) => {
+      const l = String(p.league || p.leagueKey || "").toUpperCase();
+      return l === leagueKey;
     });
 
-    if (totalSpan) totalSpan.textContent = String(totalPoints);
+    if (!preds.length) {
+      container.innerHTML = `<p style="padding:12px;">No predictions for ${esc(leagueInfo.name)} yet.</p>`;
+      if (totalSpan) totalSpan.textContent = "0";
+      updateMatchdayHeader("?");
+      return;
+    }
+
+    // one single matchday title (use newest matchday)
+    const maxMd = preds.reduce((m, p) => {
+      const md = parseInt(p.matchday, 10);
+      return Number.isFinite(md) ? Math.max(m, md) : m;
+    }, 0);
+    updateMatchdayHeader(maxMd || "?");
+
+    // render ONLY matches you predicted
+    let totalPts = 0;
+    const cardsHtml = preds
+      .map((pred, i) => {
+        const fixture = fixturesById[String(pred.fixtureId)] || null;
+        const { html, pts } = buildCardHTML(i + 1, pred, fixture);
+        if (pts != null) totalPts += pts;
+        return html;
+      })
+      .join("");
+
+    container.innerHTML = cardsHtml || `<p style="padding:12px;">No results yet.</p>`;
+
+    // attach logos after DOM is filled
+    preds.forEach((pred) => {
+      const sel = `.match-card[data-fixture="${esc(String(pred.fixtureId))}"]`;
+      const cardEl = container.querySelector(sel);
+      if (!cardEl) return;
+      const fixture = fixturesById[String(pred.fixtureId)] || null;
+      attachLogos(cardEl, pred, fixture);
+    });
+
+    // total points header
+    if (totalSpan) totalSpan.textContent = String(totalPts);
   }
 
-  render();
+  // expose for other scripts if needed
+  window.renderResultsPage = renderResultsPage;
+
+  // --- AUTH GATE BOOT ---
+  (function bootResultsWithAuth() {
+    if (!window.firebase || !firebase.auth) {
+      console.error("[Results] firebase not found. Check script order.");
+      return;
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        console.warn("[Results] no user, redirecting to signup...");
+        window.location.href =
+          "../signup.html?next=" + encodeURIComponent(location.pathname);
+        return;
+      }
+      renderResultsPage();
+    });
+  })();
 })();

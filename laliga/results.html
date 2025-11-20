@@ -47,13 +47,19 @@
 </script>
 
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<!-- Firebase SDKs (compat version for simple global usage) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../scripts/firebase-init.js"></script>
 <script src="../scripts/config.js"></script>
 <script src="../scripts/api.js"></script>
+<script src="../scripts/auth.js"></script>
+<script src="../scripts/predictionsStore.js"></script>
 <script src="../scripts/resultsPage.js"></script>
- <script src="../scripts/auth.js"></script>
-
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   // Determine which league this page belongs to

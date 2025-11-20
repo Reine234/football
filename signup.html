@@ -48,96 +48,122 @@
       
       </div>
 <script>
-(function(){
-  const API_BASE = (window.FBL_CFG && window.FBL_CFG.API_BASE) || 'http://localhost:8080';
-  const APP_BASE = (window.FBL_CFG && window.FBL_CFG.APP_BASE) || 'http://localhost:5000';
+(function () {
+  const APP_BASE =
+    (window.FBL_CFG && window.FBL_CFG.APP_BASE) ||
+    window.location.origin;
 
   function folderFromLeagueKey(k){
-    if (k === 'LALIGA')     return 'laliga';
-    if (k === 'BUNDESLIGA') return 'bundesliga';
-    if (k === 'LIGUE1')     return 'ligue1';
-    return 'premier';
+    if (k === "LIGUE1") return "ligue1";
+    if (k === "LALIGA") return "laliga";
+    if (k === "BUNDESLIGA") return "bundesliga";
+    return "premier";
   }
 
   function resultsUrl(){
-    const k = sessionStorage.getItem('FBL_leagueKey') || 'PREMIER_LEAGUE';
+    const k = sessionStorage.getItem("FBL_leagueKey") || "PREMIER_LEAGUE";
     return APP_BASE.replace(/\/$/,'') + '/' + folderFromLeagueKey(k) + '/results.html';
   }
 
   function getNext(){
     const q = new URLSearchParams(location.search);
-    return q.get('next') || resultsUrl();
+    return q.get("next") || resultsUrl();
   }
 
-  // If already logged in → skip signup and go to results
-  fetch(`${API_BASE.replace(/\/$/,'')}/api/users.php?action=session`, {
-      credentials: 'include'
-    })
-    .then(r => r.json())
-    .then(j => {
-      if (j && j.success) {
-        location.replace(getNext());
+  function goNext(){
+    location.replace(getNext());
+  }
+
+  // ---- wait for Firebase init safely ----
+  function getAuthSafe(){
+    if (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) return window.FBL_FIREBASE.auth;
+    if (window.firebase && firebase.auth) return firebase.auth(); // compat fallback
+    return null;
+  }
+
+  function whenAuthReady(cb){
+    const authNow = getAuthSafe();
+    if (authNow) return cb(authNow);
+
+    const iv = setInterval(() => {
+      const a = getAuthSafe();
+      if (a) {
+        clearInterval(iv);
+        cb(a);
       }
-    })
-    .catch(() => {});
+    }, 80);
+  }
 
-  // Common hook AFTER signup/login succeeds
-  // (auth.js: FBL_AUTH.redirectAfterAuth() respects ?next=…)
-  window.__FBL_AFTER_AUTH__ = function(){
-    if (window.FBL_AUTH && typeof window.FBL_AUTH.redirectAfterAuth === "function") {
-      window.FBL_AUTH.redirectAfterAuth();
-    } else {
-      location.replace(getNext());
-    }
-  };
+  // reusable hook after successful auth
+  window.__FBL_AFTER_AUTH__ = goNext;
 
-  // Email/password signup – use FBL_AUTH so pending_predictions are flushed
-  const form = document.getElementById("signup-form");
-  if (form) {
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const username = this.username.value.trim();
-      const email    = this.email.value.trim();
-      const pass     = this.password.value.trim();
-      const confirm  = this.confirm.value.trim();
-
-      if (!username || !email || !pass || !confirm) {
-        alert('Please fill all fields.');
-        return;
-      }
-      if (pass !== confirm) {
-        alert('Passwords do not match.');
-        return;
-      }
-
-      try {
-        if (window.FBL_AUTH && typeof window.FBL_AUTH.signUp === "function") {
-          // 🔴 This calls /api/users.php?action=signup AND flushes pending_predictions
-          await window.FBL_AUTH.signUp(username, email, pass);
-        } else {
-          // Fallback (should almost never be used)
-          const res = await fetch(`${API_BASE.replace(/\/$/,'')}/api/users.php`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'signup', username, email, password: pass })
-          }).then(r => r.json());
-
-          if (!res || !res.success) {
-            alert(res && res.message ? res.message : 'Signup failed.');
-            return;
-          }
-        }
-
-        // Now that we have a PHP session and predictions are saved → go to results
-        window.__FBL_AFTER_AUTH__();
-      } catch (err) {
-        console.error(err);
-        alert(err && err.message ? err.message : 'Signup failed.');
+  // If already logged in → go next
+  whenAuthReady((auth) => {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        sessionStorage.setItem(
+          "fbl_current_user",
+          JSON.stringify({
+            uid: user.uid,
+            email: user.email || "",
+            username: user.displayName || ""
+          })
+        );
+        goNext();
       }
     });
-  }
+  });
+
+  // ---- Signup submit ----
+  document.getElementById("signup-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const auth = getAuthSafe();
+    if (!auth) return alert("Firebase is still loading. Refresh and try again.");
+
+    const username = this.username.value.trim();
+    const email    = this.email.value.trim();
+    const pass     = this.password.value.trim();
+    const confirm  = this.confirm.value.trim();
+
+    if (!username || !email || !pass || !confirm) {
+      return alert("Please fill all fields.");
+    }
+    if (pass !== confirm) {
+      return alert("Passwords do not match.");
+    }
+
+    try {
+      // try signup first
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+
+      if (cred.user) {
+        await cred.user.updateProfile({ displayName: username });
+      }
+
+      (window.__FBL_AFTER_AUTH__ || goNext)();
+      return;
+
+    } catch (err) {
+      console.warn("[Signup] createUser error:", err);
+
+      // If email already exists → try sign in automatically
+      if (err && err.code === "auth/email-already-in-use") {
+        try {
+          await auth.signInWithEmailAndPassword(email, pass);
+          (window.__FBL_AFTER_AUTH__ || goNext)();
+          return;
+        } catch (e2) {
+          alert("Email already exists. Please sign in instead.");
+          // keep next param so user still returns to results
+          location.href = "signin.html?next=" + encodeURIComponent(getNext());
+          return;
+        }
+      }
+
+      alert(err.message || "Signup failed.");
+    }
+  });
 })();
 </script>
 
@@ -150,10 +176,14 @@
     </section>
   </main>
 
-  <!-- keep your existing script order -->
-  <script src="./scripts/config.js"></script>
-  <script src="./scripts/api.js"></script>
-  <script src="./scripts/auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../scripts/config.js"></script>
+<script src="../scripts/api.js"></script>
+<script src="../scripts/firebase-init.js"></script>
+<script src="../scripts/auth.js"></script>
+
   
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
@@ -162,53 +192,4 @@
   
   
   
-  
-  
-  <!-- REPLACE your entire Google init script with THIS clean version -->
-<script>
-(function () {
-  const onloadDiv = document.getElementById('g_id_onload');
-  const googleBtn = document.getElementById('g_id_signin');
-
-  // Trim spaces; also fallback from config.js if needed
-  const clientId = ((onloadDiv?.dataset?.client_id || window.FBL_GOOGLE_CLIENT_ID || '') + '').trim();
-
-  let initialized = false;
-
-  function initGoogle() {
-    if (initialized) return true;
-    if (!window.google || !google.accounts || !google.accounts.id) return false;
-    if (!clientId) {
-      console.warn("Missing Google Client ID");
-      return false;
-    }
-
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: window.fblGoogleOneTap,   // your existing handler
-      ux_mode: "popup"                    // ⬅ popup only (NO origin checks)
-    });
-
-    initialized = true;
-    return true;
-  }
-
-  // Wait for GSI SDK to load, try init
-  const interval = setInterval(() => {
-    if (initGoogle()) clearInterval(interval);
-  }, 150);
-
-  // When clicking the Google button → open popup
-  if (googleBtn) {
-    googleBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (!initGoogle()) {
-        alert("Google is still loading… try again.");
-        return;
-      }
-      google.accounts.id.prompt();   // ⬅ opens popup selector
-    });
-  }
-})();
-</script>
 </body></html>

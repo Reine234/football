@@ -17,84 +17,17 @@
     <section class="auth-card">
       <h1 class="title">Sign in</h1>
 
-      <form id="login-form" class="form">
+      <form id="signin-form" class="form">
         <label class="sr-only" for="login-user">Username or Email</label>
-        <input id="login-user" name="login-user" type="text" class="input" placeholder="Username or Email" />
+        <input id="email" name="login-user" type="text" class="input" placeholder="Username or Email" />
 
         <label class="sr-only" for="login-pass">Password</label>
-        <input id="login-pass" name="login-pass" type="password" class="input" placeholder="Password" />
+        <input id="password" name="login-pass" type="password" class="input" placeholder="Password" />
 
         <button type="submit" class="btn-primary">Sign in</button>
       </form>
 
-      <script>
-(function(){
-  const API_BASE = (window.FBL_CFG && window.FBL_CFG.API_BASE) || 'http://localhost:8080';
-  const APP_BASE = (window.FBL_CFG && window.FBL_CFG.APP_BASE) || 'http://localhost:5000';
 
-  function folderFromLeagueKey(k){
-    return k === 'LALIGA' ? 'laliga' : (k === 'BUNDESLIGA' ? 'bundesliga' : 'premier');
-  }
-  function resultsUrl(){
-    const k = sessionStorage.getItem('FBL_leagueKey') || 'PREMIER_LEAGUE';
-    return APP_BASE.replace(/\/$/,'') + '/' + folderFromLeagueKey(k) + '/results.html';
-  }
-  function getNext(){
-    const q = new URLSearchParams(location.search);
-    return q.get('next') || resultsUrl();
-  }
-
-  // If already logged in → go straight to results (no auto loop)
-  fetch(`${API_BASE}/api/users.php?action=session`, { credentials: 'include' })
-    .then(r => r.json())
-    .then(j => { 
-      if (j && j.success) location.replace(getNext()); 
-    })
-    .catch(() => {});
-
-  // Reusable hook after successful auth
-  window.__FBL_AFTER_AUTH__ = function(){ location.replace(getNext()); };
-})();
-
-// Email/password signup
-document.getElementById("signup-form").addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const API_BASE = (window.FBL_CFG && window.FBL_CFG.API_BASE) || 'http://localhost:8080';
-
-  const username = this.username.value.trim();
-  const email    = this.email.value.trim();
-  const pass     = this.password.value.trim();
-  const confirm  = this.confirm.value.trim();
-
-  if (!username || !email || !pass || !confirm) return alert('Please fill all fields.');
-  if (pass !== confirm) return alert('Passwords do not match.');
-
-  const res = await fetch(`${API_BASE}/api/users.php`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ action: 'signup', username, email, password: pass })
-  }).then(r=>r.json()).catch(err => ({ success:false, message:String(err) }));
-
-  if (!res || !res.success) return alert(res && res.message ? res.message : 'Signup failed.');
-  window.__FBL_AFTER_AUTH__(); // Redirects only AFTER sign-up
-});
-
-// Google Sign-In
-async function fblGoogleOneTap(response){
-  const API_BASE = (window.FBL_CFG && window.FBL_CFG.API_BASE) || 'http://localhost:8080';
-  if (!response || !response.credential) return;
-  const out = await fetch(`${API_BASE}/api/users.php`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body: JSON.stringify({ action:'google_login', credential: response.credential })
-  }).then(r=>r.json()).catch(()=>({success:false}));
-  if (out && out.success) window.__FBL_AFTER_AUTH__();
-  else alert((out && out.message) || 'Google sign-in failed.');
-}
-window.fblGoogleOneTap = fblGoogleOneTap;
-</script>
 
 
 
@@ -104,61 +37,17 @@ window.fblGoogleOneTap = fblGoogleOneTap;
       </p>
     </section>
   </main>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+ 
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="./scripts/firebase-init.js"></script>
+<script src="./scripts/config.js"></script>
+<script src="./scripts/api.js"></script>
+<script src="./scripts/auth.js"></script>
+<script src="./scripts/signinPage.js" defer></script>
 
-  <script src="./scripts/config.js"></script>
-  <script src="./scripts/api.js"></script>
-  <script src="./scripts/auth.js"></script>
-
-
-<!-- REPLACE your entire Google init script with THIS clean version -->
-<script>
-(function () {
-  const onloadDiv = document.getElementById('g_id_onload');
-  const googleBtn = document.getElementById('g_id_signin');
-
-  // Trim spaces; also fallback from config.js if needed
-  const clientId = ((onloadDiv?.dataset?.client_id || window.FBL_GOOGLE_CLIENT_ID || '') + '').trim();
-
-  let initialized = false;
-
-  function initGoogle() {
-    if (initialized) return true;
-    if (!window.google || !google.accounts || !google.accounts.id) return false;
-    if (!clientId) {
-      console.warn("Missing Google Client ID");
-      return false;
-    }
-
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: window.fblGoogleOneTap,   // your existing handler
-      ux_mode: "popup"                    // ⬅ popup only (NO origin checks)
-    });
-
-    initialized = true;
-    return true;
-  }
-
-  // Wait for GSI SDK to load, try init
-  const interval = setInterval(() => {
-    if (initGoogle()) clearInterval(interval);
-  }, 150);
-
-  // When clicking the Google button → open popup
-  if (googleBtn) {
-    googleBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (!initGoogle()) {
-        alert("Google is still loading… try again.");
-        return;
-      }
-      google.accounts.id.prompt();   // ⬅ opens popup selector
-    });
-  }
-})();
-</script>
-
-
+          
 
 </body></html>
