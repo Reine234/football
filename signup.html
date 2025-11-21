@@ -37,11 +37,62 @@
         <button type="submit" class="btn-primary">Sign up</button>
       </form>
 
+<script>
+async function flushPendingPredictionsAfterAuth() {
+  try {
+    const raw = sessionStorage.getItem("pending_predictions");
+    if (!raw) return;
+
+    const pending = JSON.parse(raw || "[]");
+    if (!Array.isArray(pending) || pending.length === 0) return;
+
+    // leagueKey + matchday are inside the payload you already build
+    const leagueKey =
+      (pending[0].league || sessionStorage.getItem("FBL_leagueKey") || "")
+        .toUpperCase();
+
+    const matchday = Number(pending[0].matchday || 1);
+
+    if (!window.FBL_STORE || !window.FBL_STORE.savePredictionsForRound) {
+      console.warn("[AFTER_AUTH] FBL_STORE not ready, cannot flush pending.");
+      return;
+    }
+
+    console.log("[AFTER_AUTH] flushing pending predictions:", pending.length);
+
+    await window.FBL_STORE.savePredictionsForRound(leagueKey, matchday, pending);
+
+    // clean up so we don't re-save
+    sessionStorage.removeItem("pending_predictions");
+  } catch (e) {
+    console.warn("[AFTER_AUTH] flush failed:", e);
+  }
+}
+
+</script>
 
 
 
+<div class="or">Or sign up with</div>
 
+      <div class="social-row">
+        <button class="social-btn" type="button" aria-label="Sign up with Google" onclick="window.fblGoogleOneTap && window.fblGoogleOneTap()">
+          <!-- Google G -->
+          <svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true">
+            <path fill="#FFC107" d="M43 24c0-1.3-.1-2.6-.4-3.8H24v7.3h10.7c-.5 2.7-2 5-4.3 6.5v5.4h7c4.1-3.8 6.6-9.4 6.6-15.4z"/>
+            <path fill="#FF3D00" d="M24 44c5.9 0 10.9-1.9 14.5-5.1l-7-5.4c-2 1.4-4.7 2.2-7.5 2.2-5.8 0-10.7-3.9-12.4-9.1H4.1v5.7C7.7 39.7 15.2 44 24 44z"/>
+            <path fill="#4CAF50" d="M11.6 26.5c-.4-1.4-.6-2.9-.6-4.5s.2-3.1.6-4.5V11.8H4.1C2.7 14.6 2 17.7 2 22s.7 7.4 2.1 10.2l7.5-5.7z"/>
+            <path fill="#1976D2" d="M24 9.5c3.2 0 6.2 1.1 8.5 3.3l6.4-6.4C35 2.4 29.9 0 24 0 15.2 0 7.7 4.3 4.1 11.8l7.5 5.7C13.3 13.4 18.2 9.5 24 9.5z"/>
+          </svg>
+        </button>
 
+        <button class="social-btn" type="button" aria-label="Sign up with Facebook">
+          <!-- Facebook f -->
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 11.99 0 5.36 0 0 5.4 0 12.07 0 18.1 4.39 23.1 10.12 24v-8.43H7.08V12.1h3.04V9.42c0-3 1.8-4.67 4.55-4.67 1.32 0 2.7.24 2.7.24v2.98h-1.52c-1.5 0-1.97.94-1.97 1.9v2.23h3.35l-.53 3.47h-2.82V24C19.61 23.1 24 18.1 24 12.07z"/>
+          </svg>
+        </button>
+      </div>
        
 
 

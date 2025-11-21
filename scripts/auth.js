@@ -1,6 +1,78 @@
 // scripts/auth.js
 (function () {
-  const auth = window.FBL_FIREBASE.auth;
+  const authRaw = window.FBL_FIREBASE && window.FBL_FIREBASE.auth;
+
+  // ✅ compat-safe auth getter (works whether authRaw is a function or object)
+  function getAuth() {
+    try {
+      return typeof authRaw === "function" ? authRaw() : authRaw;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Flush predictions made before auth (stored in sessionStorage)
+  async function flushPendingPredictionsFromSession() {
+    const raw = sessionStorage.getItem("pending_predictions");
+    if (!raw) return 0;
+
+    let pending = [];
+    try { pending = JSON.parse(raw); } catch (_) {}
+
+    if (!Array.isArray(pending) || pending.length === 0) return 0;
+
+    // store must exist
+    if (
+      !window.FBL_STORE ||
+      typeof window.FBL_STORE.savePredictionsForRound !== "function"
+    ) {
+      console.warn("[Auth] FBL_STORE missing, keeping pending_predictions for later.");
+      return 0; // keep pending, do NOT delete
+    }
+
+    const a = getAuth();
+    const uid = a && a.currentUser ? a.currentUser.uid : null;
+    if (!uid) {
+      console.warn("[Auth] No uid yet, keeping pending_predictions for later.");
+      return 0; // keep pending, do NOT delete
+    }
+
+    // Group by league + matchday so we save correctly
+    const groups = {};
+    pending.forEach((p) => {
+      const lk = String(
+        p.league || sessionStorage.getItem("FBL_leagueKey") || "PREMIER_LEAGUE"
+      ).toUpperCase();
+
+      const md = String(
+        p.matchday || sessionStorage.getItem("FBL_roundNum") || "1"
+      );
+
+      const key = lk + "__" + md;
+      if (!groups[key]) groups[key] = { leagueKey: lk, roundNum: md, items: [] };
+
+      groups[key].items.push({
+        ...p,
+        uid,                 // ✅ ensure uid on each prediction
+        league: lk,
+        matchday: md,
+      });
+    });
+
+    // Save each group
+    for (const key in groups) {
+      const g = groups[key];
+      await window.FBL_STORE.savePredictionsForRound(
+        g.leagueKey,
+        g.roundNum,
+        g.items
+      );
+    }
+
+    sessionStorage.removeItem("pending_predictions");
+    console.log("[Auth] flushed pending predictions:", pending.length);
+    return pending.length;
+  }
 
   // ----- Helpers -----
   function saveUserToSession(user) {
@@ -56,11 +128,22 @@
         throw new Error("Please complete all fields.");
       }
 
-      const cred = await auth().createUserWithEmailAndPassword(email, password);
+      const a = getAuth();
+      if (!a) throw new Error("Firebase auth not ready.");
+
+      const cred = await a.createUserWithEmailAndPassword(email, password);
+
       // update profile with username
       await cred.user.updateProfile({ displayName: username });
 
       saveUserToSession(cred.user);
+
+      // ✅ flush AFTER signup (uid now exists)
+      try { await flushPendingPredictionsFromSession(); } catch (e) {
+        console.warn("[Auth] flush after signup failed:", e);
+      }
+
+      redirectAfterAuth();
       return true;
     },
 
@@ -69,21 +152,36 @@
         throw new Error("Please complete all fields.");
       }
 
-      // we always use email for Firebase; you can decide email == username if you want
-      const cred = await auth().signInWithEmailAndPassword(emailOrUser, password);
+      const a = getAuth();
+      if (!a) throw new Error("Firebase auth not ready.");
+
+      const cred = await a.signInWithEmailAndPassword(emailOrUser, password);
+
       saveUserToSession(cred.user);
+
+      // ✅ flush AFTER signin
+      try { await flushPendingPredictionsFromSession(); } catch (e) {
+        console.warn("[Auth] flush after signin failed:", e);
+      }
+
+      redirectAfterAuth();
       return true;
     },
 
     async signOut() {
-      await auth().signOut();
+      const a = getAuth();
+      if (!a) return;
+      await a.signOut();
       saveUserToSession(null);
       location.reload();
     },
 
     async hasSession() {
       return new Promise((resolve) => {
-        const unsub = auth().onAuthStateChanged((user) => {
+        const a = getAuth();
+        if (!a) return resolve(false);
+
+        const unsub = a.onAuthStateChanged((user) => {
           saveUserToSession(user || null);
           unsub();
           resolve(!!user);
@@ -97,15 +195,68 @@
 
   window.FBL_AUTH = FBL_AUTH;
 
-  // Keep hooks for Google button (for now just show alert or later hook GSI)
-  window.fblGoogleOneTap = function () {
-    alert("Google sign-in via Firebase not wired yet.");
-  };
+  // ✅ SAFETY AUTO-FLUSH:
+  // If a user lands on any page already logged in and there are pending predictions,
+  // flush them once store+uid are ready.
+  (function autoFlushOnAuthReady() {
+    const a = getAuth();
+    if (!a) return;
+
+    a.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      const raw = sessionStorage.getItem("pending_predictions");
+      if (!raw) return;
+
+      try {
+        await flushPendingPredictionsFromSession();
+      } catch (e) {
+        console.warn("[Auth] auto flush failed:", e);
+      }
+    });
+  })();
+
+// Keep hooks for Google button (now real Firebase Google sign-in)
+
+
+// Google Sign-In with Firebase (compat-safe)
+window.fblGoogleOneTap = async function () {
+  try {
+    // Grab whatever you stored in firebase-init.js
+    const rawAuth =
+      (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) ||
+      (window.firebase && firebase.auth); // could be function OR instance
+
+    if (!rawAuth) {
+      throw new Error("Firebase auth not ready. Check firebase-init.js order.");
+    }
+
+    // Normalize to an auth *instance*
+    const authApi = (typeof rawAuth === "function") ? rawAuth() : rawAuth;
+
+    if (!authApi || typeof authApi.signInWithPopup !== "function") {
+      throw new Error("Firebase auth instance invalid. Check FBL_FIREBASE.auth setup.");
+    }
+
+    if (!firebase?.auth?.GoogleAuthProvider) {
+      throw new Error("GoogleAuthProvider not available. Ensure compat SDK is loaded.");
+    }
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
+    const cred = await authApi.signInWithPopup(provider);
+
+    // keep your existing flow
+    saveUserToSession(cred.user);
+    await flushPendingPredictionsFromSession();
+
+    console.log("[Auth] Google sign-in success ✅", cred.user?.uid);
+    redirectAfterAuth();
+  } catch (err) {
+    console.error("[Auth] Google sign-in failed:", err);
+    alert(err.message || "Google sign-in failed. Please try again.");
+  }
+};
+
 })();
-
-
-
-
-
-
 

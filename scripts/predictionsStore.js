@@ -1,5 +1,6 @@
 // /scripts/predictionsStore.js
 (function () {
+  // compat-safe handles
   const auth =
     (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) ||
     (window.firebase && firebase.auth());
@@ -9,7 +10,11 @@
     (window.firebase && firebase.firestore());
 
   function getUidNow() {
-    return auth.currentUser ? auth.currentUser.uid : null;
+    try {
+      return auth.currentUser ? auth.currentUser.uid : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   function waitForUid() {
@@ -46,7 +51,7 @@
         {
           ...p,
           uid,
-          league: String(leagueKey).toUpperCase(),
+          league: leagueKey,
           matchday: String(roundNum),
           fixtureId,
           timestamp: p.timestamp || new Date().toISOString(),
@@ -56,7 +61,7 @@
     });
 
     await batch.commit();
-    console.log("[STORE] saved", pending.length, "predictions");
+    console.log("[STORE] saved", pending.length, "to", leagueKey, "round", roundNum);
     return true;
   }
 
@@ -67,11 +72,12 @@
     const snap = await db
       .collection("predictions")
       .where("uid", "==", uid)
-      .where("league", "==", String(leagueKey).toUpperCase())
+      .where("league", "==", leagueKey)
       .get();
 
     const out = [];
     snap.forEach((doc) => out.push(doc.data()));
+
     out.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     console.log("[STORE] loaded", out.length, "for", leagueKey);
