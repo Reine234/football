@@ -51,11 +51,15 @@ app.use(express.static(__dirname));
 
 // Prevent accidental access to server-side data
 app.use("/data", (_req, res) => res.sendStatus(404));
-
-// Default route → Premier League page (adjust if needed)
+// Default route → REDIRECT to /premier/ so relative links work
 app.get("/", (_req, res) => {
-  res.sendFile(join(__dirname, "premier", "index.html"));
+  res.redirect(302, "/premier/");
 });
+
+// Optional safety: if any old root links are hit, forward them too
+app.get("/predictions.html", (_req, res) => res.redirect(302, "/premier/predictions.html"));
+app.get("/results.html",     (_req, res) => res.redirect(302, "/premier/results.html"));
+app.get("/index.html",       (_req, res) => res.redirect(302, "/premier/index.html"));
 
 // ------------------------
 // Upstream APIs

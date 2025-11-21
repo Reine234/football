@@ -15,6 +15,16 @@
   let grouped   = null; // { byRound: { [roundNum]: fixtures[] }, rounds: [roundNum...] }
   let roundIndex = 0;
 
+  // ✅ ADDED: resolve correct folder for this league (so we never go to /predictions.html)
+  function leagueFolderFromKey(key) {
+    if (key === "LIGUE1") return "ligue1";
+    if (key === "LALIGA") return "laliga";
+    if (key === "BUNDESLIGA") return "bundesliga";
+    return "premier";
+  }
+  const leagueFolder   = leagueFolderFromKey(leagueKey);
+  const predictionsUrl = `/${leagueFolder}/predictions.html`; // absolute, always correct
+
   function formatDayLabel(isoString) {
     const d = new Date(isoString);
     if (isNaN(d)) return "Date TBD";
@@ -104,7 +114,7 @@
         sessionStorage.setItem("FBL_leagueKey", leagueKey);
         sessionStorage.setItem("FBL_selectedFixture", String(f.id));
         sessionStorage.setItem("FBL_mode", "single");
-        window.location.href = "predictions.html";
+        window.location.href = predictionsUrl; // ✅ FIXED
       });
     });
 
@@ -171,15 +181,9 @@
       sessionStorage.setItem("FBL_leagueKey", leagueKey);
       sessionStorage.removeItem("FBL_selectedFixture");
       sessionStorage.setItem("FBL_mode", "all");
-      window.location.href = "predictions.html";
+      window.location.href = predictionsUrl; // ✅ FIXED
     });
   }
 
   init();
 })();
-
-
-
-
-
-
