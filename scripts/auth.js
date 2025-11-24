@@ -1,14 +1,9 @@
 // scripts/auth.js
-
 (function () {
+  const authRaw = window.FBL_FIREBASE && window.FBL_FIREBASE.auth;
 
-  // ✅ compat-safe auth getter (works whether auth is a function or object)
-  // ✅ DO NOT cache authRaw at load time (race on prod)
+  // compat-safe auth getter
   function getAuth() {
-    const authRaw =
-      (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) ||
-      (window.firebase && firebase.auth);
-
     try {
       return typeof authRaw === "function" ? authRaw() : authRaw;
     } catch (_) {
@@ -58,7 +53,7 @@
 
       groups[key].items.push({
         ...p,
-        uid,                 // ✅ ensure uid on each prediction
+        uid,      // ensure uid on each prediction
         league: lk,
         matchday: md,
       });
@@ -101,37 +96,59 @@
     return "premier";
   }
 
-  function redirectAfterAuth() {
-    const params = new URLSearchParams(location.search);
-    const next = params.get("next");
+  // 🔒 Make next-path always same-origin and never localhost
+  function sanitizeNext(nextRaw) {
+    if (!nextRaw) return null;
 
     const origin = window.location.origin.replace(/\/$/, "");
 
-    const cfgBase =
-      (window.FBL_APP_BASE ||
-        (window.FBL_CFG && window.FBL_CFG.APP_BASE) ||
-        origin).replace(/\/$/, "");
+    try {
+      // URL() will normalize ../ and ./ safely
+      const u = new URL(nextRaw, origin + "/");
 
-    // ✅ SAFETY: never use localhost base when we’re on a real domain
-    const appBase =
-      /localhost|127\.0\.0\.1/.test(cfgBase) && !/localhost|127\.0\.0\.1/.test(origin)
-        ? origin
-        : cfgBase;
+      // If next is pointing to localhost or another origin, strip to path only
+      const host = u.hostname || "";
+      const isLocalhost = /localhost|127\.0\.0\.1/.test(host);
+      const pathOnly = u.pathname + u.search + u.hash;
 
-    if (next) {
-      if (/^https?:\/\//i.test(next) || next.startsWith("//")) {
-        location.href = next;
-      } else if (next.startsWith("/")) {
-        location.href = appBase + next;
-      } else {
-        location.href = appBase + "/" + next.replace(/^\.?\//, "");
+      return pathOnly.startsWith("/") ? pathOnly : "/" + pathOnly;
+    } catch (e) {
+      // fallback for weird strings
+      let n = String(nextRaw).trim();
+
+      // strip absolute localhost
+      if (/^https?:\/\//i.test(n) && /localhost|127\.0\.0\.1/.test(n)) {
+        try {
+          const u2 = new URL(n);
+          n = u2.pathname + u2.search + u2.hash;
+        } catch (_) {}
       }
+
+      n = n.replace(/^(\.\/|\.\.\/)+/, ""); // remove leading ./ or ../
+      if (!n.startsWith("/")) n = "/" + n;
+      return n;
+    }
+  }
+
+  function redirectAfterAuth() {
+    const params = new URLSearchParams(location.search);
+    const nextRaw = params.get("next");
+
+    const origin = window.location.origin.replace(/\/$/, "");
+    const nextPath = sanitizeNext(nextRaw);
+
+    if (nextPath) {
+      console.log("[Auth] redirecting to next =", origin + nextPath);
+      location.assign(origin + nextPath);
       return;
     }
 
     const key = sessionStorage.getItem("FBL_leagueKey") || "PREMIER_LEAGUE";
     const folder = leagueFolderFromKey(key);
-    location.href = appBase + `/${folder}/results.html`;
+    const fallback = `/${folder}/results.html`;
+
+    console.log("[Auth] redirecting to fallback =", origin + fallback);
+    location.assign(origin + fallback);
   }
 
   // ----- Public API -----
@@ -145,13 +162,10 @@
       if (!a) throw new Error("Firebase auth not ready.");
 
       const cred = await a.createUserWithEmailAndPassword(email, password);
-
-      // update profile with username
       await cred.user.updateProfile({ displayName: username });
 
       saveUserToSession(cred.user);
 
-      // ✅ flush AFTER signup (uid now exists)
       try { await flushPendingPredictionsFromSession(); } catch (e) {
         console.warn("[Auth] flush after signup failed:", e);
       }
@@ -169,10 +183,8 @@
       if (!a) throw new Error("Firebase auth not ready.");
 
       const cred = await a.signInWithEmailAndPassword(emailOrUser, password);
-
       saveUserToSession(cred.user);
 
-      // ✅ flush AFTER signin
       try { await flushPendingPredictionsFromSession(); } catch (e) {
         console.warn("[Auth] flush after signin failed:", e);
       }
@@ -208,56 +220,39 @@
 
   window.FBL_AUTH = FBL_AUTH;
 
-  // ✅ SAFETY AUTO-FLUSH:
-  // If a user lands on any page already logged in and there are pending predictions,
-  // flush them once store+uid are ready.
+  // Auto-flush once user is already logged in
   (function autoFlushOnAuthReady() {
-    let tries = 0;
-    const t = setInterval(() => {
-      const a = getAuth();
-      if (!a) {
-        if (++tries > 50) clearInterval(t); // ~5s max wait
-        return;
-      }
-      clearInterval(t);
+    const a = getAuth();
+    if (!a) return;
 
-      a.onAuthStateChanged(async (user) => {
-        if (!user) return;
-        const raw = sessionStorage.getItem("pending_predictions");
-        if (!raw) return;
+    a.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      if (!sessionStorage.getItem("pending_predictions")) return;
 
-        try {
-          await flushPendingPredictionsFromSession();
-        } catch (e) {
-          console.warn("[Auth] auto flush failed:", e);
-        }
-      });
-    }, 100);
+      try { await flushPendingPredictionsFromSession(); }
+      catch (e) { console.warn("[Auth] auto flush failed:", e); }
+    });
   })();
-
-  // Keep hooks for Google button (now real Firebase Google sign-in)
 
   // Google Sign-In with Firebase (compat-safe)
   window.fblGoogleOneTap = async function () {
     try {
-      // Grab whatever you stored in firebase-init.js
       const rawAuth =
         (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) ||
-        (window.firebase && firebase.auth); // could be function OR instance
+        (window.firebase && firebase.auth);
 
       if (!rawAuth) {
         throw new Error("Firebase auth not ready. Check firebase-init.js order.");
       }
 
-      // Normalize to an auth *instance*
       const authApi = (typeof rawAuth === "function") ? rawAuth() : rawAuth;
 
       if (!authApi || typeof authApi.signInWithPopup !== "function") {
-        throw new Error("Firebase auth instance invalid. Check FBL_FIREBASE.auth setup.");
+        throw new Error("Firebase auth instance invalid.");
       }
 
       if (!firebase?.auth?.GoogleAuthProvider) {
-        throw new Error("GoogleAuthProvider not available. Ensure compat SDK is loaded.");
+        throw new Error("GoogleAuthProvider not available.");
       }
 
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -265,7 +260,6 @@
 
       const cred = await authApi.signInWithPopup(provider);
 
-      // keep your existing flow
       saveUserToSession(cred.user);
       await flushPendingPredictionsFromSession();
 
@@ -277,4 +271,8 @@
     }
   };
 
+  // Facebook (you'll wire provider later)
+  window.fblFacebookSignIn = async function () {
+    alert("Facebook sign-in not wired yet.");
+  };
 })();
