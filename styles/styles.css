@@ -1,12 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
-  background-color: #f9fafc;
-  color: #333;
+  background-color: #e6eaf1;
+  color: #000000;
 }
 
 /* Top bar */
 .topbar2 {
+  gap:8px;
   background-color: #00c49a;
   color: white;
   display: flex;
@@ -25,78 +27,104 @@ body {
   text-decoration: none;
   font-weight: 500;
 }
-
-
-
-/* Navigation bar container */
-.nav {
-  display: flex;
-  justify-content: space-around; /* equal spacing between items */
-  align-items: center;
-  margin-top: 10px; /* pushes it down below the topbar */
-  width: 100%;
-  
-  padding: 15px 0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+:root {
+  --fbl-accent: #00B894; /* teal active color */
 }
 
-/* Each navigation item */
-.nav-item {
+/* nav container */
+nav.nav {
+ 
   display: flex;
-  flex-direction: column; /* image above text */
-  align-items: center;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 8px 0 0;
+  border-bottom: 1px solid #e0e0e0; /* full-width bottom line */
+  background: #ffffff;
+  margin-top: 10px;        /* 👈 this pushes the white nav down a bit */
+  /* optional: rounded corners to match the mockup */
+  border-radius: 8px 8px 0 0;
+}
+
+/* each item (inactive) */
+nav.nav .nav-item {
+  flex: 1;
+  text-align: center;
+  padding: 6px 0 10px;
   cursor: pointer;
-  transition: color 0.3s ease;
+  color: #8b8f99;
+  font-size: 12px;
+  position: relative; /* for underline */
+  transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
-/* Icon styling */
-.nav-item img {
-  width: 30px;
-  height: 30px;
-  margin-bottom: 5px;
-  transition: transform 0.3s ease;
+/* icon (inactive) */
+nav.nav .nav-item img {
+  display: block;
+  margin: 0 auto 4px;
+  width: 22px;
+  height: 22px;
+  filter: grayscale(1) opacity(0.6); /* grey icons when inactive */
+  transition: filter 0.2s ease, opacity 0.2s ease, transform 0.1s ease;
 }
 
-/* Text styling */
-.nav-item span {
-  font-size: 14px;
-  color: #333;
-  transition: color 0.3s ease;
+/* label */
+nav.nav .nav-item span {
+  display: block;
 }
 
-/* Hover and active states */
-.nav-item:hover span,
-.nav-item.active span,
-.nav-item.selected span {
-  color: #00B894;
+/* ACTIVE state (added via JS): text + icon + glow */
+nav.nav .nav-item.nav-active span {
+  color: var(--fbl-accent);
 }
 
-.nav-item:hover img,
-.nav-item.active img,
-.nav-item.selected img {
-  transform: scale(1.1);
+nav.nav .nav-item.nav-active img {
+  filter: drop-shadow(0 0 6px rgba(0, 184, 148, 0.9));
+  opacity: 1;
+  transform: translateY(-1px);
 }
 
+/* short teal line under the active tab */
+nav.nav .nav-item::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 0;
+  height: 3px;
+  border-radius: 999px;
+  background-color: var(--fbl-accent);
+  box-shadow: 0 0 8px rgba(0, 184, 148, 0.7);
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: width 0.2s ease, opacity 0.2s ease;
+}
 
-
-/* League tabs */
+nav.nav .nav-item.nav-active::after {
+  width: 40%;  /* little line, not full width */
+  opacity: 1;
+}
+/* League Tabs */
 .league-tabs {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin: 15px;
- 
+  margin: 15px 0;
 }
 
 .tab {
-   
   border: none;
+  background: #eee;
+  padding: 6px 14px;
   border-radius: 20px;
-  padding: 8px 18px;
   font-weight: 500;
   cursor: pointer;
-  background-color:  #FFF4E3;
+
 }
+
+.tab.active {
+  background: #f2c94c;
+}
+
 .page-controls2 {
 
   display: flex;
@@ -126,7 +154,7 @@ body {
 .black-arrow{
     background: none;
   border: none;
-  font-size: 1.4em;
+  font-size: 3em;
   color: #000;
   cursor: pointer;
 }
@@ -138,8 +166,8 @@ body {
  .arrow2{
 background: none;
   border: none;
-  font-size: 1.2em;
-  color: #000;
+  font-size: 2em;
+  color: #00B894;
   cursor: pointer;
 
 }
@@ -147,7 +175,7 @@ background: none;
 .left{
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 
 }
 
@@ -161,9 +189,14 @@ background: none;
 }
 
 .subtitle {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 400; /* normal weight for the rest of the text */
   margin: 0;
+  Font: Rubik;
+
+Size: 16px;
+
+line-height:24px;
 }
 
 .subtitle .bold {
@@ -173,9 +206,16 @@ background: none;
 
 .match-card {
   background-color: #C4FFF4;
-  padding: 15px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 30px;
   margin-bottom: 15px;
+  Width: Fixed (390px);
+  Height: Hug (237px);
+  Gap: 16px;
+ 
+  margin-top: 6px;
+  padding: 9px 13px;
+
 }
 
 .teams {
@@ -225,27 +265,28 @@ background: none;
 }
 
 .score-box button {
-  background-color: #047857 ;
+  background-color: #ffffff;
   border: none;
   padding: 5px 8px;
   font-size: 16px;
   cursor: pointer;
   border-radius: 4px;
-  color: #fff;
+  color: #000000;
 }
 
 .score-box input {
   width: 40px;
   text-align: center;
   border: none;
-  background-color: #d1fae5;
-  color: #000;
+  background-color: #00B894;
+  color: #ffffff;
   font-weight: bold;
   border-radius: 6px;
   margin: 0 4px;
+  height: 40px;
 }
 .hr{
-   color: grey;
+   color: #D8E8FF;
 }
 .matches-header {
   display: flex;

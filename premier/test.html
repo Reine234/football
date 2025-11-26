@@ -1,20 +1,46 @@
-<!DOCTYPE html><html><head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>FBL Tests</title>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="../common/js/config.js"></script>
-  <script src="../common/js/tests-page.js"></script>
-  <style>body{font-family:system-ui, Arial; padding:16px;} table{border-collapse:collapse} td,th{border:1px solid #ddd;padding:6px}</style>
-</head><body>
-  <h2>Numeric Input Tests</h2>
-  <table><thead><tr><th>#</th><th>H</th><th>A</th><th>Expected OK</th><th>Found Errors</th><th>Result</th></tr></thead>
-    <tbody id="t-body"></tbody></table>
-    <script src="/common/js/tests-page.js"></script>
-<div id="tests"></div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FansBetLiga — Prediction Input Tests</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 16px; background:#f7f7f9; }
+    h2 { margin: 0 0 8px; }
+    p { color:#444; margin-top: 6px; }
+    #run-tests { padding:10px 14px; border:0; border-radius:8px; background:#0b7; color:#fff; font-weight:600; cursor:pointer; }
+    #run-tests:active { transform: translateY(1px); }
+    .note { font-size: 14px; color:#666; margin-top:8px;}
+  </style>
+</head>
+<body>
+  <h2>Prediction +/- Input Tests</h2>
+  <p>
+    This page does <b>not</b> create any dummy cards.  
+    It only runs tests if your real predictions cards exist on the page.
+  </p>
+  <p class="note">
+    ✅ Best use: temporarily include <code>predictionsInputTests.js</code> in your
+    real <code>predictions.html</code> during dev, or open predictions page then click “Run tests”
+    here after navigating to a matchday.
+  </p>
 
+  <button id="run-tests">Run tests on current page</button>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="/common/js/config.js"></script>
-<script src="/common/js/tests-page.js"></script>
+  <!-- Load tests -->
+  <script src="../scripts/predictionsLiveTests.js"></script>
+  <script>
+    document.getElementById("run-tests").addEventListener("click", () => {
+      if (window.FBL_PRED_TESTS) window.FBL_PRED_TESTS.runAll();
+      else alert("Tests script not loaded.");
+    });
 
-</body></html>
+    // Auto-run if cards are already present
+    window.addEventListener("load", () => {
+      if (window.FBL_PRED_TESTS && window.FBL_PRED_TESTS.collectCards().length) {
+        window.FBL_PRED_TESTS.runAll();
+      }
+    });
+  </script>
+</body>
+</html>

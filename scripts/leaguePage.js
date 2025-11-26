@@ -15,15 +15,14 @@
   let grouped   = null; // { byRound: { [roundNum]: fixtures[] }, rounds: [roundNum...] }
   let roundIndex = 0;
 
-  // ✅ ADDED: resolve correct folder for this league (so we never go to /predictions.html)
   function leagueFolderFromKey(key) {
-    if (key === "LIGUE1") return "ligue1";
-    if (key === "LALIGA") return "laliga";
-    if (key === "BUNDESLIGA") return "bundesliga";
+    const k = String(key || "").toUpperCase();
+    if (k === "LIGUE1") return "ligue1";
+    if (k === "LALIGA") return "laliga";
+    if (k === "BUNDESLIGA") return "bundesliga";
     return "premier";
   }
-  const leagueFolder   = leagueFolderFromKey(leagueKey);
-  const predictionsUrl = `/${leagueFolder}/predictions.html`; // absolute, always correct
+  const leagueFolder = leagueFolderFromKey(leagueKey);
 
   function formatDayLabel(isoString) {
     const d = new Date(isoString);
@@ -35,7 +34,7 @@
 
   function renderRound() {
     if (!grouped || !grouped.rounds || !grouped.rounds.length) {
-      if (matchdayTitleEl) matchdayTitleEl.textContent = `${leagueInfo.name} - Matchday ? of ${leagueInfo.totalRounds || "?"}`;
+      if (matchdayTitleEl) matchdayTitleEl.textContent = ` Matches - Matchday ? of ${leagueInfo.totalRounds || "?"}`;
       if (matchesContainer) matchesContainer.innerHTML = `<p>No fixtures available.</p>`;
       return;
     }
@@ -43,7 +42,9 @@
     const roundNum = grouped.rounds[roundIndex];
     const fixtures = grouped.byRound[roundNum] || [];
 
-    if (matchdayTitleEl) matchdayTitleEl.textContent = `${leagueInfo.name} - Matchday ${roundNum} of ${leagueInfo.totalRounds || "?"}`;
+    if (matchdayTitleEl) matchdayTitleEl.textContent = ` Matches - Matchday ${roundNum} of ${leagueInfo.totalRounds || "?"}`;
+
+ 
 
     // group by date label
     const byDate = {};
@@ -114,7 +115,9 @@
         sessionStorage.setItem("FBL_leagueKey", leagueKey);
         sessionStorage.setItem("FBL_selectedFixture", String(f.id));
         sessionStorage.setItem("FBL_mode", "single");
-        window.location.href = predictionsUrl; // ✅ FIXED
+
+        // ✅ FIX: always go to correct league folder
+        window.location.href = `/${leagueFolder}/predictions.html`;
       });
     });
 
@@ -129,6 +132,7 @@
 
   function goPrev() { if (!grouped) return; roundIndex = Math.max(0, roundIndex - 1); renderRound(); }
   function goNext() { if (!grouped) return; roundIndex = Math.min(grouped.rounds.length - 1, roundIndex + 1); renderRound(); }
+
 
   async function init() {
     let allFixtures = [];
@@ -181,9 +185,49 @@
       sessionStorage.setItem("FBL_leagueKey", leagueKey);
       sessionStorage.removeItem("FBL_selectedFixture");
       sessionStorage.setItem("FBL_mode", "all");
-      window.location.href = predictionsUrl; // ✅ FIXED
+
+      // ✅ FIX: always go to correct league folder
+      window.location.href = `/${leagueFolder}/predictions.html`;
     });
   }
 
   init();
+})();
+// ==== Keep < day-number > in sync with "Matches - Matchday X of Y" ====
+(function () {
+  function syncDayNumberFromTitle() {
+    const titleEl = document.getElementById('matchday-title');
+    const dayEl   = document.getElementById('day-number');
+    if (!titleEl || !dayEl) return;
+
+    const text = titleEl.textContent || '';
+    // look for "Matchday 14" in "Matches - Matchday 14 of 38"
+    const m = text.match(/matchday\s+(\d+)/i);
+    if (m && m[1]) {
+      dayEl.textContent = m[1];   // <- put 14 between <   >
+    }
+  }
+
+  function initMatchdayMirror() {
+    const titleEl = document.getElementById('matchday-title');
+    if (!titleEl) return;
+
+    // 1) set it once at start
+    syncDayNumberFromTitle();
+
+    // 2) whenever your existing code changes the title,
+    //    this observer updates the number automatically
+    const observer = new MutationObserver(syncDayNumberFromTitle);
+    observer.observe(titleEl, {
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMatchdayMirror);
+  } else {
+    initMatchdayMirror();
+  }
 })();

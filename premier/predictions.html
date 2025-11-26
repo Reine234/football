@@ -14,9 +14,9 @@
   
   <nav class="nav">
     <div class="nav-item "><img src="/img/home.png" alt="Home"><span>Home</span></div>
-    <div class="nav-item "><img src="/img/person.png" alt="Results"><span>Results</span></div>
-    <div class="nav-item"><img src="/img/books.png" alt="Winners"><span>Winners</span></div>
-    <div class="nav-item"><img src="/img/3 dots.png" alt="Rules"><span>Rules</span></div>
+    <div class="nav-item "><img src="/img/results.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="/img/winners.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="/img/rules.png" alt="Rules"><span>Rules</span></div>
   </nav>
 
  
@@ -24,7 +24,7 @@
   <main>
     <section class="predictions">
       <div class="matches-header">
-        <div class="left"><a href="index.html" class="back-arrow">&lt;</a><h2>Matches</h2></div>
+        <div class="left"><a href="index.html" class="back-arrow">&lt;</a><h2>Matchs</h2></div>
         <a href="" id="done" class="done">Done</a>
       </div>
       <div class="contain">
@@ -78,11 +78,11 @@
 <script src="../scripts/predictionsStore.js"></script>
 <script src="../scripts/config.js"></script>
 <script src="../scripts/api.js"></script>
->
+
 <script src="../scripts/auth.js"></script>
 
 <script src="../scripts/predictionsPage.js"></script>
-
+<script src="../scripts/predictionsLiveTests.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -132,6 +132,56 @@ document.addEventListener("DOMContentLoaded", () => {
     else tab.classList.remove("active");
   });
 });
+</script>
+
+<script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const nav = document.querySelector('nav.nav');
+    if (!nav) return;
+
+    const items = Array.from(nav.querySelectorAll('.nav-item'));
+
+    // Helper: remove active from all, then add to the one whose label matches
+    function setActiveByLabel(label) {
+      const targetLabel = label.toLowerCase();
+      items.forEach(i => i.classList.remove('nav-active'));
+
+      const found = items.find(i => {
+        const text = (i.querySelector('span')?.textContent || "").trim().toLowerCase();
+        return text === targetLabel;
+      });
+
+      if (found) {
+        found.classList.add('nav-active');
+      }
+    }
+
+    // 1) On page load, decide which tab should be active based on URL
+    const path = window.location.pathname.toLowerCase(); // e.g. "/premier/results.html"
+
+    if (path.includes('results')) {
+      setActiveByLabel('results');
+    } else if (path.includes('winners')) {
+      setActiveByLabel('winners');
+    } else if (path.includes('rules')) {
+      setActiveByLabel('rules');
+    } else {
+      // default: Home
+      setActiveByLabel('home');
+    }
+
+    // 2) Optional: if some tabs don't navigate yet and you still
+    // want them to glow when clicked on the same page:
+    nav.addEventListener('click', function (e) {
+      const item = e.target.closest('.nav-item');
+      if (!item || !nav.contains(item)) return;
+
+      // If this click navigates to another page (like "Results"),
+      // the new page will set the right tab on load using the code above.
+      items.forEach(i => i.classList.remove('nav-active'));
+      item.classList.add('nav-active');
+    });
+  });
 </script>
 
 

@@ -225,6 +225,10 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
       );
       if (!row) return;
 
+      
+  if (row.dataset.bound === "1") return;
+  row.dataset.bound = "1";
+  
       const hMinus = row.querySelector(".home-minus");
       const hPlus  = row.querySelector(".home-plus");
       const aMinus = row.querySelector(".away-minus");
