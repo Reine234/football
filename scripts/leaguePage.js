@@ -65,7 +65,7 @@
         const kickoff = (window.FBL && window.FBL.formatKickoffLocal)
           ? window.FBL.formatKickoffLocal(f.utcDate)
           : new Date(f.utcDate).toLocaleTimeString();
-        const colorClass = (i % 2 === 0) ? "cyan" : "blue";
+        const colorClass = (i % 2 === 0) ? "blue" : "cyan";
         html += `
           <div class="match-card ${colorClass}" data-fixture="${f.id}" data-league="${leagueKey}">
             <div class="match-info">

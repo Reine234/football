@@ -125,20 +125,53 @@ nav.nav .nav-item.nav-active::after {
   background: #f2c94c;
 }
 
-.page-controls2 {
 
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 1em;
-  color: #00c49a;
-}
+
 .arrow2 {
-  background: none;
   border: none;
-  font-size: 1.4em;
-  color: #00c49a;
+  background: transparent;
+  color: var(--fbl-teal);
+  font-size: 40px;          /* size of < and > */
+  line-height: 1;
   cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 999px;
+  color: #00c49a;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+    
+  padding: 0;             /* remove extra padding */
+  margin: 0 8px;          /* ⟵ small manual space to the number */
+  border-radius: 999px;
+}
+
+/* hover / click = slightly lighter green */
+.contain .arrow2:hover:not(:disabled) {
+  background-color: rgba(0, 184, 148, 0.08);
+  transform: translateY(-1px);
+}
+
+.contain .arrow2:active:not(:disabled) {
+  background-color: rgba(0, 184, 148, 0.16);  /* "light green" feel */
+}
+
+/* disabled state (e.g. at first/last matchday) */
+.contain .arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+  background: transparent;
+}
+
+#day-number2 {
+  min-width: 16px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333333;
+  margin-top: 15px;
 }
 .contain{
    display: flex;
@@ -162,13 +195,7 @@ nav.nav .nav-item.nav-active::after {
   display: flex;
   justify-content: space-between; /* pushes Matches left, Done right */
   align-items: center; /* vertically aligns them */
-}
- .arrow2{
-background: none;
-  border: none;
-  font-size: 2em;
-  color: #00B894;
-  cursor: pointer;
+
 
 }
 
@@ -209,13 +236,14 @@ line-height:24px;
   padding: 16px;
   border-radius: 30px;
   margin-bottom: 15px;
-  Width: Fixed (390px);
-  Height: Hug (237px);
-  Gap: 16px;
  
+  Gap: 16px;
+  border-radius: 9px;
   margin-top: 6px;
   padding: 9px 13px;
-
+  margin-top: 6px;
+  box-shadow: 
+  0 2px 4px rgba(0,0,0,0.1);
 }
 
 .teams {

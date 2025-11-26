@@ -174,7 +174,223 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 </script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Determine which league this page belongs to
+  const path = window.location.pathname.toLowerCase();
+  let league = "";
+  if (path.includes("laliga")) league = "laliga";
+  else if (path.includes("bundesliga")) league = "bundesliga";
+  else if (path.includes("premier")) league = "premier";
+
+  // Handle top nav clicks
+  const navItems = document.querySelectorAll(".nav-item");
+  navItems.forEach(item => {
+    const label = item.querySelector("span").textContent.trim().toLowerCase();
+
+    item.addEventListener("click", () => {
+      if (label === "home") {
+        window.location.href = `../${league}/index.html`;
+      } 
+      else if (label === "results") {
+        window.location.href = `../${league}/results.html`;
+      } 
+      else if (label === "winners") {
+        alert("Winners page coming soon!");
+      } 
+      else if (label === "rules") {
+        alert("Rules page coming soon!");
+      }
+    });
+  });
+
+  // Handle league tab switching (La Liga / Bundesliga / Premier)
+  const tabs = document.querySelectorAll(".league-tabs .tab");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const target = tab.getAttribute("data-href");
+      if (target) window.location.href = target;
+    });
+  });
+
+  // Optional: visually mark active tab automatically
+  tabs.forEach(tab => {
+    const href = tab.getAttribute("data-href").toLowerCase();
+    if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
+    else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
+    else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else tab.classList.remove("active");
+  });
+});
+</script>
 
 
+<script>
+  // Make the league tabs navigate
+  (function(){
+    function go(btn){ var url = btn.getAttribute('data-href'); if(url){ location.href = url; } }
+    document.querySelectorAll('.league-tabs .tab').forEach(function(btn){
+      btn.addEventListener('click', function(){ go(btn); });
+    });
+  })();
+</script>
+
+<!-- Your content here -->
+
+
+<!-- Paste this before </body> -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Helper: detect the current league folder from the URL path
+  function currentLeagueFolder() {
+    const parts = location.pathname.split('/').filter(Boolean);
+    const i = parts.findIndex(p => ['premier','bundesliga','laliga'].includes(p));
+    return i >= 0 ? parts[i] : 'premier';
+  }
+
+  const leagueFolder = currentLeagueFolder();
+
+  // Top nav buttons
+  document.querySelectorAll(".nav-item").forEach(item => {
+    const label = item.querySelector("span")?.textContent.trim().toLowerCase();
+    item.addEventListener("click", () => {
+      if (label === "home")     location.href = "index.html";         // relative -> stays in this folder
+      if (label === "results")  location.href = "results.html";       // relative -> /<league>/results.html
+      if (label === "winners")  alert("Winners page coming soon!");
+      if (label === "rules")    alert("Rules page coming soon!");
+    });
+  });
+
+  // League tabs (always go to the specific folder root)
+  document.querySelectorAll(".league-tabs .tab").forEach(tab => {
+    const target = tab.getAttribute("data-href");
+    if (target) {
+      tab.addEventListener("click", () => location.href = target);
+    }
+  });
+
+  // Bet button – ALWAYS within the current folder
+  const betButton = document.getElementById("bet-button-main");
+  if (betButton) {
+    betButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      location.href = "predictions.html"; // relative -> /<league>/predictions.html
+    });
+  }
+
+  // If you also click match cards to go to predictions:
+  document.addEventListener("click", (e) => {
+    const card = e.target.closest(".match-card");
+    if (!card) return;
+    // (Optionally store selected match id in localStorage here)
+    location.href = "predictions.html";
+  });
+});
+</script>
+
+
+<!-- NEW: match-card + Bet button hooks -->
+<script>
+  // When user clicks a match card → SINGLE mode
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.match-card');
+    if (!card) return;
+    const fixtureId = String(card.dataset.fixture || card.dataset.fixtureId || '').trim();
+    if (!fixtureId) return;
+    sessionStorage.setItem('FBL_mode', 'single');
+    sessionStorage.setItem('FBL_selectedFixture', fixtureId);
+    // predictions.html lives in the same league folder
+    location.href = 'predictions.html';
+  });
+
+  // Bet button → ALL mode
+  const betBtn = document.getElementById('bet-button-main');
+  if (betBtn) {
+    betBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      sessionStorage.setItem('FBL_mode', 'all');
+      sessionStorage.removeItem('FBL_selectedFixture'); // avoid sticky single-match
+      location.href = 'predictions.html';
+    });
+  }
+</script>
+<script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const nav = document.querySelector('nav.nav');
+    if (!nav) return;
+
+    const items = Array.from(nav.querySelectorAll('.nav-item'));
+
+    // Helper: remove active from all, then add to the one whose label matches
+    function setActiveByLabel(label) {
+      const targetLabel = label.toLowerCase();
+      items.forEach(i => i.classList.remove('nav-active'));
+
+      const found = items.find(i => {
+        const text = (i.querySelector('span')?.textContent || "").trim().toLowerCase();
+        return text === targetLabel;
+      });
+
+      if (found) {
+        found.classList.add('nav-active');
+      }
+    }
+
+    // 1) On page load, decide which tab should be active based on URL
+    const path = window.location.pathname.toLowerCase(); // e.g. "/premier/results.html"
+
+    if (path.includes('results')) {
+      setActiveByLabel('results');
+    } else if (path.includes('winners')) {
+      setActiveByLabel('winners');
+    } else if (path.includes('rules')) {
+      setActiveByLabel('rules');
+    } else {
+      // default: Home
+      setActiveByLabel('home');
+    }
+
+    // 2) Optional: if some tabs don't navigate yet and you still
+    // want them to glow when clicked on the same page:
+    nav.addEventListener('click', function (e) {
+      const item = e.target.closest('.nav-item');
+      if (!item || !nav.contains(item)) return;
+
+      // If this click navigates to another page (like "Results"),
+      // the new page will set the right tab on load using the code above.
+      items.forEach(i => i.classList.remove('nav-active'));
+      item.classList.add('nav-active');
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.league-tabs .tab');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const href = tab.dataset.href;
+        if (href) {
+          // navigate to that league's page if you still want page switch
+          window.location.href = href;
+        }
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
+
+
+
+
+  
 
 </body></html>

@@ -106,10 +106,7 @@ nav.nav .nav-item.nav-active::after {
   width: 40%;  /* little line, not full width */
   opacity: 1;
 }
-.league-tabs {
-  display: flex;
-  gap: 8px;
-}
+
 
 /* League Tabs */
 .league-tabs {
