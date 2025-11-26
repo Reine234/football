@@ -9,101 +9,109 @@
     LIGUE1:         { name: "Ligue 1",        totalRounds: 34 },
   };
 
+  // ------------------------------------------------------------
+  // Firestore store (save + load)
+  // ------------------------------------------------------------
+  (function () {
+    const auth =
+      (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) ||
+      (window.firebase && firebase.auth && firebase.auth());
 
-  // /scripts/predictionsStore.js
-(function () {
-  // compat-safe handles
-  const auth = (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) || (window.firebase && firebase.auth());
-  const db   = (window.FBL_FIREBASE && window.FBL_FIREBASE.db)   || (window.firebase && firebase.firestore());
+    const db =
+      (window.FBL_FIREBASE && window.FBL_FIREBASE.db) ||
+      (window.firebase && firebase.firestore && firebase.firestore());
 
-  function getUidNow() {
-    try {
-      return auth.currentUser ? auth.currentUser.uid : null;
-    } catch (_) {
-      return null;
+    function getUidNow() {
+      try {
+        return auth && auth.currentUser ? auth.currentUser.uid : null;
+      } catch (_) {
+        return null;
+      }
     }
-  }
 
-  function waitForUid() {
-    const uid = getUidNow();
-    if (uid) return Promise.resolve(uid);
+    function waitForUid() {
+      const uid = getUidNow();
+      if (uid) return Promise.resolve(uid);
 
-    return new Promise((resolve, reject) => {
-      const unsub = auth.onAuthStateChanged(
-        (user) => {
-          unsub();
-          resolve(user ? user.uid : null);
-        },
-        (err) => {
-          unsub();
-          reject(err);
+      return new Promise((resolve, reject) => {
+        if (!auth || !auth.onAuthStateChanged) {
+          resolve(null);
+          return;
         }
-      );
-    });
-  }
+        const unsub = auth.onAuthStateChanged(
+          (user) => {
+            unsub();
+            resolve(user ? user.uid : null);
+          },
+          (err) => {
+            unsub();
+            reject(err);
+          }
+        );
+      });
+    }
 
- // ✅ SAVE (keeps your structure, just ensures uid is present and stable doc ids)
-async function savePredictionsForRound(leagueKey, roundNum, pending) {
-  const uid = await waitForUid();
-  if (!uid) throw new Error("Not logged in");
+    async function savePredictionsForRound(leagueKey, roundNum, pending) {
+      const uid = await waitForUid();
+      if (!uid) throw new Error("Not logged in");
+      if (!db || !db.batch) throw new Error("Firestore not available");
 
-  console.log("[STORE] saving", pending.length, "for", leagueKey, "round", roundNum);
+      console.log("[STORE] saving", pending.length, "for", leagueKey, "round", roundNum);
 
-  const batch = db.batch();
+      const batch = db.batch();
 
-  pending.forEach((p) => {
-    const fixtureId = String(p.fixtureId);
-    const docId = `${uid}_${leagueKey}_${fixtureId}`; // stable per user+league+fixture
-    const ref = db.collection("predictions").doc(docId);
+      pending.forEach((p) => {
+        const fixtureId = String(p.fixtureId);
+        const docId = `${uid}_${leagueKey}_${fixtureId}`;
+        const ref = db.collection("predictions").doc(docId);
 
-    batch.set(
-      ref,
-      {
-        ...p,
-        uid,
-        league: leagueKey,
-        matchday: String(roundNum),
-        fixtureId,
-        timestamp: p.timestamp || new Date().toISOString(),
-      },
-      { merge: true }
-    );
-  });
+        batch.set(
+          ref,
+          {
+            ...p,
+            uid,
+            league: leagueKey,
+            matchday: String(roundNum),
+            fixtureId,
+            timestamp: p.timestamp || new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      });
 
-  await batch.commit();
-  console.log("[STORE] saved OK");
-  return true;
-}
+      await batch.commit();
+      console.log("[STORE] saved OK");
+      return true;
+    }
 
-  // ✅ READ (THIS is what fixes your permissions error)
-  async function loadPredictionsForLeague(leagueKey) {
-    const uid = await waitForUid();
-    if (!uid) return [];
+    async function loadPredictionsForLeague(leagueKey) {
+      const uid = await waitForUid();
+      if (!uid || !db) return [];
 
-    const snap = await db
-      .collection("predictions")
-      .where("uid", "==", uid)          // <-- REQUIRED for rules
-      .where("league", "==", leagueKey)
-      .get();
+      const snap = await db
+        .collection("predictions")
+        .where("uid", "==", uid)
+        .where("league", "==", leagueKey)
+        .get();
 
-    const out = [];
-    snap.forEach((doc) => out.push(doc.data()));
+      const out = [];
+      snap.forEach((doc) => out.push(doc.data()));
+      out.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      return out;
+    }
 
-    // keep them in saved-time order
-    out.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    return out;
-  }
+    window.FBL_STORE = window.FBL_STORE || {};
+    window.FBL_STORE.savePredictionsForRound = savePredictionsForRound;
+    window.FBL_STORE.loadPredictionsForLeague = loadPredictionsForLeague;
+  })();
 
-  window.FBL_STORE = window.FBL_STORE || {};
-  window.FBL_STORE.savePredictionsForRound = savePredictionsForRound;
-  window.FBL_STORE.loadPredictionsForLeague = loadPredictionsForLeague;
-})();
-
-  // ---- 1) Pull league context first (so leagueKey exists) ----
-  const selected  = window.FBL.loadSelectedRound(); // { leagueKey, roundNum, fixtures }
+  // ------------------------------------------------------------
+  // League context
+  // ------------------------------------------------------------
+  const selected  = window.FBL.loadSelectedRound && window.FBL.loadSelectedRound();
   const leagueKey = sessionStorage.getItem("FBL_leagueKey");
 
-  if (!selected || !leagueKey) {
+  if (!selected || !leagueKey || !window.FBL.LEAGUE_MAP[leagueKey]) {
     console.error("No selected round / league in sessionStorage");
     if (leagueKey && window.FBL.LEAGUE_MAP[leagueKey]) {
       window.location.href = "./index.html";
@@ -118,7 +126,6 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
   const totalRounds = leagueInfo.totalRounds || "?";
   const allFixtures = selected.fixtures || [];
 
-  // ---- 2) Single vs all mode (clickable cards) ----
   const mode         = sessionStorage.getItem("FBL_mode") || "all";
   const selFixtureId = sessionStorage.getItem("FBL_selectedFixture");
   const pageFixtures =
@@ -126,7 +133,9 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
       ? allFixtures.filter((f) => String(f.id) === String(selFixtureId))
       : allFixtures.slice();
 
-  // ---- 3) DOM refs (unchanged) ----
+  // ------------------------------------------------------------
+  // DOM refs
+  // ------------------------------------------------------------
   const subtitleEl     = document.querySelector(".subtitle");
   const dayNumWrapEl   = document.getElementById("day-number2");
   const prevDayBtn     = document.getElementById("prev-day");
@@ -142,32 +151,55 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
   const badgeEl        = document.querySelector(".gprompt__badge");
   const matchdayTextEl = document.getElementById("gprompt-matchday");
 
-  // ---- 4) Blank-by-default predictions (no “0-0” showing) ----
-  // { [fixtureId]: { homeScore:null|number, awayScore:null|number, homeTeam, awayTeam } }
+  // ------------------------------------------------------------
+  // Prediction state + helpers
+  // ------------------------------------------------------------
+  // userPred[fixtureId] = { homeScore, awayScore, homeTeam, awayTeam }
   const userPred = {};
   const clamp    = (v) => (v < 0 ? 0 : v > 20 ? 20 : v);
   const display  = (el, val) => {
-    el.value = val === null ? "" : String(val);
+    if (!el) return;
+    el.value = val === null || typeof val === "undefined" ? "" : String(val);
   };
   const isSet = (p) => p && p.homeScore !== null && p.awayScore !== null;
 
+  function ensurePredictionSlot(f) {
+    const id = String(f.id);
+    if (!userPred[id]) {
+      userPred[id] = {
+        homeScore: null,
+        awayScore: null,
+        homeTeam: f.home,
+        awayTeam: f.away,
+      };
+    } else {
+      userPred[id].homeTeam = f.home;
+      userPred[id].awayTeam = f.away;
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Render fixtures (no button listeners here)
+  // ------------------------------------------------------------
   function renderFixtures() {
+    if (!listEl) return;
+
     if (subtitleEl) {
       subtitleEl.innerHTML = `<span class="bold">${leagueInfo.name} Matches</span> - Matchday ${roundNum} of ${totalRounds}`;
     }
-    if (dayNumWrapEl) dayNumWrapEl.textContent = roundNum;
+    if (dayNumWrapEl) {
+      dayNumWrapEl.textContent = roundNum;
+    }
     if (prevDayBtn) prevDayBtn.disabled = true;
     if (nextDayBtn) nextDayBtn.disabled = true;
 
+    pageFixtures.forEach((f) => ensurePredictionSlot(f));
+
     const html = pageFixtures
       .map((f) => {
-        userPred[f.id] = {
-          homeScore: null,
-          awayScore: null,
-          homeTeam: f.home,
-          awayTeam: f.away,
-        };
-        const ko = window.FBL.formatKickoffLocal(f.utcDate);
+        const ko = window.FBL.formatKickoffLocal
+          ? window.FBL.formatKickoffLocal(f.utcDate)
+          : "";
         return `
         <div class="match-card" data-fixture="${f.id}">
           <div class="teams">
@@ -206,71 +238,86 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
       `;
       })
       .join("");
+
     listEl.innerHTML = html;
 
-    // logos
+    // logos + initial values
     pageFixtures.forEach((f) => {
       const row = listEl.querySelector(
         `.match-card[data-fixture="${f.id}"]`
       );
       if (!row) return;
-      window.FBL.ensureLogo(f.home, row.querySelector(".home-logo"));
-      window.FBL.ensureLogo(f.away, row.querySelector(".away-logo"));
-    });
+      const id = String(f.id);
+      const pred = userPred[id];
 
-    // +/- handlers (null-aware)
-    pageFixtures.forEach((f) => {
-      const row = listEl.querySelector(
-        `.match-card[data-fixture="${f.id}"]`
-      );
-      if (!row) return;
+      if (window.FBL.ensureLogo) {
+        window.FBL.ensureLogo(f.home, row.querySelector(".home-logo"));
+        window.FBL.ensureLogo(f.away, row.querySelector(".away-logo"));
+      }
 
-      
-  if (row.dataset.bound === "1") return;
-  row.dataset.bound = "1";
-  
-      const hMinus = row.querySelector(".home-minus");
-      const hPlus  = row.querySelector(".home-plus");
-      const aMinus = row.querySelector(".away-minus");
-      const aPlus  = row.querySelector(".away-plus");
-      const hVal   = row.querySelector(".home-val");
-      const aVal   = row.querySelector(".away-val");
-
-      display(hVal, null);
-      display(aVal, null);
-
-      hMinus.addEventListener("click", () => {
-        let cur = userPred[f.id].homeScore;
-        if (cur === null || Number.isNaN(cur)) cur = 0;
-        cur = clamp(cur - 1);
-        userPred[f.id].homeScore = cur;
-        display(hVal, cur);
-      });
-      hPlus.addEventListener("click", () => {
-        let cur = userPred[f.id].homeScore;
-        if (cur === null || Number.isNaN(cur)) cur = 0;
-        cur = clamp(cur + 1);
-        userPred[f.id].homeScore = cur;
-        display(hVal, cur);
-      });
-      aMinus.addEventListener("click", () => {
-        let cur = userPred[f.id].awayScore;
-        if (cur === null || Number.isNaN(cur)) cur = 0;
-        cur = clamp(cur - 1);
-        userPred[f.id].awayScore = cur;
-        display(aVal, cur);
-      });
-      aPlus.addEventListener("click", () => {
-        let cur = userPred[f.id].awayScore;
-        if (cur === null || Number.isNaN(cur)) cur = 0;
-        cur = clamp(cur + 1);
-        userPred[f.id].awayScore = cur;
-        display(aVal, cur);
-      });
+      const hVal = row.querySelector(".home-val");
+      const aVal = row.querySelector(".away-val");
+      display(hVal, pred.homeScore);
+      display(aVal, pred.awayScore);
     });
   }
 
-  // ---- helpers for API + redirects ----
+  // ------------------------------------------------------------
+  // Global +/- handler on window (capture phase) – blocks other handlers
+  // ------------------------------------------------------------
+  let plusMinusWired = false;
+  function wirePlusMinus() {
+    if (plusMinusWired) return;
+    plusMinusWired = true;
+
+    window.addEventListener(
+      "click",
+      function (e) {
+        const btn = e.target.closest("button.plus, button.minus");
+        if (!btn) return;
+        const card = btn.closest(".match-card");
+        if (!card) return;
+
+        // Block other click handlers (tests, old scripts, etc.)
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const fixtureId = String(card.dataset.fixture || "");
+        const pred = userPred[fixtureId];
+        if (!pred) return;
+
+        const isHome = btn.classList.contains("home-plus") || btn.classList.contains("home-minus");
+        const isPlus = btn.classList.contains("plus");
+
+        if (isHome) {
+          let cur = pred.homeScore;
+          if (cur === null || Number.isNaN(cur)) cur = 0;
+          cur = clamp(cur + (isPlus ? 1 : -1));
+          pred.homeScore = cur;
+          const hVal = card.querySelector(".home-val");
+          display(hVal, cur);
+        } else {
+          let cur = pred.awayScore;
+          if (cur === null || Number.isNaN(cur)) cur = 0;
+          cur = clamp(cur + (isPlus ? 1 : -1));
+          pred.awayScore = cur;
+          const aVal = card.querySelector(".away-val");
+          display(aVal, cur);
+        }
+
+        // Activate Done button visually (if you have CSS for .done-active)
+        if (topDoneLink && !topDoneLink.classList.contains("done-active")) {
+          topDoneLink.classList.add("done-active");
+        }
+      },
+      true // capture on window so we run BEFORE document-level listeners
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Helpers, finalize & popup logic
+  // ------------------------------------------------------------
   function getApiBase() {
     const b =
       window.FBL_API_BASE ||
@@ -286,17 +333,45 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
     return "premier";
   }
 
-  function redirectToSignup() {
-    const folder = leagueFolderFromKey(leagueKey);
-    const nextPath = `/${folder}/results.html`;
-    window.location.href =
-      "../signup.html?next=" + encodeURIComponent(nextPath);
+  function waitForFirebaseUser() {
+    try {
+      if (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) {
+        const auth = window.FBL_FIREBASE.auth;
+        const u = auth.currentUser;
+        if (u) return Promise.resolve(u);
+        return new Promise((resolve) => {
+          const unsub = auth.onAuthStateChanged((user) => {
+            unsub();
+            resolve(user || null);
+          });
+        });
+      }
+      if (window.firebase && firebase.auth) {
+        const auth = firebase.auth();
+        const u = auth.currentUser;
+        if (u) return Promise.resolve(u);
+        return new Promise((resolve) => {
+          const unsub = auth.onAuthStateChanged((user) => {
+            unsub();
+            resolve(user || null);
+          });
+        });
+      }
+    } catch (_) {}
+    return Promise.resolve(null);
   }
 
-  // Build the exact structure PHP expects for save_prediction
-  function buildServerPayloads(touchedFixtures) {
-    return touchedFixtures.map((f) => {
-      const p = userPred[f.id];
+  async function finalizeAndContinue() {
+    const touched = pageFixtures.filter((f) =>
+      isSet(userPred[String(f.id)])
+    );
+    if (!touched.length) {
+      alert(".");
+      return;
+    }
+
+    let pending = touched.map((f) => {
+      const p = userPred[String(f.id)];
       return {
         league:    leagueKey,
         fixtureId: String(f.id),
@@ -314,184 +389,67 @@ async function savePredictionsForRound(leagueKey, roundNum, pending) {
         timestamp: new Date().toISOString(),
       };
     });
-  }
 
-  // helper used when user is already logged in
-  function flushPendingPredictionsToServer() {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const pending = JSON.parse(
-          sessionStorage.getItem("pending_predictions") || "[]"
-        );
-        if (!pending.length) return resolve();
+    sessionStorage.setItem("pending_predictions", JSON.stringify(pending));
+    sessionStorage.setItem("FBL_leagueKey", leagueKey);
 
-        const url = getApiBase() + "/api/users.php";
+    closeConfirmPrompt();
 
-        for (const p of pending) {
-          const res = await fetch(url, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "save_prediction",
-              prediction: p,
-            }),
-          });
+    const folder = leagueFolderFromKey(leagueKey);
+    const resultsPath = `../${folder}/results.html`;
 
-          const text = await res.text();
-          let j;
-          try {
-            j = JSON.parse(text);
-          } catch {
-            throw new Error(
-              "Save failed (" +
-                res.status +
-                "): " +
-                text.slice(0, 200)
-            );
-          }
-          if (!j.success) {
-            throw new Error(j.message || "Save failed");
-          }
-        }
+    console.log("[PredictionsPage] confirm clicked. waiting for auth...");
 
-        sessionStorage.removeItem("pending_predictions");
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
+    const user = await waitForFirebaseUser();
+    if (!user) {
+      console.warn("[PredictionsPage] No firebase user -> redirect signup");
+      window.location.href =
+        "../signup.html?next=" + encodeURIComponent(resultsPath);
+      return;
+    }
 
-  // Stop multiple redirects from causing loops (safe no-op; we never read this)
-  sessionStorage.setItem("redirectLock", "true");
-  setTimeout(() => sessionStorage.removeItem("redirectLock"), 5000);
+    pending = pending.map((p) => (p.uid ? p : { ...p, uid: user.uid }));
 
-  // ✅ ADDED: tiny helper to get current Firebase uid (compat-safe)
-  function getFirebaseUid() {
+    if (
+      !window.FBL_STORE ||
+      typeof window.FBL_STORE.savePredictionsForRound !== "function"
+    ) {
+      console.error("[PredictionsPage] FBL_STORE.savePredictionsForRound missing");
+      alert("Storage not ready. Please refresh.");
+      return;
+    }
+
     try {
-      if (
-        window.FBL_FIREBASE &&
-        window.FBL_FIREBASE.auth &&
-        window.FBL_FIREBASE.auth.currentUser
-      ) {
-        return window.FBL_FIREBASE.auth.currentUser.uid || null;
-      }
-      if (window.firebase && firebase.auth && firebase.auth().currentUser) {
-        return firebase.auth().currentUser.uid || null;
-      }
-    } catch (_) {}
-    return null;
-  }
+      console.log(
+        "[PredictionsPage] saving",
+        pending.length,
+        "predictions to Firestore..."
+      );
 
-// ✅ ADDED: wait for firebase user (compat-safe)
-function waitForFirebaseUser() {
-  try {
-    if (window.FBL_FIREBASE && window.FBL_FIREBASE.auth) {
-      const u = window.FBL_FIREBASE.auth.currentUser;
-      if (u) return Promise.resolve(u);
+      await window.FBL_STORE.savePredictionsForRound(
+        leagueKey,
+        roundNum,
+        pending
+      );
 
-      return new Promise((resolve) => {
-        const unsub = window.FBL_FIREBASE.auth.onAuthStateChanged((user) => {
-          unsub();
-          resolve(user || null);
-        });
-      });
+      console.log("[PredictionsPage] saved OK. going to results:", resultsPath);
+      window.location.href = resultsPath;
+    } catch (err) {
+      console.error("[PredictionsPage] save failed:", err);
+      alert("Unable to save predictions right now. Please try again.");
     }
-
-    if (window.firebase && firebase.auth) {
-      const u = firebase.auth().currentUser;
-      if (u) return Promise.resolve(u);
-
-      return new Promise((resolve) => {
-        const unsub = firebase.auth().onAuthStateChanged((user) => {
-          unsub();
-          resolve(user || null);
-        });
-      });
-    }
-  } catch (_) {}
-
-  return Promise.resolve(null);
-}
-
-
-async function finalizeAndContinue() {
-  const touched = pageFixtures.filter((f) => isSet(userPred[f.id]));
-  if (!touched.length) {
-    alert(".");
-    return;
   }
 
-  let pending = buildServerPayloads(touched);
-
-  // still keep as safety
-  sessionStorage.setItem("pending_predictions", JSON.stringify(pending));
-  sessionStorage.setItem("FBL_leagueKey", leagueKey);
-
-  closeConfirmPrompt();
-
-  const folder = leagueFolderFromKey(leagueKey);
-  const resultsPath = `../${folder}/results.html`;
-
-  console.log("[PredictionsPage] confirm clicked. waiting for auth...");
-
-  const user = await waitForFirebaseUser();
-  if (!user) {
-    console.warn("[PredictionsPage] No firebase user -> redirect signup");
-    window.location.href =
-      "../signup.html?next=" + encodeURIComponent(resultsPath);
-    return;
-  }
-
-  // attach uid for Firestore rules
-  pending = pending.map((p) => (p.uid ? p : { ...p, uid: user.uid }));
-
-  if (
-    !window.FBL_STORE ||
-    typeof window.FBL_STORE.savePredictionsForRound !== "function"
-  ) {
-    console.error("[PredictionsPage] FBL_STORE.savePredictionsForRound missing");
-    alert("Storage not ready. Please refresh.");
-    return;
-  }
-
-  try {
-    console.log(
-      "[PredictionsPage] saving",
-      pending.length,
-      "predictions to Firestore..."
-    );
-
-    await window.FBL_STORE.savePredictionsForRound(
-      leagueKey,
-      roundNum,
-      pending
-    );
-
-    console.log("[PredictionsPage] saved OK. going to results:", resultsPath);
-    window.location.href = resultsPath;
-  } catch (err) {
-    console.error("[PredictionsPage] save failed:", err);
-    alert("Unable to save predictions right now. Please try again.");
-  }
-}
-
-
-
-
-
-
-
-
-
-  // ---- popup wiring (UI unchanged) ----
   function openConfirmPrompt() {
+    if (!overlayEl || !confirmListEl) return;
+
     if (badgeEl) badgeEl.textContent = leagueInfo.name + " Matches";
     if (matchdayTextEl)
       matchdayTextEl.textContent = `${roundNum} of ${totalRounds}`;
 
-    const touched = pageFixtures.filter((f) => isSet(userPred[f.id]));
+    const touched = pageFixtures.filter((f) =>
+      isSet(userPred[String(f.id)])
+    );
     if (!touched.length) {
       alert(".");
       return;
@@ -499,7 +457,7 @@ async function finalizeAndContinue() {
 
     const rows = touched
       .map((f) => {
-        const p = userPred[f.id];
+        const p = userPred[String(f.id)];
         return `
         <div class="gprompt__row">
           <img class="gprompt__logo gprompt__logo--home" />
@@ -514,7 +472,7 @@ async function finalizeAndContinue() {
 
     touched.forEach((f, i) => {
       const r = confirmListEl.querySelectorAll(".gprompt__row")[i];
-      if (!r) return;
+      if (!r || !window.FBL.ensureLogo) return;
       window.FBL.ensureLogo(
         f.home,
         r.querySelector(".gprompt__logo--home")
@@ -529,15 +487,17 @@ async function finalizeAndContinue() {
     overlayEl.setAttribute("aria-hidden", "false");
   }
 
-  const closeConfirmPrompt = () => {
+  function closeConfirmPrompt() {
+    if (!overlayEl) return;
     overlayEl.classList.remove("is-open");
     overlayEl.setAttribute("aria-hidden", "true");
-  };
+  }
 
-  const onDone = (e) => {
+  function onDone(e) {
     e.preventDefault();
     openConfirmPrompt();
-  };
+  }
+
   if (topDoneLink)   topDoneLink.addEventListener("click", onDone);
   if (bottomDoneBtn) bottomDoneBtn.addEventListener("click", onDone);
   if (closeBtn)      closeBtn.addEventListener("click", closeConfirmPrompt);
@@ -548,227 +508,9 @@ async function finalizeAndContinue() {
       finalizeAndContinue();
     });
 
-  // ---- render ----
+  // ------------------------------------------------------------
+  // Initial render + wire clicks
+  // ------------------------------------------------------------
   renderFixtures();
+  wirePlusMinus();
 })();
-
-/* ==== FBL Prediction Number Tests (non-invasive) ==== */
-(function () {
-  // Config
-  const MAX_SCORE = 20; // same ceiling your UI clamp uses
-  const MIN_SCORE = 0;
-
-  // Inject tiny styles for inline feedback (once)
-  (function injectStylesOnce() {
-    if (document.getElementById("fbl-tests-style")) return;
-    const css = `
-      .fbl-input-error { outline: ; border-radius: 6px; }
-      .fbl-err-msg { margin-top:6px; font-size:12px; color:#C4FFF4; }
-      .match-card .fbl-err-msg { margin-left: 4px; }
-    `;
-    const el = document.createElement("style");
-    el.id = "fbl-tests-style";
-    el.textContent = css;
-    document.head.appendChild(el);
-  })();
-
-  // Helpers
-  function parseVal(v) {
-    if (v === "" || v == null) return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-  function clamp(n) {
-    if (n == null) return null;
-    n = Math.trunc(n);
-    if (n < MIN_SCORE) n = MIN_SCORE;
-    if (n > MAX_SCORE) n = MAX_SCORE;
-    return n;
-  }
-  function setErr(input, msg) {
-    clearErr(input);
-    input.classList.add("fbl-input-error");
-    const p = input.closest(".match-card") || input.parentElement;
-    if (!p) return;
-    const m = document.createElement("div");
-    m.className = "fbl-err-msg";
-    m.textContent = msg;
-    const scoreSection = p.querySelector(".score-section") || p;
-    scoreSection.appendChild(m);
-  }
-  function clearErr(node) {
-    const card = node.closest
-      ? node.closest(".match-card") || document
-      : document;
-    card
-      .querySelectorAll(".fbl-input-error")
-      .forEach((el) => el.classList.remove("fbl-input-error"));
-    card
-      .querySelectorAll(".fbl-err-msg")
-      .forEach((el) => el.remove());
-  }
-
-  function validatePair(homeInput, awayInput, { allowEmpty = true } = {}) {
-    const rawH = homeInput.value.trim();
-    const rawA = awayInput.value.trim();
-
-    const hv0 = parseVal(rawH);
-    const av0 = parseVal(rawA);
-
-    if (allowEmpty && hv0 === null && av0 === null) {
-      return { ok: true, hv: null, av: null };
-    }
-
-    if ((hv0 === null) !== (av0 === null)) {
-      return {
-        ok: false,
-        hv: hv0,
-        av: av0,
-        msg: "Enter both scores or leave both blank.",
-      };
-    }
-
-    const hv = clamp(hv0);
-    const av = clamp(av0);
-    if (!Number.isInteger(hv0) || hv0 !== hv) {
-      return {
-        ok: false,
-        hv,
-        av,
-        msg: `Home score must be an integer between ${MIN_SCORE} and ${MAX_SCORE}.`,
-      };
-    }
-    if (!Number.isInteger(av0) || av0 !== av) {
-      return {
-        ok: false,
-        hv,
-        av,
-        msg: `Away score must be an integer between ${MIN_SCORE} and ${MAX_SCORE}.`,
-      };
-    }
-
-    return { ok: true, hv, av };
-  }
-
-  function attachInputSanitizers(root) {
-    root.addEventListener(
-      "input",
-      (e) => {
-        const inp = e.target;
-        if (!(inp instanceof HTMLInputElement)) return;
-        if (
-          !inp.classList.contains("home-val") &&
-          !inp.classList.contains("away-val")
-        )
-          return;
-
-        const digits = (inp.value.match(/\d+/g) || []).join("");
-        const n = clamp(digits === "" ? null : Number(digits));
-        inp.value = n == null ? "" : String(n);
-        clearErr(inp);
-      },
-      true
-    );
-  }
-
-  function attachButtonWatchers(root) {
-    root.addEventListener(
-      "click",
-      (e) => {
-        const btn = e.target.closest("button");
-        if (!btn) return;
-        if (
-          !btn.classList.contains("plus") &&
-          !btn.classList.contains("minus")
-        )
-          return;
-        const card = btn.closest(".match-card");
-        if (!card) return;
-
-        requestAnimationFrame(() => {
-          const h = card.querySelector(".home-val");
-          const a = card.querySelector(".away-val");
-          if (!h || !a) return;
-
-          clearErr(h);
-          const res = validatePair(h, a, { allowEmpty: true });
-          if (!res.ok) {
-            setErr(h, res.msg || "Invalid score.");
-            if (res.hv != null) h.value = String(res.hv);
-            if (res.av != null) a.value = String(res.av);
-          }
-        });
-      },
-      true
-    );
-  }
-
-  function attachConfirmGate() {
-    document.addEventListener(
-      "click",
-      (e) => {
-        const btn = e.target.closest("#gprompt-confirm");
-        if (!btn) return;
-
-        const cards = document.querySelectorAll(".match-card");
-        let firstErr = null;
-
-        cards.forEach((card) => {
-          const h = card.querySelector(".home-val");
-          const a = card.querySelector(".away-val");
-          if (!h || !a) return;
-
-          const res = validatePair(h, a, { allowEmpty: true });
-          clearErr(h);
-          if (!res.ok) {
-            if (!firstErr) firstErr = { card, h, msg: res.msg };
-            setErr(h, res.msg || "Invalid score.");
-          } else {
-            if (res.hv != null) h.value = String(res.hv);
-            if (res.av != null) a.value = String(res.av);
-          }
-        });
-
-        if (firstErr) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          firstErr.h.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
-      },
-      true
-    );
-  }
-
-  function bootIfPresent() {
-    const list = document.getElementById("predictions-list");
-    if (!list) return;
-    attachInputSanitizers(document);
-    attachButtonWatchers(document);
-    attachConfirmGate();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", bootIfPresent);
-  } else {
-    bootIfPresent();
-  }
-
-  window.FBL_TESTS = {
-    validateCard(cardEl) {
-      const h = cardEl.querySelector(".home-val");
-      const a = cardEl.querySelector(".away-val");
-      if (!h || !a) return { ok: true };
-      clearErr(h);
-      const r = validatePair(h, a, { allowEmpty: true });
-      if (!r.ok) setErr(h, r.msg || "Invalid score.");
-      return r;
-    },
-  };
-})();
-
-
-
-

@@ -165,9 +165,6 @@ nav.nav .nav-item.nav-active::after {
   font-weight: 400;
 }
 
-.season-title .back-arrow {
-  font-size: 19px;
-}
 
 /* User Info */
 .user-info {
@@ -185,18 +182,50 @@ nav.nav .nav-item.nav-active::after {
   font-weight: 500;
 }
 
-/* Matches Section */
-.matches {
-  padding: 0 15px;
-}
 
-.matches-header {
+/* Header layout on predictions page */
+ .matches-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 15px 0;
-  font-weight: 600;
+  padding: 8px 12px;
 }
+
+/* Left side: back arrow + title */
+.matches-header .left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Back arrow icon (replace URL with your real file if needed) */
+.back-arrow {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-image: url("../img/black-arrow-left.png"); /* <= your arrow image */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 25px 25px;
+  text-decoration: none;
+
+  /* hide the "<" text but keep link accessible */
+  font-size: 0;
+}
+
+/* Title */
+ .matches-header h2 {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+
+
+
+
+
+
 
 /* Match Card */
 .match-card {
@@ -210,12 +239,14 @@ nav.nav .nav-item.nav-active::after {
 .match-header {
   background: #05a081;
   color: white;
-  padding: 4px 10px;
+  padding: 4px 20px;
   border-radius: 10px;
   display: inline-block;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 15px;
 }
+
+
 
 .match-time {
   font-size: 13px;
@@ -289,3 +320,84 @@ nav.nav .nav-item.nav-active::after {
   font-weight: 500;
   font-size: 13px;
 }
+
+
+
+:root {
+  --fbl-teal: #00B894;
+}
+
+/* wrapper for <icon> 14 <icon> */
+.page-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* base style for both arrow buttons */
+.page-controls .arrow {
+  width: 30px;                 /* round clickable area */
+  height: 30px;
+  padding: 0;
+  margin: 0 6px;               /* small gap from the number */
+  border: none;
+  border-radius: 999px;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px 18px;  /* icon size */
+  cursor: pointer;
+
+  /* hide the text "<" and ">" but keep them for accessibility */
+  font-size: 0;
+}
+
+/* left arrow icon */
+#prev-day {
+  background-image: url("../img/arrow-left-green.png");
+}
+
+/* right arrow icon */
+#next-day {
+  background-image: url("../img/arrow-right-green.png");
+}
+
+/* hover / focus: light green halo */
+.page-controls .arrow:hover:not(:disabled),
+.page-controls .arrow:focus-visible:not(:disabled) {
+  background-color: rgba(0, 184, 148, 0.10);
+  outline: none;
+}
+
+/* click: slightly lighter + pressed */
+.page-controls .arrow:active:not(:disabled) {
+  background-color: rgba(0, 184, 148, 0.20);
+  filter: brightness(1.1);     /* icon looks a bit lighter */
+  transform: translateY(1px);
+}
+
+/* disabled state, if you ever disable at edges */
+.page-controls .arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background-color: transparent;
+  filter: none;
+  transform: none;
+}
+
+/* matchday number in the middle */
+#day-number {
+  display: inline-block;
+  margin: 0 2px;
+  min-width: 20px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333333;
+}
+
+
+
+
+
+
