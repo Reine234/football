@@ -10,7 +10,7 @@ body {
 /* Top bar */
 .topbar {
   background-color: #00c49a;
-  color: white;
+  color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -138,7 +138,7 @@ nav.nav .nav-item.nav-active::after {
   outline: none;
   border-radius: 988px;
   padding: 6px 16px;
-  background-color: #FFF6E6;        /* very light orange */
+  background-color: #fcf8f2;        /* very light orange */
   color: #000000;
   font-size: 13px;
   font-weight: 500;
@@ -199,7 +199,7 @@ nav.nav .nav-item.nav-active::after {
     opacity 0.15s ease;
     
   padding: 0;             /* remove extra padding */
-  margin: 0 1px;          /* ⟵ small manual space to the number */
+  margin: 0 3px;          /* ⟵ small manual space to the number */
   border-radius: 999px;
 }
 
