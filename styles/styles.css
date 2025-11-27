@@ -125,8 +125,10 @@ nav.nav .nav-item.nav-active::after {
   background: #f2c94c;
 }
 
-
-
+.predictions{
+     width: 97%;
+  margin: 0 auto;
+}
 .arrow2 {
   border: none;
   background: transparent;
@@ -147,7 +149,9 @@ nav.nav .nav-item.nav-active::after {
   margin: 0 8px;          /* ⟵ small manual space to the number */
   border-radius: 999px;
 }
-
+.contain{
+  width: 100%;
+}
 /* hover / click = slightly lighter green */
 .contain .arrow2:hover:not(:disabled) {
   background-color: rgba(0, 184, 148, 0.08);
@@ -177,6 +181,7 @@ nav.nav .nav-item.nav-active::after {
    display: flex;
   justify-content: space-between; /* pushes Matches left, Done right */
   align-items: center;
+  gap: 8px;
 
 }
 /* Matches */
@@ -195,7 +200,8 @@ nav.nav .nav-item.nav-active::after {
   display: flex;
   justify-content: space-between; /* pushes Matches left, Done right */
   align-items: center; /* vertically aligns them */
-
+  
+  margin-bottom: 15px;
 
 }
 
@@ -218,12 +224,15 @@ nav.nav .nav-item.nav-active::after {
 .subtitle {
   font-size: 1rem;
   font-weight: 400; /* normal weight for the rest of the text */
-  margin: 0;
+ 
   Font: Rubik;
-
+  
 Size: 16px;
 
 line-height:24px;
+ margin: 0 0 10px 0;
+    font-weight: bold;
+  
 }
 
 .subtitle .bold {
@@ -276,6 +285,7 @@ line-height:24px;
   font-weight: bold;
   font-size: 14px;
   margin-top: 10px;
+
 }
 
 .score-inputs {
@@ -372,6 +382,8 @@ html,body{opacity:1;visibility:visible}
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  gap: 8px;
 }
 
 /* base style for both arrow buttons (second set) */

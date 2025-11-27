@@ -1,6 +1,3 @@
-
-
-
 // /scripts/resultsPage.js
 (function () {
   if (window.__FBL_RESULTS_INITED__) return;
@@ -29,26 +26,30 @@
   }
   const container = root;
 
-  // ---------- LEAGUE (EXPLICIT) ----------
-  function resolveLeagueKey() {
-    const explicit = (window.FBL_RESULTS_LEAGUE_KEY || "").toUpperCase();
-    if (
-      explicit &&
-      ["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "LIGUE1"].includes(explicit)
-    ) {
-      sessionStorage.setItem("FBL_leagueKey", explicit);
-      return explicit;
-    }
 
-    // fallback: from path or stored key (just in case)
+
+    // ---------- LEAGUE (from URL / stored) ----------
+  function resolveLeagueKey() {
     const path = location.pathname.toLowerCase();
+
+    // decide purely from the URL
     if (path.includes("bundes")) return "BUNDESLIGA";
     if (path.includes("laliga") || path.includes("la-liga")) return "LALIGA";
     if (path.includes("ligue1") || path.includes("ligue-1")) return "LIGUE1";
+    if (path.includes("premier")) return "PREMIER_LEAGUE";
+
+    // fallback to whatever was stored last
     const stored = (sessionStorage.getItem("FBL_leagueKey") || "").toUpperCase();
-    return stored || "PREMIER_LEAGUE";
+    if (["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "LIGUE1"].includes(stored)) {
+      return stored;
+    }
+
+    // default if nothing else matches
+    return "PREMIER_LEAGUE";
   }
 
+  
+  
   const leagueKey = resolveLeagueKey();
   const leagueInfo = window.FBL.LEAGUE_MAP[leagueKey] || {
     name: leagueKey,
@@ -69,13 +70,12 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])
     );
 
+  // We want: "2:00pm, Sat 26th"
   function formatKickoff(iso) {
-    if (window.FBL && typeof window.FBL.formatKickoffLocal === "function") {
-      return window.FBL.formatKickoffLocal(iso);
-    }
     if (!iso) return "";
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "";
+
     let h = d.getHours();
     const m = String(d.getMinutes()).padStart(2, "0");
     const ampm = h >= 12 ? "pm" : "am";
@@ -84,11 +84,6 @@
 
     const wdNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const wd = wdNames[d.getDay()];
-    const mnNames = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
-    const mn = mnNames[d.getMonth()];
     const day = d.getDate();
     const suffix =
       day === 1 || day === 21 || day === 31
@@ -99,7 +94,7 @@
         ? "rd"
         : "th";
 
-    return `${h}:${m}${ampm}, ${wd} ${day}${suffix} ${mn}`;
+    return `${h}:${m}${ampm}, ${wd} ${day}${suffix}`;
   }
 
   function computePoints(predH, predA, finH, finA) {
@@ -201,11 +196,26 @@
 
   function updateMatchdayHeader(matchdayStr) {
     const headerEl = document.querySelector(".matches-header h3");
-    if (!headerEl) return;
-    const md = matchdayStr != null && matchdayStr !== "" ? matchdayStr : "?";
-    headerEl.textContent = `Matches - Matchday ${md} of ${esc(
-      String(leagueInfo.totalRounds || "?")
-    )}`;
+    const dayNumSpan = document.getElementById("day-number");
+
+    const md =
+      matchdayStr != null && matchdayStr !== ""
+        ? String(matchdayStr)
+        : "?";
+
+    if (headerEl) {
+      headerEl.textContent = `Matches - Matchday ${md} of ${esc(
+        String(leagueInfo.totalRounds || "?")
+      )}`;
+    }
+
+    if (dayNumSpan) {
+      if (md === "?") {
+        dayNumSpan.textContent = "";
+      } else {
+        dayNumSpan.textContent = md;
+      }
+    }
   }
 
   // ---------- CARD RENDER ----------
@@ -252,8 +262,9 @@
     const html = `
       <div class="match-card" data-fixture="${esc(String(pred.fixtureId))}">
         <div class="match-header">MATCH ${idx}</div>
-        <p class="match-time">${esc(niceTime)}</p>
 
+        <p class="match-time">${esc(niceTime)}</p>
+        <hr class="hr" />
         <div class="teams">
           <div class="team home-team">
             <img class="team-logo home-logo" alt="${esc(homeName)} logo" />
@@ -312,16 +323,17 @@
     if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
   }
 
-   // ---------- MAIN ----------
+  // ---------- MAIN ----------
   async function renderResultsPage() {
     // auth is ready here (boot calls after onAuthStateChanged)
     const user = firebase.auth().currentUser;
 
     const displayName =
-      (user && (user.displayName || (user.email ? user.email.split("@")[0] : ""))) ||
+      (user &&
+        (user.displayName ||
+          (user.email ? user.email.split("@")[0] : ""))) ||
       "Guest";
 
-    // build/update header (your existing helper)
     const totalSpan = ensureUserHeader(displayName);
 
     // get fixtures for THIS league
@@ -330,20 +342,27 @@
     // load predictions for THIS league
     let preds = [];
     try {
-      if (window.FBL_STORE && typeof window.FBL_STORE.loadPredictionsForLeague === "function") {
+      if (
+        window.FBL_STORE &&
+        typeof window.FBL_STORE.loadPredictionsForLeague === "function"
+      ) {
         preds = await window.FBL_STORE.loadPredictionsForLeague(leagueKey);
       } else {
         // fallback (in case store file isn't loaded on results page)
         const uid = user && user.uid;
         if (uid && firebase.firestore) {
-          const snap = await firebase.firestore()
+          const snap = await firebase
+            .firestore()
             .collection("predictions")
             .where("uid", "==", uid)
             .where("league", "==", leagueKey)
             .get();
 
           snap.forEach((doc) => preds.push(doc.data()));
-          preds.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+          preds.sort(
+            (a, b) =>
+              new Date(a.timestamp || 0) - new Date(b.timestamp || 0)
+          );
         }
       }
     } catch (e) {
@@ -358,7 +377,9 @@
     });
 
     if (!preds.length) {
-      container.innerHTML = `<p style="padding:12px;">No predictions for ${esc(leagueInfo.name)} yet.</p>`;
+      container.innerHTML = `<p style="padding:12px;">No predictions for ${esc(
+        leagueInfo.name
+      )} yet.</p>`;
       if (totalSpan) totalSpan.textContent = "0";
       updateMatchdayHeader("?");
       return;
@@ -382,11 +403,14 @@
       })
       .join("");
 
-    container.innerHTML = cardsHtml || `<p style="padding:12px;">No results yet.</p>`;
+    container.innerHTML =
+      cardsHtml || `<p style="padding:12px;">No results yet.</p>`;
 
     // attach logos after DOM is filled
     preds.forEach((pred) => {
-      const sel = `.match-card[data-fixture="${esc(String(pred.fixtureId))}"]`;
+      const sel = `.match-card[data-fixture="${CSS.escape(
+        String(pred.fixtureId)
+      )}"]`;
       const cardEl = container.querySelector(sel);
       if (!cardEl) return;
       const fixture = fixturesById[String(pred.fixtureId)] || null;

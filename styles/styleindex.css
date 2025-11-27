@@ -322,11 +322,7 @@ nav.nav .nav-item.nav-active::after {
   background-color: #0056b3; /* darker blue when hovered */
 }
 
-
-
-
-
-
+ 
 
 :root {
   --fbl-teal: #00B894;
@@ -341,7 +337,7 @@ nav.nav .nav-item.nav-active::after {
 
 /* base style for both arrow buttons */
 .page-controls .arrow {
-  width: 30px;                 /* round clickable area */
+  width: 18px;                 /* round clickable area */
   height: 30px;
   padding: 0;
   margin: 0 6px;               /* small gap from the number */
