@@ -264,7 +264,12 @@ line-height:24px;
 .team {
   display: flex;
   flex-direction: column; /* Stack image above text */
-  align-items: center;    /* Center image and text horizontally */
+  align-items: center;
+     white-space: normal;      /* allow wrapping (undo nowrap if you had it) */
+  word-break: break-word;   /* break very long words if needed */
+  hyphens: auto;            /* optional: add hyphen when breaking */
+
+     /* Center image and text horizontally */
 }
 
 .team img {

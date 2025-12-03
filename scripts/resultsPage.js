@@ -8,9 +8,9 @@
   window.FBL.LEAGUE_MAP =
     window.FBL.LEAGUE_MAP || {
       PREMIER_LEAGUE: { name: "Premier League", totalRounds: 38 },
-      BUNDESLIGA: { name: "Bundesliga", totalRounds: 34 },
-      LALIGA: { name: "La Liga", totalRounds: 38 },
-      LIGUE1: { name: "Ligue 1", totalRounds: 34 },
+      BUNDESLIGA:     { name: "Bundesliga",     totalRounds: 34 },
+      LALIGA:         { name: "La Liga",        totalRounds: 38 },
+      AFCON:          { name: "Afcon",          totalRounds: 6 },
     };
 
   // ---------- ROOT ----------
@@ -26,37 +26,36 @@
   }
   const container = root;
 
-
-
-    // ---------- LEAGUE (from URL / stored) ----------
+  // ---------- LEAGUE (from global / URL / stored) ----------
   function resolveLeagueKey() {
-    const path = location.pathname.toLowerCase();
+    // 1) explicit override from page (your AFCON results.html sets this)
+    const forced = (window.FBL_RESULTS_LEAGUE_KEY || "").toUpperCase();
+    if (forced && window.FBL.LEAGUE_MAP[forced]) return forced;
 
-    // decide purely from the URL
+    // 2) detect from URL path
+    const path = location.pathname.toLowerCase();
     if (path.includes("bundes")) return "BUNDESLIGA";
     if (path.includes("laliga") || path.includes("la-liga")) return "LALIGA";
-    if (path.includes("ligue1") || path.includes("ligue-1")) return "LIGUE1";
+    if (path.includes("afcon")) return "AFCON";
     if (path.includes("premier")) return "PREMIER_LEAGUE";
 
-    // fallback to whatever was stored last
+    // 3) fallback to whatever was stored last
     const stored = (sessionStorage.getItem("FBL_leagueKey") || "").toUpperCase();
-    if (["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "LIGUE1"].includes(stored)) {
+    if (["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "AFCON"].includes(stored)) {
       return stored;
     }
 
-    // default if nothing else matches
+    // 4) default if nothing else matches
     return "PREMIER_LEAGUE";
   }
 
-  
-  
-  const leagueKey = resolveLeagueKey();
+  const leagueKey  = resolveLeagueKey();
   const leagueInfo = window.FBL.LEAGUE_MAP[leagueKey] || {
     name: leagueKey,
     totalRounds: "?",
   };
 
-  // ---------- API BASE ----------
+  // ---------- API BASE (for your PHP endpoints, unchanged) ----------
   const apiBase = (
     window.FBL_API_BASE ||
     (window.FBL_CFG && window.FBL_CFG.API_BASE) ||
@@ -113,6 +112,53 @@
     return 0;
   }
 
+  // ---------- NORMALIZE / MATCH FOR AFCON (to join TSDB fixtures) ----------
+  function normalizeName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // strip accents
+      .replace(/[^a-z0-9]+/g, "")
+      .trim();
+  }
+
+  function findAfconFixture(pred, fixturesList) {
+    if (!fixturesList || !fixturesList.length) return null;
+
+    const predHome = normalizeName(pred.home && pred.home.name);
+    const predAway = normalizeName(pred.away && pred.away.name);
+    if (!predHome || !predAway) return null;
+
+    // 1) same home/away
+    let candidates = fixturesList.filter((f) => {
+      const fh = normalizeName(f.home && f.home.name);
+      const fa = normalizeName(f.away && f.away.name);
+      return fh === predHome && fa === predAway;
+    });
+
+    if (!candidates.length) return null;
+    if (candidates.length === 1) return candidates[0];
+
+    // 2) if more than one, pick closest by date to kickoff
+    const target = Date.parse(pred.kickoff || pred.timestamp || 0);
+    if (!Number.isFinite(target)) return candidates[0];
+
+    let best = candidates[0];
+    let bestDiff = Infinity;
+
+    candidates.forEach((f) => {
+      const t = Date.parse(f.utcDate || f.timestamp || 0);
+      if (!Number.isFinite(t)) return;
+      const diff = Math.abs(t - target);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = f;
+      }
+    });
+
+    return best;
+  }
+
   // ---------- BACKEND HELPERS ----------
   async function getSessionUser() {
     try {
@@ -144,20 +190,21 @@
     }
   }
 
+  // 👉 now returns both: { byId, list } so AFCON can fuzzy-join
   async function fetchFixturesForCurrentLeague() {
     if (!window.FBL || typeof window.FBL.fetchFixturesForLeague !== "function") {
-      return {};
+      return { byId: {}, list: [] };
     }
     try {
-      const all = await window.FBL.fetchFixturesForLeague(leagueKey);
+      const all = await window.FBL.fetchFixturesForLeague(leagueKey); // TSDB for AFCON
       const byId = {};
       (all || []).forEach((f) => {
         byId[String(f.id)] = f;
       });
-      return byId;
+      return { byId, list: all || [] };
     } catch (e) {
       console.warn("resultsPage: fetchFixturesForLeague failed", e);
-      return {};
+      return { byId: {}, list: [] };
     }
   }
 
@@ -229,7 +276,12 @@
       (pred.away && pred.away.name) ||
       "Away";
 
-    const kickoffIso = (fixture && fixture.utcDate) || pred.timestamp || "";
+    // 👉 use kickoff saved with prediction FIRST, then fixture, then timestamp
+    const kickoffIso =
+      pred.kickoff ||
+      (fixture && fixture.utcDate) ||
+      pred.timestamp ||
+      "";
     const niceTime = formatKickoff(kickoffIso);
 
     const predHomeVal =
@@ -308,9 +360,24 @@
   }
 
   function attachLogos(cardEl, pred, fixture) {
-    if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
     const homeLogoEl = cardEl.querySelector(".home-logo");
     const awayLogoEl = cardEl.querySelector(".away-logo");
+
+    // AFCON: prefer logos stored with prediction/fixture (from your static groups)
+    if (leagueKey === "AFCON") {
+      const homeLogo =
+        (fixture && fixture.home && fixture.home.logo) ||
+        (pred.home && pred.home.logo);
+      const awayLogo =
+        (fixture && fixture.away && fixture.away.logo) ||
+        (pred.away && pred.away.logo);
+
+      if (homeLogoEl && homeLogo) homeLogoEl.src = homeLogo;
+      if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
+    }
+
+    // Fallback / other leagues: use global ensureLogo helper
+    if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
 
     const homeTeam =
       (fixture && fixture.home) ||
@@ -336,8 +403,9 @@
 
     const totalSpan = ensureUserHeader(displayName);
 
-    // get fixtures for THIS league
-    const fixturesById = await fetchFixturesForCurrentLeague();
+    // get fixtures for THIS league (TSDB for AFCON)
+    const { byId: fixturesById, list: fixturesList } =
+      await fetchFixturesForCurrentLeague();
 
     // load predictions for THIS league
     let preds = [];
@@ -396,7 +464,14 @@
     let totalPts = 0;
     const cardsHtml = preds
       .map((pred, i) => {
-        const fixture = fixturesById[String(pred.fixtureId)] || null;
+        // 1) normal join by fixtureId
+        let fixture = fixturesById[String(pred.fixtureId)] || null;
+
+        // 2) AFCON: if no direct match, try fuzzy by team names using TSDB data
+        if (!fixture && leagueKey === "AFCON") {
+          fixture = findAfconFixture(pred, fixturesList);
+        }
+
         const { html, pts } = buildCardHTML(i + 1, pred, fixture);
         if (pts != null) totalPts += pts;
         return html;
@@ -413,7 +488,12 @@
       )}"]`;
       const cardEl = container.querySelector(sel);
       if (!cardEl) return;
-      const fixture = fixturesById[String(pred.fixtureId)] || null;
+
+      let fixture = fixturesById[String(pred.fixtureId)] || null;
+      if (!fixture && leagueKey === "AFCON") {
+        fixture = findAfconFixture(pred, fixturesList);
+      }
+
       attachLogos(cardEl, pred, fixture);
     });
 

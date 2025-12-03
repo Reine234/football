@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- AFCON league meta -->
+  <meta name="league" content="AFCON" />
+
+  <title>FansBetLiga — AFCON Predictions</title>
+
+  <link rel="stylesheet" href="/styles/styles.css" />
+</head>
+<body>
+  <header class="topbar2">
+    <h1 class="logo2">FANSBETLIGA</h1>
+    <a href="#" class="about2">About</a>
+  </header>
+
+  <!-- same bottom nav as other leagues -->
+  <nav class="nav">
+    <div class="nav-item"><img src="/img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item"><img src="/img/results.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="/img/winners.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="/img/rules.png" alt="Rules"><span>Rules</span></div>
+  </nav>
+
+  <section class="predictions">
+    <div class="matches-header">
+      <div class="left">
+        <a href="index.html" class="back-arrow">&lt;</a>
+        <h2>Matchs</h2>
+      </div>
+      <a href="" id="done" class="done">Done</a>
+    </div>
+
+    <div class="contain">
+      <!-- initial text; predictionsPage.js will overwrite with AFCON name + round -->
+      <h1 class="subtitle">
+        <span class="bold">AFCON Group Matches</span> - Matchday 1 of 3
+      </h1>
+      <div class="page-controls2">
+        <button id="prev-day" class="arrow2">&lt;</button>
+        <span id="day-number2">1</span>
+        <button id="next-day" class="arrow2">&gt;</button>
+      </div>
+    </div>
+
+    <!-- match cards injected here by predictionsPage.js using FBL.loadSelectedRound -->
+    <div id="predictions-list"></div>
+  </section>
+  </main>
+
+  <!-- Confirmation modal (same design, AFCON text) -->
+  <div id="gprompt-overlay" aria-hidden="true">
+    <div class="gprompt__backdrop"></div>
+    <div class="gprompt__dialog" role="dialog" aria-modal="true" aria-labelledby="gprompt-title">
+      <button id="gprompt-close" class="gprompt__x" type="button" aria-label="Close">×</button>
+      <h3 id="gprompt-title" class="gprompt__title">
+        Are you sure you want to submit these scores? Please confirm that all the information is correct.
+      </h3>
+      <div class="gprompt__subtitle">
+        <span class="gprompt__badge">AFCON Matches</span>
+        – Matchday <span id="gprompt-matchday">1 of 3</span>
+      </div>
+      <div id="confirmList" class="gprompt__list" role="list"></div>
+      <div class="gprompt__actions">
+        <button id="gprompt-cancel" class="gprompt__btn" type="button">Cancel</button>
+        <button id="gprompt-confirm" class="gprompt__btn gprompt__btn--primary" type="button">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Firebase SDKs (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="../scripts/firebase-init.js"></script>
+  <script src="../scripts/predictionsStore.js"></script>
+  <script src="../scripts/auth.js"></script>
+
+  <!-- existing global config + API + predictions logic -->
+  <script src="../scripts/config.js"></script>
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/predictionsPage.js"></script>
+
+  <!-- NAV + league detection scripts (kept same so behaviour matches other leagues) -->
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const path = window.location.pathname.toLowerCase();
+    let league = "";
+    if (path.includes("laliga")) league = "laliga";
+    else if (path.includes("bundesliga")) league = "bundesliga";
+    else if (path.includes("premier")) league = "premier";
+    else if (path.includes("afcon")) league = "afcon";
+
+    // ====== NAVBAR LINKS (if you ever use .navbar) ======
+    const navItems = document.querySelectorAll(".navbar .nav-item");
+    navItems.forEach(item => {
+      const label = item.querySelector("p")?.textContent.trim().toLowerCase() || "";
+
+      item.addEventListener("click", () => {
+        switch (label) {
+          case "home":
+            window.location.href = `/${league}/index.html`;
+            break;
+          case "results":
+            window.location.href = `/${league}/results.html`;
+            break;
+          case "winners":
+            alert("🏆 Winners page coming soon!");
+            break;
+          case "rules":
+            alert("⚙️ Rules page coming soon!");
+            break;
+        }
+      });
+    });
+
+    // ====== LEAGUE TABS (if present) ======
+    const tabs = document.querySelectorAll(".league-tabs .tab");
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const target = tab.getAttribute("data-href");
+        if (target) window.location.href = target;
+      });
+    });
+
+    // ====== HIGHLIGHT ACTIVE LEAGUE TAB ======
+    tabs.forEach(tab => {
+      const href = (tab.getAttribute("data-href") || "").toLowerCase();
+      if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
+      else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
+      else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+      else if (path.includes("afcon") && href.includes("afcon")) tab.classList.add("active");
+      else tab.classList.remove("active");
+    });
+  });
+  </script>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const nav = document.querySelector('nav.nav');
+    if (!nav) return;
+
+    const items = Array.from(nav.querySelectorAll('.nav-item'));
+
+    function setActiveByLabel(label) {
+      const targetLabel = label.toLowerCase();
+      items.forEach(i => i.classList.remove('nav-active'));
+
+      const found = items.find(i => {
+        const text = (i.querySelector('span')?.textContent || "").trim().toLowerCase();
+        return text === targetLabel;
+      });
+
+      if (found) {
+        found.classList.add('nav-active');
+      }
+    }
+
+    const path = window.location.pathname.toLowerCase();
+
+    if (path.includes('results')) {
+      setActiveByLabel('results');
+    } else if (path.includes('winners')) {
+      setActiveByLabel('winners');
+    } else if (path.includes('rules')) {
+      setActiveByLabel('rules');
+    } else {
+      setActiveByLabel('home');
+    }
+
+    nav.addEventListener('click', function (e) {
+      const item = e.target.closest('.nav-item');
+      if (!item || !nav.contains(item)) return;
+
+      items.forEach(i => i.classList.remove('nav-active'));
+      item.classList.add('nav-active');
+    });
+  });
+  </script>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Helper: detect the current league folder from the URL path
+    function currentLeagueFolder() {
+      const parts = location.pathname.split('/').filter(Boolean);
+      const i = parts.findIndex(p => ['premier','bundesliga','laliga','afcon'].includes(p));
+      return i >= 0 ? parts[i] : 'premier';
+    }
+
+    const leagueFolder = currentLeagueFolder();
+
+    // Top nav buttons
+    document.querySelectorAll(".nav-item").forEach(item => {
+      const label = item.querySelector("span")?.textContent.trim().toLowerCase();
+      item.addEventListener("click", () => {
+        if (label === "home")     location.href = "index.html";
+        if (label === "results")  location.href = "results.html";
+        if (label === "winners")  alert("Winners page coming soon!");
+        if (label === "rules")    alert("Rules page coming soon!");
+      });
+    });
+
+    // League tabs (if present)
+    document.querySelectorAll(".league-tabs .tab").forEach(tab => {
+      const target = tab.getAttribute("data-href");
+      if (target) {
+        tab.addEventListener("click", () => location.href = target);
+      }
+    });
+
+    // Bet button – ALWAYS within the current folder (if you add it here later)
+    const betButton = document.getElementById("bet-button-main");
+    if (betButton) {
+      betButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        location.href = "predictions.html";
+      });
+    }
+  });
+  </script>
+
+  <script>
+  // League tabs active styling (if tabs exist)
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.league-tabs .tab');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const href = tab.dataset.href;
+        if (href) {
+          window.location.href = href;
+        }
+      });
+    });
+  });
+  </script>
+
+</body>
+</html>

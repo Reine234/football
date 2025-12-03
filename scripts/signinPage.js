@@ -71,8 +71,8 @@
             ? "laliga"
             : leagueKey === "BUNDESLIGA"
             ? "bundesliga"
-            : leagueKey === "LIGUE1"
-            ? "ligue1"
+            : leagueKey === "AFCON"
+            ? "afcon"
             : "premier";
 
         location.href = `../${folder}/results.html`;

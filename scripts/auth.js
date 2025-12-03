@@ -90,7 +90,7 @@
   }
 
   function leagueFolderFromKey(key) {
-    if (key === "LIGUE1") return "ligue1";
+    if (key === "AFCON") return "afcon";
     if (key === "LALIGA") return "laliga";
     if (key === "BUNDESLIGA") return "bundesliga";
     return "premier";

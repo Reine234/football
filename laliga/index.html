@@ -40,6 +40,7 @@
     <button class="tab" data-href="/laliga/index.html">La Liga</button>
     <button class="tab" data-href="/bundesliga/index.html">Bundesliga</button>
     <button class="tab" data-href="/premier/index.html">Premier League</button>
+      <button class="tab" data-href="/afcon/index.html">Afcon</button>
    
   </div>
 
@@ -113,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
     else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
     else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else if (path.includes("afcon") && href.includes("afcon")) tab.classList.add("active");
     else tab.classList.remove("active");
   });
 });
@@ -123,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Helper: detect the current league folder from the URL path
   function currentLeagueFolder() {
     const parts = location.pathname.split('/').filter(Boolean);
-    const i = parts.findIndex(p => ['premier','bundesliga','laliga'].includes(p));
+    const i = parts.findIndex(p => ['premier','bundesliga','laliga','afcon'].includes(p));
     return i >= 0 ? parts[i] : 'premier';
   }
 

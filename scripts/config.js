@@ -20,6 +20,32 @@
     // window.FBL_CFG.APP_BASE = "https://fansbetliga.com";
   }
 
+
+
+  window.FBL = window.FBL || {};
+window.FBL.LEAGUE_MAP = window.FBL.LEAGUE_MAP || {
+  PREMIER_LEAGUE: {
+    id: "PL",                // <- football-data code
+    name: "Premier League",
+    totalRounds: 38,
+  },
+  BUNDESLIGA: {
+    id: "BL1",               // <- football-data code
+    name: "Bundesliga",
+    totalRounds: 34,
+  },
+  LALIGA: {
+    id: "PD",                // <- football-data code
+    name: "La Liga",
+    totalRounds: 38,
+  },
+  AFCON: {
+    id: null,                // AFCON uses SportsDB / static, not the AF proxy
+    name: "Afcon",
+    totalRounds: 3,          // or 6, depending on how you count
+  },
+};
+
   // ===== API-Football / fixtures metadata =====
   // This is what `tryFetchAF` in api.js is expecting:
   //   window.FBL_CFG.API_FOOTBALL[leagueKey].SEASON
@@ -39,6 +65,11 @@
     },
     LIGUE1: {
       LEAGUE_ID: 61,   // Ligue 1
+      SEASON:   2025,
+    },
+
+    AFCON: {
+      LEAGUE_ID: 8,   // AFCON
       SEASON:   2025,
     },
   };

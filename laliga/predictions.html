@@ -85,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (path.includes("laliga")) league = "laliga";
   else if (path.includes("bundesliga")) league = "bundesliga";
   else if (path.includes("premier")) league = "premier";
+  else if (path.includes("afcon")) league = "afcon";
 
   // ====== NAVBAR LINKS ======
   const navItems = document.querySelectorAll(".navbar .nav-item");
@@ -124,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
     else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
     else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else if (path.includes("afcon") && href.includes("afcon")) tab.classList.add("active");
     else tab.classList.remove("active");
   });
 });
@@ -186,6 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (path.includes("laliga")) league = "laliga";
   else if (path.includes("bundesliga")) league = "bundesliga";
   else if (path.includes("premier")) league = "premier";
+  else if (path.includes("afcon")) league = "afcon";
 
   // Handle top nav clicks
   const navItems = document.querySelectorAll(".nav-item");
@@ -223,6 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
     else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
     else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
+    else if (path.includes("afcon") && href.includes("afcon")) tab.classList.add("active");
     else tab.classList.remove("active");
   });
 });
@@ -248,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Helper: detect the current league folder from the URL path
   function currentLeagueFolder() {
     const parts = location.pathname.split('/').filter(Boolean);
-    const i = parts.findIndex(p => ['premier','bundesliga','laliga'].includes(p));
+    const i = parts.findIndex(p => ['premier','bundesliga','laliga','afcon'].includes(p));
     return i >= 0 ? parts[i] : 'premier';
   }
 

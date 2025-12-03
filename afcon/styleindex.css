@@ -112,11 +112,17 @@ nav.nav .nav-item.nav-active::after {
 .league-tabs {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 5px;
   margin: 15px;
  
 }
 
+
+.centralized {
+  max-width: px;
+  margin: 0 auto;
+  padding: 0 px;
+}
 .tab {
    
   border: none;
@@ -423,3 +429,23 @@ nav.nav .nav-item.nav-active::after {
 }
 
 
+.tabs-container {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  gap: 10px; /* space between tabs */
+  scrollbar-width: none; /* Hide scrollbar (Firefox) */
+}
+
+.tabs-container::-webkit-scrollbar {
+  display: none; /* Hide scrollbar (Chrome/Safari) */
+}
+
+.tab-item {
+  flex: 0 0 auto;    /* Prevent tabs from shrinking */
+  padding: 10px 16px;
+  background: #eee;
+  border-radius: 8px;
+  cursor: pointer;
+}

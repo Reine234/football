@@ -6,7 +6,7 @@
     PREMIER_LEAGUE: { name: "Premier League", totalRounds: 38 },
     BUNDESLIGA:     { name: "Bundesliga",     totalRounds: 34 },
     LALIGA:         { name: "La Liga",        totalRounds: 38 },
-    LIGUE1:         { name: "Ligue 1",        totalRounds: 34 },
+    AFCON:          { name: "Afcon",          totalRounds: 6 },
   };
 
   // ------------------------------------------------------------
@@ -106,32 +106,117 @@
   })();
 
   // ------------------------------------------------------------
-  // League context
+  // League context (supports AFCON static flow + existing flow)
   // ------------------------------------------------------------
-  const selected  = window.FBL.loadSelectedRound && window.FBL.loadSelectedRound();
-  const leagueKey = sessionStorage.getItem("FBL_leagueKey");
-
-  if (!selected || !leagueKey || !window.FBL.LEAGUE_MAP[leagueKey]) {
-    console.error("No selected round / league in sessionStorage");
-    if (leagueKey && window.FBL.LEAGUE_MAP[leagueKey]) {
-      window.location.href = "./index.html";
-    } else {
-      window.location.href = "../premier/index.html";
-    }
-    return;
+  function detectLeagueKeyFromPath() {
+    const path = (window.location.pathname || "").toLowerCase();
+    if (path.includes("/afcon/"))      return "AFCON";
+    if (path.includes("/laliga/"))     return "LALIGA";
+    if (path.includes("/bundesliga/")) return "BUNDESLIGA";
+    return "PREMIER_LEAGUE";
   }
 
-  const leagueInfo  = window.FBL.LEAGUE_MAP[leagueKey];
-  const roundNum    = selected.roundNum || 1;
-  const totalRounds = leagueInfo.totalRounds || "?";
-  const allFixtures = selected.fixtures || [];
+  function loadSelectedRoundUniversal() {
+    // 1) Existing helper if available (Premier / BL / LaLiga flow)
+    try {
+      if (window.FBL && typeof window.FBL.loadSelectedRound === "function") {
+        const sel = window.FBL.loadSelectedRound();
+        if (sel && Array.isArray(sel.fixtures) && sel.fixtures.length) {
+          console.log("[PredictionsPage] using FBL.loadSelectedRound", sel);
+          return sel;
+        }
+      }
+    } catch (e) {
+      console.warn("[PredictionsPage] FBL.loadSelectedRound failed:", e);
+    }
 
-  const mode         = sessionStorage.getItem("FBL_mode") || "all";
-  const selFixtureId = sessionStorage.getItem("FBL_selectedFixture");
-  const pageFixtures =
-    mode === "single" && selFixtureId
-      ? allFixtures.filter((f) => String(f.id) === String(selFixtureId))
-      : allFixtures.slice();
+    // 2) Fallback: AFCON / custom static pages write here
+    try {
+      const raw = sessionStorage.getItem("FBL_selectedRound");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.fixtures)) {
+          console.log("[PredictionsPage] using FBL_selectedRound from sessionStorage", parsed);
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("[PredictionsPage] FBL_selectedRound parse error:", e);
+    }
+
+    return null;
+  }
+
+  let selected  = loadSelectedRoundUniversal();
+  let leagueKey = sessionStorage.getItem("FBL_leagueKey");
+
+  if (!leagueKey && selected && selected.leagueKey) {
+    leagueKey = selected.leagueKey;
+    sessionStorage.setItem("FBL_leagueKey", leagueKey);
+  }
+
+  if (!leagueKey) {
+    leagueKey = detectLeagueKeyFromPath();
+    sessionStorage.setItem("FBL_leagueKey", leagueKey);
+  }
+
+  if (!selected || !leagueKey || !window.FBL.LEAGUE_MAP[leagueKey]) {
+    console.error("[PredictionsPage] No selected round / league.", {
+      leagueKey,
+      selected,
+    });
+
+    const folderKey = detectLeagueKeyFromPath();
+    let base = "../premier/";
+    if (folderKey === "AFCON")          base = "../afcon/";
+    else if (folderKey === "LALIGA")    base = "../laliga/";
+    else if (folderKey === "BUNDESLIGA") base = "../bundesliga/";
+
+    window.location.href = base + "index.html";
+    return;
+  }
+const leagueInfo  = window.FBL.LEAGUE_MAP[leagueKey];
+const roundNum    = selected.roundNum || 1;
+const totalRounds = leagueInfo.totalRounds || "?";
+const allFixtures = selected.fixtures || [];
+
+// Mode + selected fixture from sessionStorage (set by match-card / Bet+)
+const mode         = sessionStorage.getItem("FBL_mode") || "all";
+const selFixtureId = sessionStorage.getItem("FBL_selectedFixture");
+
+let pageFixtures;
+
+// 👉 For AFCON we ALWAYS show all fixtures for the selected matchday
+if (leagueKey === "AFCON") {
+  pageFixtures = allFixtures.slice();
+} else if (mode === "single" && selFixtureId) {
+  // Normal leagues: try single-match mode
+  pageFixtures = allFixtures.filter(
+    (f) => String(f.id) === String(selFixtureId)
+  );
+
+  // If nothing matches (bad id / stale storage), fall back to all fixtures
+  if (!pageFixtures.length) {
+    console.warn(
+      "[PredictionsPage] single-mode id not found, falling back to all fixtures"
+    );
+    pageFixtures = allFixtures.slice();
+  }
+} else {
+  // Normal ALL mode
+  pageFixtures = allFixtures.slice();
+}
+
+console.log(
+  "[PredictionsPage] leagueKey=",
+  leagueKey,
+  "roundNum=",
+  roundNum,
+  "fixtures=",
+  allFixtures.length,
+  "pageFixtures=",
+  pageFixtures.length
+);
 
   // ------------------------------------------------------------
   // DOM refs
@@ -163,6 +248,24 @@
   };
   const isSet = (p) => p && p.homeScore !== null && p.awayScore !== null;
 
+  // helper for long team names
+  function breakTeamName(name) {
+    if (!name) return "";
+    const words = String(name).trim().split(/\s+/);
+
+    if (words.length <= 2) return words.join(" ");
+
+    if (words.length === 3) {
+      return `${words[0]} ${words[1]}<br>${words[2]}`;
+    }
+    if (words.length === 4) {
+      return `${words[0]} ${words[1]}<br>${words[2]} ${words[3]}`;
+    }
+    const firstLine = `${words[0]} ${words[1]}`;
+    const secondLine = words.slice(2).join(" ");
+    return `${firstLine}<br>${secondLine}`;
+  }
+
   function ensurePredictionSlot(f) {
     const id = String(f.id);
     if (!userPred[id]) {
@@ -185,7 +288,9 @@
     if (!listEl) return;
 
     if (subtitleEl) {
-      subtitleEl.innerHTML = `<span class="bold">${leagueInfo.name} Matches</span> - Matchday ${roundNum} of ${totalRounds}`;
+      subtitleEl.innerHTML =
+        `<span class="bold">${leagueInfo.name} Matches</span> - ` +
+        `Matchday ${roundNum} of ${totalRounds}`;
     }
     if (dayNumWrapEl) {
       dayNumWrapEl.textContent = roundNum;
@@ -205,7 +310,7 @@
           <div class="teams">
             <div class="team left">
               <img class="team-logo home-logo" />
-              <p>${f.home.name}</p>
+              <p>${breakTeamName(f.home.name)}</p>
             </div>
             <div class="match-center">
               <p class="vs">VS</p>
@@ -213,7 +318,7 @@
             </div>
             <div class="team right">
               <img class="team-logo away-logo" />
-              <p>${f.away.name}</p>
+              <p>${breakTeamName(f.away.name)}</p>
             </div>
           </div>
 
@@ -263,7 +368,7 @@
   }
 
   // ------------------------------------------------------------
-  // Global +/- handler on window (capture phase) – blocks other handlers
+  // Global +/- handler on window (capture phase)
   // ------------------------------------------------------------
   let plusMinusWired = false;
   function wirePlusMinus() {
@@ -278,7 +383,7 @@
         const card = btn.closest(".match-card");
         if (!card) return;
 
-        // Block other click handlers (tests, old scripts, etc.)
+        // Block other click handlers
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -287,7 +392,9 @@
         const pred = userPred[fixtureId];
         if (!pred) return;
 
-        const isHome = btn.classList.contains("home-plus") || btn.classList.contains("home-minus");
+        const isHome =
+          btn.classList.contains("home-plus") ||
+          btn.classList.contains("home-minus");
         const isPlus = btn.classList.contains("plus");
 
         if (isHome) {
@@ -306,29 +413,20 @@
           display(aVal, cur);
         }
 
-        // Activate Done button visually (if you have CSS for .done-active)
         if (topDoneLink && !topDoneLink.classList.contains("done-active")) {
           topDoneLink.classList.add("done-active");
         }
       },
-      true // capture on window so we run BEFORE document-level listeners
+      true
     );
   }
 
   // ------------------------------------------------------------
   // Helpers, finalize & popup logic
   // ------------------------------------------------------------
-  function getApiBase() {
-    const b =
-      window.FBL_API_BASE ||
-      (window.FBL_CFG && window.FBL_CFG.API_BASE) ||
-      "";
-    return b.replace(/\/$/, "");
-  }
-
   function leagueFolderFromKey(key) {
-    if (key === "LIGUE1") return "ligue1";
-    if (key === "LALIGA") return "laliga";
+    if (key === "AFCON")      return "afcon";
+    if (key === "LALIGA")     return "laliga";
     if (key === "BUNDESLIGA") return "bundesliga";
     return "premier";
   }
@@ -370,25 +468,34 @@
       return;
     }
 
-    let pending = touched.map((f) => {
-      const p = userPred[String(f.id)];
-      return {
-        league:    leagueKey,
-        fixtureId: String(f.id),
-        matchday:  roundNum,
-        home: {
-          id:   f.home.id,
-          name: f.home.name,
-          score: p.homeScore,
-        },
-        away: {
-          id:   f.away.id,
-          name: f.away.name,
-          score: p.awayScore,
-        },
-        timestamp: new Date().toISOString(),
-      };
-    });
+   pending = touched.map((f) => {
+  const p = userPred[String(f.id)];
+  return {
+    league:    leagueKey,
+    fixtureId: String(f.id),
+    matchday:  roundNum,
+
+    // we now also keep logos (for AFCON) and kickoff time
+    home: {
+      id:    f.home.id,
+      name:  f.home.name,
+      logo:  f.home.logo || null,
+      score: p.homeScore,
+    },
+    away: {
+      id:    f.away.id,
+      name:  f.away.name,
+      logo:  f.away.logo || null,
+      score: p.awayScore,
+    },
+
+    // real kickoff from the fixture (used on results page)
+    kickoff:   f.utcDate || null,
+
+    // when the prediction was submitted
+    timestamp: new Date().toISOString(),
+  };
+});
 
     sessionStorage.setItem("pending_predictions", JSON.stringify(pending));
     sessionStorage.setItem("FBL_leagueKey", leagueKey);

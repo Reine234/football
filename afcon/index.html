@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FansBetLiga — AFCON Group A</title>
+
+  <link rel="stylesheet" href="../afcon/styleindex.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap">
+  <style>
+    body {
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+  </style>
+</head>
+<body data-league="AFCON">
+  <header class="topbar">
+    <h1 class="logo">FANSBETLIGA</h1>
+    <a href="#" class="about">About</a>
+  </header>
+
+  <!-- Bottom nav -->
+  <nav class="nav">
+    <div class="nav-item"><img src="../img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item"><img src="../img/results.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="../img/winners.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="../img/rules.png" alt="Rules"><span>Rules</span></div>
+  </nav>
+
+  <div class="season-title">
+    <span class="back-arrow"></span>
+    <h2>AFCON 2025 — Group A</h2>
+  </div>
+
+  <!-- Group tabs -->
+  <div class="league-tabs">
+    <button class="tab active" onclick="window.location.href='groupA.html'">Group A</button>
+    <button class="tab" onclick="window.location.href='groupB.html'">Group B</button>
+    <button class="tab" onclick="window.location.href='groupC.html'">Group C</button>
+    <button class="tab" onclick="window.location.href='groupD.html'">Group D</button>
+    <button class="tab" onclick="window.location.href='groupE.html'">Group E</button>
+    <button class="tab" onclick="window.location.href='groupF.html'">Group F</button>
+  </div>
+
+  <section class="matches">
+    <div class="matches-header">
+      <h3 data-group="Group A">Group A - Matchday 1 of 3</h3>
+      <div class="page-controls">
+        <button id="prev-day" class="arrow">&lt;</button>
+        <span id="day-number">1</span>
+        <button id="next-day" class="arrow">&gt;</button>
+      </div>
+    </div>
+
+    <!-- Matchday 1 -->
+    <div class="day" data-matchday="1">
+      <h4>Sunday, 21 Dec 2025</h4>
+      <div class="match-card cyan" data-fixture-id="AFGA-1">
+        <div class="match-info">
+          <p class="time">19:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/morocco.png" alt="Morocco">
+              <p>Morocco</p>
+            </div>
+            <div class="team">
+              <img src="../img/comoros.png" alt="Comoros">
+              <p>Comoros</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="match-card blue" data-fixture-id="AFGA-2">
+        <div class="match-info">
+          <p class="time">14:30</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/mali.png" alt="Mali">
+              <p>Mali</p>
+            </div>
+            <div class="team">
+              <img src="../img/zambia.png" alt="Zambia">
+              <p>Zambia</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matchday 2 -->
+    <div class="day" data-matchday="2">
+      <h4>Friday, 26 Dec 2025</h4>
+      <div class="match-card cyan" data-fixture-id="AFGA-3">
+        <div class="match-info">
+          <p class="time">19:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/morocco.png" alt="Morocco">
+              <p>Morocco</p>
+            </div>
+            <div class="team">
+              <img src="../img/mali.png" alt="Mali">
+              <p>Mali</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="match-card blue" data-fixture-id="AFGA-4">
+        <div class="match-info">
+          <p class="time">14:30</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/zambia.png" alt="Zambia">
+              <p>Zambia</p>
+            </div>
+            <div class="team">
+              <img src="../img/comoros.png" alt="Comoros">
+              <p>Comoros</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matchday 3 -->
+    <div class="day" data-matchday="3">
+      <h4>Tuesday, 29 Dec 2025</h4>
+      <div class="match-card cyan" data-fixture-id="AFGA-5">
+        <div class="match-info">
+          <p class="time">17:30</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/zambia.png" alt="Zambia">
+              <p>Zambia</p>
+            </div>
+            <div class="team">
+              <img src="../img/morocco.png" alt="Morocco">
+              <p>Morocco</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="match-card blue" data-fixture-id="AFGA-6">
+        <div class="match-info">
+          <p class="time">17:30</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/comoros.png" alt="Comoros">
+              <p>Comoros</p>
+            </div>
+            <div class="team">
+              <img src="../img/mali.png" alt="Mali">
+              <p>Mali</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a id="bet-button-main" class="fixed-button" href="predictions.html">Bet +</a>
+  </section>
+
+  <!-- Firebase + app scripts (same environment as other leagues) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+
+  <script src="../scripts/firebase-init.js"></script>
+  <script src="../scripts/config.js"></script>
+  <script src="../scripts/api.js"></script>
+<script src="../scripts/predictionsPage.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // -----------------------------
+    // 1) STATIC FIXTURES FOR GROUP A
+    // -----------------------------
+    const groupAFixtures = [
+      {
+        id: "AFGA-1",
+        utcDate: "2025-12-21T19:00:00Z",
+        roundNum: 1,
+        roundText: "Matchday 1",
+        leagueId: null,
+        home: { id: "MOR", name: "Morocco", logo: "../img/morocco.png" },
+        away: { id: "COM", name: "Comoros", logo: "../img/comoros.png" },
+        goals: { home: null, away: null },
+        status: { short: "NS", long: "Not Started" }
+      },
+      {
+        id: "AFGA-2",
+        utcDate: "2025-12-22T14:30:00Z",
+        roundNum: 1,
+        roundText: "Matchday 1",
+        leagueId: null,
+        home: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
+        away: { id: "ZAM", name: "Zambia", logo: "../img/zambia.png" },
+        goals: { home: null, away: null },
+        status: { short: "NS", long: "Not Started" }
+      },
+      {
+        id: "AFGA-3",
+        utcDate: "2025-12-26T19:00:00Z",
+        roundNum: 2,
+        roundText: "Matchday 2",
+        leagueId: null,
+        home: { id: "MOR", name: "Morocco", logo: "../img/morocco.png" },
+        away: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
+        goals: { home: null, away: null },
+        status: { short: "NS", long: "Not Started" }
+      },
+      {
+        id: "AFGA-4",
+        utcDate: "2025-12-26T14:30:00Z",
+        roundNum: 2,
+        roundText: "Matchday 2",
+        leagueId: null,
+        home: { id: "ZAM", name: "Zambia", logo: "../img/zambia.png" },
+        away: { id: "COM", name: "Comoros", logo: "../img/comoros.png" },
+        goals: { home: null, away: null },
+        status: { short: "NS", long: "Not Started" }
+      },
+      {
+        id: "AFGA-5",
+        utcDate: "2025-12-29T17:30:00Z",
+        roundNum: 3,
+        roundText: "Matchday 3",
+        leagueId: null,
+        home: { id: "ZAM", name: "Zambia", logo: "../img/zambia.png" },
+        away: { id: "MOR", name: "Morocco", logo: "../img/morocco.png" },
+        goals: { home: null, away: null },
+        status: { short: "NS", long: "Not Started" }
+      },
+      {
+        id: "AFGA-6",
+        utcDate: "2025-12-29T17:30:00Z",
+        roundNum: 3,
+        roundText: "Matchday 3",
+        leagueId: null,
+        home: { id: "COM", name: "Comoros", logo: "../img/comoros.png" },
+        away: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
+        goals: { home: null, away: null },
+        status: { short: "NS", long: "Not Started" }
+      }
+    ];
+
+    // -----------------------------
+    // 2) BOTTOM NAV CLICK HANDLERS
+    // -----------------------------
+    const navItems = document.querySelectorAll(".nav .nav-item");
+    if (navItems[0]) {
+      navItems[0].style.cursor = "pointer";
+      navItems[0].addEventListener("click", () => {
+        // AFCON home
+        window.location.href = "index.html";
+      });
+    }
+    if (navItems[1]) {
+      navItems[1].style.cursor = "pointer";
+      navItems[1].addEventListener("click", () => {
+        window.location.href = "results.html";
+      });
+    }
+    if (navItems[2]) {
+      navItems[2].style.cursor = "pointer";
+      navItems[2].addEventListener("click", () => {
+        alert("Winners page coming soon!");
+      });
+    }
+    if (navItems[3]) {
+      navItems[3].style.cursor = "pointer";
+      navItems[3].addEventListener("click", () => {
+        alert("Rules page coming soon!");
+      });
+    }
+
+    // -----------------------------
+    // 3) MATCHDAY PAGINATION (show 1 day at a time)
+    // -----------------------------
+    const days = Array.from(document.querySelectorAll(".day"));
+    let currentDay = 1;
+
+    const totalDays = days.reduce((max, day) => {
+      const d = Number(day.dataset.matchday || 1);
+      return d > max ? d : max;
+    }, 1);
+
+    const dayNumberEl = document.getElementById("day-number");
+    const prevBtn = document.getElementById("prev-day");
+    const nextBtn = document.getElementById("next-day");
+
+    function updateDayHeaderAndVisibility() {
+      const h3 = document.querySelector(".matches-header h3");
+      if (h3) {
+        h3.textContent = `Group A - Matchday ${currentDay} of ${totalDays}`;
+      }
+      if (dayNumberEl) {
+        dayNumberEl.textContent = currentDay;
+      }
+
+      days.forEach((day) => {
+        const d = Number(day.dataset.matchday || 1);
+        day.style.display = d === currentDay ? "" : "none";
+      });
+    }
+
+    prevBtn.addEventListener("click", () => {
+      if (currentDay > 1) {
+        currentDay--;
+        updateDayHeaderAndVisibility();
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (currentDay < totalDays) {
+        currentDay++;
+        updateDayHeaderAndVisibility();
+      }
+    });
+
+    // -----------------------------
+    // 4) TELL predictionsPage.js WHICH FIXTURES TO USE
+    //    (this is the missing piece)
+    // -----------------------------
+    function goToAfconPredictions() {
+      // Fixtures for THIS matchday only
+      const fixturesForDay = groupAFixtures.filter(
+        (f) => f.roundNum === currentDay
+      );
+
+      // Save into sessionStorage in the SAME format the other leagues use
+      const payload = {
+        leagueKey: "AFCON",
+        roundNum: currentDay,
+        fixtures: fixturesForDay
+      };
+      sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+      sessionStorage.setItem("FBL_leagueKey", "AFCON");
+
+      // If your global helper exists, also call it (doesn't break anything)
+      if (window.FBL && typeof window.FBL.persistSelectedRound === "function") {
+        window.FBL.persistSelectedRound("AFCON", currentDay, fixturesForDay);
+      }
+
+      // Now go to the AFCON predictions page in the SAME folder
+      window.location.href = "predictions.html";
+    }
+
+    // Entire match card clickable → open predictions
+    const cards = document.querySelectorAll(".match-card");
+    cards.forEach((card) => {
+      card.style.cursor = "pointer";
+      card.addEventListener("click", goToAfconPredictions);
+    });
+
+    // Bet+ button also uses same behaviour
+    const betBtn = document.getElementById("bet-button-main");
+    if (betBtn) {
+      betBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        goToAfconPredictions();
+      });
+    }
+
+    // Initial view = Matchday 1
+    updateDayHeaderAndVisibility();
+  });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // 👇 CHANGE THIS if your main page is different
+  // Example: "/premier/index.html" or "/bundesliga/index.html"
+  const HOME_TARGET = "/premier/index.html";
+
+  const path = window.location.pathname.toLowerCase();
+  // Only run for afcon group pages
+  if (!path.includes("/afcon/")) return;
+
+  const nav = document.querySelector("nav.nav");
+  if (!nav) return;
+
+  const items = Array.from(nav.querySelectorAll(".nav-item"));
+
+  items.forEach(function (item) {
+    const label = (item.querySelector("span")?.textContent || "")
+      .trim()
+      .toLowerCase();
+
+    if (label === "home") {
+      // 🔥 Remove ALL existing click handlers by cloning the node
+      const clone = item.cloneNode(true);
+      item.parentNode.replaceChild(clone, item);
+
+      clone.style.cursor = "pointer";
+      clone.addEventListener(
+        "click",
+        function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = HOME_TARGET;
+        },
+        false
+      );
+    }
+  });
+});
+</script>
+
+</body>
+</html>

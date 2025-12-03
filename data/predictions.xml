@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<predictions>
-<prediction><user_id>1</user_id><league>BUNDESLIGA</league><fixture_id>540498</fixture_id><matchday>11</matchday><home_id>15</home_id><home_name>1. FSV Mainz 05</home_name><home_score>1</home_score><away_id>2</away_id><away_name>TSG 1899 Hoffenheim</away_name><away_score>1</away_score><timestamp>2025-11-19T09:47:41.046Z</timestamp></prediction><prediction><user_id>1</user_id><league>BUNDESLIGA</league><fixture_id>540496</fixture_id><matchday>11</matchday><home_id>5</home_id><home_name>FC Bayern München</home_name><home_score>1</home_score><away_id>17</away_id><away_name>SC Freiburg</away_name><away_score>1</away_score><timestamp>2025-11-19T12:39:26.559Z</timestamp></prediction></predictions>

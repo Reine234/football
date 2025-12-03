@@ -17,7 +17,7 @@
 
   function leagueFolderFromKey(key) {
     const k = String(key || "").toUpperCase();
-    if (k === "LIGUE1") return "ligue1";
+    if (k === "AFCON") return "afcon";
     if (k === "LALIGA") return "laliga";
     if (k === "BUNDESLIGA") return "bundesliga";
     return "premier";
