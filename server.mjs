@@ -624,6 +624,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/scripts', express.static(join(__dirname, 'scripts')));
+
 const leagues = ["premier", "bundesliga", "laliga", "afcon"];
 for (const L of leagues) {
   app.get(`/${L}/`, (_req, res) =>
