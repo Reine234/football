@@ -46,7 +46,7 @@ app.use(express.json()); // parse JSON
 app.use(cookieParser()); // read/set cookies
 
 // Serve ALL your frontend files (HTML, CSS, JS, images...) from the project folder
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, { extensions: ['html', 'js', 'css'] }));  // Added extensions for proper handling
 
 // Prevent accidental access to server-side data
 app.use("/data", (_req, res) => res.sendStatus(404));
