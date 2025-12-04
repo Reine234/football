@@ -66,7 +66,9 @@ app.get("/results.html", (_req, res) =>
 app.get("/index.html", (_req, res) =>
   res.redirect(302, "/premier/index.html")
 );
-
+app.get("/winners.html", (_req, res) =>
+  res.redirect(302, "/premier/winners.html")
+);
 // ------------------------
 // Upstream APIs
 // ------------------------
@@ -635,6 +637,10 @@ for (const L of leagues) {
   );
   app.get(`/${L}/results.html`, (_req, res) =>
     res.sendFile(join(__dirname, L, "results.html"))
+  );
+   app.get(`/${L}/predictions.html`, (_req, res) =>
+    res.sendFile(join(__dirname, L, "winners.html"))
+ 
   );
 }
 
