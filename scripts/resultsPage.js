@@ -159,7 +159,7 @@
     return best;
   }
 
-  // ---------- BACKEND HELPERS ----------
+  // ---------- BACKEND HELPERS (PHP – left as-is, but not used for Firestore points) ----------
   async function getSessionUser() {
     try {
       const r = await fetch(API_USERS + "?action=session", {
@@ -205,6 +205,45 @@
     } catch (e) {
       console.warn("resultsPage: fetchFixturesForLeague failed", e);
       return { byId: {}, list: [] };
+    }
+  }
+
+  // ---------- FIRESTORE: store points with predictions ----------
+  async function syncPointsToFirestore(predictionsWithPoints) {
+    // we only touch Firestore, nothing PHP here
+    if (!window.firebase || !firebase.auth || !firebase.firestore) return;
+
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+
+    const uid = user.uid;
+    const db = firebase.firestore();
+    const batch = db.batch();
+
+    predictionsWithPoints.forEach((p) => {
+      if (p.points == null || p.fixtureId == null) return;
+      const fixtureId = String(p.fixtureId);
+      // doc id pattern: uid_LEAGUEKEY_fixtureId
+      const docId = `${uid}_${leagueKey}_${fixtureId}`;
+      const ref = db.collection("predictions").doc(docId);
+      batch.set(
+        ref,
+        {
+          points: p.points,
+        },
+        { merge: true }
+      );
+    });
+
+    try {
+      await batch.commit();
+      console.log(
+        "[resultsPage] synced points for",
+        predictionsWithPoints.length,
+        "predictions"
+      );
+    } catch (e) {
+      console.warn("[resultsPage] failed to sync points", e);
     }
   }
 
@@ -427,10 +466,7 @@
             .get();
 
           snap.forEach((doc) => preds.push(doc.data()));
-          preds.sort(
-            (a, b) =>
-              new Date(a.timestamp || 0) - new Date(b.timestamp || 0)
-          );
+          // original fallback sort (oldest first) will be overridden below
         }
       }
     } catch (e) {
@@ -443,6 +479,35 @@
       const l = String(p.league || p.leagueKey || "").toUpperCase();
       return l === leagueKey;
     });
+
+    // ❌ Hide predictions made AFTER kickoff, but keep them in Firestore
+    preds = preds.filter((p) => {
+      let fixture = fixturesById[String(p.fixtureId)] || null;
+      if (!fixture && leagueKey === "AFCON") {
+        fixture = findAfconFixture(p, fixturesList);
+      }
+
+      const kickoffIso =
+        p.kickoff ||
+        (fixture && fixture.utcDate) ||
+        p.timestamp ||
+        "";
+      const ko = Date.parse(kickoffIso);
+      const predTime = Date.parse(p.timestamp || "");
+
+      // if we can't parse, keep it (don't be too aggressive)
+      if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
+
+      // only display predictions done ON or BEFORE kickoff
+      return predTime <= ko;
+    });
+
+    // ✅ Sort newest predictions first (today's at the top)
+    preds.sort(
+      (a, b) =>
+        new Date(b.timestamp || 0).getTime() -
+        new Date(a.timestamp || 0).getTime()
+    );
 
     if (!preds.length) {
       container.innerHTML = `<p style="padding:12px;">No predictions for ${esc(
@@ -462,6 +527,8 @@
 
     // render ONLY matches you predicted
     let totalPts = 0;
+    const predictionsWithPoints = [];
+
     const cardsHtml = preds
       .map((pred, i) => {
         // 1) normal join by fixtureId
@@ -473,7 +540,13 @@
         }
 
         const { html, pts } = buildCardHTML(i + 1, pred, fixture);
-        if (pts != null) totalPts += pts;
+        if (pts != null) {
+          totalPts += pts;
+          predictionsWithPoints.push({
+            fixtureId: pred.fixtureId,
+            points: pts,
+          });
+        }
         return html;
       })
       .join("");
@@ -499,6 +572,11 @@
 
     // total points header
     if (totalSpan) totalSpan.textContent = String(totalPts);
+
+    // 🔁 Store points on each prediction in Firestore for Winners page
+    if (predictionsWithPoints.length) {
+      syncPointsToFirestore(predictionsWithPoints);
+    }
   }
 
   // expose for other scripts if needed

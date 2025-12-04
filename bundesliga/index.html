@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = `../${league}/results.html`;
       } 
       else if (label === "winners") {
-        alert("Winners page coming soon!");
+        window.location.href = `../${league}/winners.html`;
       } 
       else if (label === "rules") {
         alert("Rules page coming soon!");
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
     item.addEventListener("click", () => {
       if (label === "home")     location.href = "index.html";         // relative -> stays in this folder
       if (label === "results")  location.href = "results.html";       // relative -> /<league>/results.html
-      if (label === "winners")  alert("Winners page coming soon!");
+      if (label === "winners")  location.href = "winners.html";       // relative -> /<league>/winners.html
       if (label === "rules")    alert("Rules page coming soon!");
     });
   });

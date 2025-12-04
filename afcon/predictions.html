@@ -113,7 +113,7 @@
             window.location.href = `/${league}/results.html`;
             break;
           case "winners":
-            alert("🏆 Winners page coming soon!");
+            window.location.href = `/${league}/winners.html`;
             break;
           case "rules":
             alert("⚙️ Rules page coming soon!");
@@ -203,7 +203,7 @@
       item.addEventListener("click", () => {
         if (label === "home")     location.href = "index.html";
         if (label === "results")  location.href = "results.html";
-        if (label === "winners")  alert("Winners page coming soon!");
+        if (label === "winners") location.href = "winners.html";
         if (label === "rules")    alert("Rules page coming soon!");
       });
     });

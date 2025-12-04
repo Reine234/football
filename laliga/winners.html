@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FansBetLiga – Winners</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Your shared CSS -->
+  <link rel="stylesheet" href="/styles/styless.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+
+    body {
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      background-color: #e9e9fc;
+      color: #000000;
+    }
+
+    /* Top bar */
+    .topbar {
+      background-color: #00c49a;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .bar {
+      color: #000000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .logo {
+      margin: 0;
+      font-size: 1.2em;
+    }
+
+    .about {
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    :root {
+      --fbl-accent: #00B894; /* teal active color */
+    }
+
+    /* nav container */
+    nav.nav {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding: 8px 0 0;
+      border-bottom: 1px solid #e0e0e0;
+      background: #ffffff;
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      margin-top: 10px;
+      border-radius: 8px 8px 0 0;
+    }
+
+    nav.nav .nav-item {
+      flex: 1;
+      text-align: center;
+      padding: 6px 0 10px;
+      cursor: pointer;
+      color: #8b8f99;
+      font-size: 12px;
+      position: relative;
+      transition: color 0.2s ease, text-shadow 0.2s ease;
+    }
+
+    nav.nav .nav-item img {
+      display: block;
+      margin: 0 auto 4px;
+      width: 22px;
+      height: 22px;
+      filter: grayscale(1) opacity(0.6);
+      transition: filter 0.2s ease, opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    nav.nav .nav-item span {
+      display: block;
+    }
+
+    nav.nav .nav-item.nav-active span {
+      color: var(--fbl-accent);
+    }
+
+    nav.nav .nav-item.nav-active img {
+      filter: drop-shadow(0 0 6px rgba(0, 184, 148, 0.9));
+      opacity: 1;
+      transform: translateY(-1px);
+    }
+
+    nav.nav .nav-item::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -1px;
+      width: 0;
+      height: 3px;
+      border-radius: 999px;
+      background-color: var(--fbl-accent);
+      box-shadow: 0 0 8px rgba(0, 184, 148, 0.7);
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: width 0.2s ease, opacity 0.2s ease;
+    }
+
+    nav.nav .nav-item.nav-active::after {
+      width: 40%;
+      opacity: 1;
+    }
+
+    .centralized {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 0 12px 24px;
+    }
+
+    /* League tabs */
+    .league-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin: 15px 0;
+    }
+
+    .league-tabs .tab {
+      flex: 1;
+      border: none;
+      outline: none;
+      border-radius: 988px;
+      padding: 6px 16px;
+      background-color: #FFF4E3;
+      color: #000000;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease,
+                  color 0.2s ease,
+                  box-shadow 0.2s ease,
+                  transform 0.1s ease;
+    }
+
+    .league-tabs .tab.active {
+      background-color: #F5A623;
+      color: #000000;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(245, 166, 35, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .back-button {
+      border: none;
+      background: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .topbar-title {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      color: #111827;
+    }
+
+    /* User bar */
+    .user-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+      margin-bottom: 12px;
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #111827;
+    }
+
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      position: relative;
+    }
+
+    .status-dot::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00c49a;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+    }
+
+    .user-points span {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .user-points .value {
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    /* Card */
+    .card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 16px 14px 18px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+    }
+
+    .card-title {
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 1.3px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    /* Tabs inside card */
+    .tab-row {
+      display: flex;
+      align-items: center;
+      background: #f3f4f6;
+      border-radius: 999px;
+      padding: 3px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .tab-row .tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 10px;
+      padding: 6px 4px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    .tab-row .tab.active {
+      background: #00c49a;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.45);
+    }
+
+    /* Table */
+    .table {
+      font-size: 11px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table thead {
+      color: #6b7280;
+    }
+
+    .table th,
+    .table td {
+      padding: 4px 2px;
+    }
+
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+      width: 16%;
+      text-align: left;
+    }
+
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+      width: 54%;
+      text-align: left;
+    }
+
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+      width: 30%;
+      text-align: right;
+      padding-right: 4px;
+    }
+
+    .table tbody tr + tr td {
+      border-top: 1px solid #f3f4f6;
+    }
+  </style>
+</head>
+
+<body data-league="LALIGA">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <h1 class="logo">FANSBETLIGA</h1>
+    <a href="#" class="about">About</a>
+  </header>
+
+  <!-- Bottom navigation -->
+  <nav class="nav">
+    <div class="nav-item"><img src="/img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item"><img src="/img/results.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="/img/winners.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="/img/rules.png" alt="Rules"><span>Rules</span></div>
+  </nav>
+
+  <div class="centralized">
+    <!-- League tabs (NOTE: link to WINNERS pages, not results) -->
+    <div class="league-tabs">
+      <button class="tab" data-href="../laliga/winners.html">La Liga</button>
+      <button class="tab" data-href="../bundesliga/winners.html">Bundesliga</button>
+      <button class="tab" data-href="../premier/winners.html">Premier League</button>
+      <button class="tab " data-href="../afcon/winners.html">Afcon</button>
+    </div>
+
+    <div class="app-wrapper">
+      <!-- Top bar inside card -->
+      <header class="bar">
+        <button class="back-button" onclick="history.back()">‹</button>
+        <h1 class="topbar-title">Preseason 2025 - 2026</h1>
+      </header>
+
+      <!-- User strip -->
+      <div class="user-strip">
+        <div class="user-pill">
+          <div class="status-dot"></div>
+          <span>Player</span> <!-- will be replaced by winnersPage.js -->
+        </div>
+        <div class="user-pill user-points">
+          <span>Points :</span>
+          <span class="value">--</span>
+        </div>
+      </div>
+
+      <!-- Classification card -->
+      <section class="card">
+        <h2 class="card-title">CLASSIFICATION</h2>
+
+        <div class="tab-row">
+          <button class="tab active">Daily Rankings</button>
+          <button class="tab">First Round Standings</button>
+          <button class="tab">Overall</button>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Filled by winnersPage.js -->
+            <tr>
+              <td colspan="3">Loading rankings…</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="../scripts/firebase-init.js"></script>
+  <script src="../scripts/predictionsStore.js"></script>
+  <script src="../scripts/config.js"></script>
+  <script src="../scripts/api.js"></script>
+ 
+ 
+
+  <!-- Winners page rankings logic (the script we wrote earlier) -->
+  <script src="/scripts/winnersPage.js"></script>
+</body>
+</html>

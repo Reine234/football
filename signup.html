@@ -150,8 +150,9 @@ async function flushPendingPredictionsAfterAuth() {
 
   // If already logged in → go next
   whenAuthReady((auth) => {
-    auth.onAuthStateChanged((user) => {
+    auth.onAuthStateChanged(async (user) => {
       if (user) {
+        // keep your existing sessionStorage
         sessionStorage.setItem(
           "fbl_current_user",
           JSON.stringify({
@@ -160,6 +161,30 @@ async function flushPendingPredictionsAfterAuth() {
             username: user.displayName || ""
           })
         );
+
+        // 🔹 NEW: sync basic profile into Firestore users/{uid}
+        try {
+          if (window.firebase && firebase.firestore) {
+            const db = firebase.firestore();
+            const email = user.email || "";
+            const baseName =
+              user.displayName ||
+              (email ? email.split("@")[0] : "Player");
+
+            await db.collection("users").doc(user.uid).set(
+              {
+                email: email,
+                displayName: baseName,
+                userName: baseName, // winners page can use this
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true } // do not overwrite existing fields
+            );
+          }
+        } catch (e) {
+          console.warn("[Signup] Failed to sync user profile to Firestore", e);
+        }
+
         goNext();
       }
     });

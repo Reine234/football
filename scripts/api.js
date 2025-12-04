@@ -175,8 +175,8 @@
       return [];
     }
 
-    const fromDate = lg.startDate || "2025-12-21";   // e.g. "2025-07-01"
-    const toDate   = lg.endDate   || "2026-01-18";   // e.g. "2026-05-25"
+    const fromDate = lg.startDate || "2025-08-03";   // e.g. "2025-07-01"
+    const toDate   = lg.endDate   || "2026-05-29";   // e.g. "2026-05-25"
     const leagueId = lg.id;               // used by /af/fixtures -> mapLeagueToFDCode
 
     const season =
