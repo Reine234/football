@@ -45,10 +45,9 @@ app.use(
 app.use(express.json()); // parse JSON
 app.use(cookieParser()); // read/set cookies
 
-
-
-// Serve the static files from the 'scripts' folder
-app.use('/scripts', express.static(join(__dirname, 'scripts')));
+// Serve ALL your frontend files (HTML, CSS, JS, images...) from the project folder
+app.use(express.static(__dirname, { extensions: ['html', 'js', 'css'] }));  // Added extensions for proper handling
+// server.mjs
 
 // Prevent accidental access to server-side data
 app.use("/data", (_req, res) => res.sendStatus(404));
