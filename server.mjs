@@ -52,6 +52,9 @@ app.use(express.static(__dirname, { extensions: ['html', 'js', 'css'] }));  // A
 // Prevent accidental access to server-side data
 app.use("/data", (_req, res) => res.sendStatus(404));
 
+
+
+
 // Default route → REDIRECT to /premier/ so relative links work
 app.get("/", (_req, res) => {
   res.redirect(302, "/premier/");
@@ -70,6 +73,33 @@ app.get("/index.html", (_req, res) =>
 app.get("/winners.html", (_req, res) =>
   res.redirect(302, "/premier/winners.html")
 );
+
+
+
+// Add this route to your server.mjs
+
+// Fetch matchdays for a specific league (simplified for now)
+app.get("/api/getMatchdays", async (req, res) => {
+  const league = req.query.league; // Extract league from the query string
+  
+  // Check if the league is valid
+  if (!league || !["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "AFCON"].includes(league)) {
+    return res.status(400).json({ error: "Invalid league" });
+  }
+  
+  // Dummy matchdays for each league, in a real-world scenario you'd query a database or an external API.
+  const matchdays = {
+    PREMIER_LEAGUE: Array.from({ length: 38 }, (_, i) => `Matchday ${i + 1}`),
+    BUNDESLIGA: Array.from({ length: 34 }, (_, i) => `Matchday ${i + 1}`),
+    LALIGA: Array.from({ length: 38 }, (_, i) => `Matchday ${i + 1}`),
+    AFCON: ["Matchday 1", "Matchday 2", "Matchday 3", "Matchday 4", "Matchday 5", "Matchday 6"],
+  };
+
+  // Send back the matchdays for the requested league
+  const leagueMatchdays = matchdays[league] || [];
+  res.json({ matchdays: leagueMatchdays });
+});
+
 // ------------------------
 // Upstream APIs
 // ------------------------

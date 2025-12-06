@@ -1,17 +1,11 @@
-//
-// /scripts/firebase-init.js
 (function () {
-  if (!window.firebase) {
-    console.error("[Firebase] compat SDK not loaded. Check script order.");
-    return;
-  }
-const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyApe--2B4qyVRwxUzREwsPgZ7hD5NLLcPc",
     authDomain: "fansbetliga-8cb53.firebaseapp.com",
     projectId: "fansbetliga-8cb53",
     storageBucket: "fansbetliga-8cb53.firebasestorage.app",
     messagingSenderId: "168157485644",
-    appId: "1:168157485644:web:47e0ea8279114a503832e9",
+    appId: "1:168157485644:web:47e0ea8279114a503832e9"
   };
 
   if (!firebase.apps.length) {
@@ -27,6 +21,3 @@ const firebaseConfig = {
 
   console.log("[Firebase] Ready:", firebase.app().options.projectId);
 })();
-
-
-

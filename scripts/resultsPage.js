@@ -112,102 +112,6 @@
     return 0;
   }
 
-  // ---------- NORMALIZE / MATCH FOR AFCON (to join TSDB fixtures) ----------
-  function normalizeName(name) {
-    return String(name || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // strip accents
-      .replace(/[^a-z0-9]+/g, "")
-      .trim();
-  }
-
-  function findAfconFixture(pred, fixturesList) {
-    if (!fixturesList || !fixturesList.length) return null;
-
-    const predHome = normalizeName(pred.home && pred.home.name);
-    const predAway = normalizeName(pred.away && pred.away.name);
-    if (!predHome || !predAway) return null;
-
-    // 1) same home/away
-    let candidates = fixturesList.filter((f) => {
-      const fh = normalizeName(f.home && f.home.name);
-      const fa = normalizeName(f.away && f.away.name);
-      return fh === predHome && fa === predAway;
-    });
-
-    if (!candidates.length) return null;
-    if (candidates.length === 1) return candidates[0];
-
-    // 2) if more than one, pick closest by date to kickoff
-    const target = Date.parse(pred.kickoff || pred.timestamp || 0);
-    if (!Number.isFinite(target)) return candidates[0];
-
-    let best = candidates[0];
-    let bestDiff = Infinity;
-
-    candidates.forEach((f) => {
-      const t = Date.parse(f.utcDate || f.timestamp || 0);
-      if (!Number.isFinite(t)) return;
-      const diff = Math.abs(t - target);
-      if (diff < bestDiff) {
-        bestDiff = diff;
-        best = f;
-      }
-    });
-
-    return best;
-  }
-
-  // ---------- BACKEND HELPERS (PHP – left as-is, but not used for Firestore points) ----------
-  async function getSessionUser() {
-    try {
-      const r = await fetch(API_USERS + "?action=session", {
-        credentials: "include",
-      });
-      const j = await r.json();
-      if (j && j.success && j.user) {
-        sessionStorage.setItem("fbl_current_user", JSON.stringify(j.user));
-        return j.user;
-      }
-    } catch (e) {
-      console.warn("resultsPage: session lookup failed:", e);
-    }
-    return null;
-  }
-
-  async function loadAllMyPredictions() {
-    try {
-      const res = await fetch(API_USERS + "?action=get_my_predictions", {
-        credentials: "include",
-      });
-      const j = await res.json();
-      if (!j || !j.success) return [];
-      return j.predictions || [];
-    } catch (e) {
-      console.warn("resultsPage: get_my_predictions failed", e);
-      return [];
-    }
-  }
-
-  // 👉 now returns both: { byId, list } so AFCON can fuzzy-join
-  async function fetchFixturesForCurrentLeague() {
-    if (!window.FBL || typeof window.FBL.fetchFixturesForLeague !== "function") {
-      return { byId: {}, list: [] };
-    }
-    try {
-      const all = await window.FBL.fetchFixturesForLeague(leagueKey); // TSDB for AFCON
-      const byId = {};
-      (all || []).forEach((f) => {
-        byId[String(f.id)] = f;
-      });
-      return { byId, list: all || [] };
-    } catch (e) {
-      console.warn("resultsPage: fetchFixturesForLeague failed", e);
-      return { byId: {}, list: [] };
-    }
-  }
-
   // ---------- FIRESTORE: store points with predictions ----------
   async function syncPointsToFirestore(predictionsWithPoints) {
     // we only touch Firestore, nothing PHP here
@@ -303,131 +207,195 @@
       }
     }
   }
+// This function is needed for the error you're encountering
+async function fetchFixturesForCurrentLeague() {
+  if (!window.FBL || typeof window.FBL.fetchFixturesForLeague !== "function") {
+    console.warn("resultsPage: fetchFixturesForLeague not defined.");
+    return { byId: {}, list: [] };
+  }
+  try {
+    const all = await window.FBL.fetchFixturesForLeague(leagueKey); // Fetch fixtures based on the current league
+    const byId = {};
+    (all || []).forEach((f) => {
+      byId[String(f.id)] = f;  // Create a dictionary of fixtures
+    });
+    return { byId, list: all || [] };
+  } catch (e) {
+    console.warn("resultsPage: fetchFixturesForLeague failed", e);
+    return { byId: {}, list: [] };
+  }
+}
 
-  // ---------- CARD RENDER ----------
-  function buildCardHTML(idx, pred, fixture) {
-    const homeName =
-      (fixture && fixture.home && fixture.home.name) ||
-      (pred.home && pred.home.name) ||
-      "Home";
-    const awayName =
-      (fixture && fixture.away && fixture.away.name) ||
-      (pred.away && pred.away.name) ||
-      "Away";
 
-    // 👉 use kickoff saved with prediction FIRST, then fixture, then timestamp
-    const kickoffIso =
-      pred.kickoff ||
-      (fixture && fixture.utcDate) ||
-      pred.timestamp ||
-      "";
-    const niceTime = formatKickoff(kickoffIso);
+function buildCardHTML(idx, pred, fixture) {
+  const homeName =
+    (fixture && fixture.home && fixture.home.name) ||
+    (pred.home && pred.home.name) ||
+    "Home";
+  const awayName =
+    (fixture && fixture.away && fixture.away.name) ||
+    (pred.away && pred.away.name) ||
+    "Away";
 
-    const predHomeVal =
-      pred.home && pred.home.score != null ? pred.home.score : "";
-    const predAwayVal =
-      pred.away && pred.away.score != null ? pred.away.score : "";
+  // 👉 use kickoff saved with prediction FIRST, then fixture, then timestamp
+  const kickoffIso =
+    pred.kickoff ||
+    (fixture && fixture.utcDate) ||
+    pred.timestamp ||
+    "";
+  const niceTime = formatKickoff(kickoffIso);
 
-    const finHome =
-      fixture &&
-      fixture.goals &&
-      fixture.goals.home !== null &&
-      fixture.goals.home !== undefined
-        ? fixture.goals.home
-        : "";
-    const finAway =
-      fixture &&
-      fixture.goals &&
-      fixture.goals.away !== null &&
-      fixture.goals.away !== undefined
-        ? fixture.goals.away
-        : "";
+  const predHomeVal =
+    pred.home && pred.home.score != null ? pred.home.score : "";
+  const predAwayVal =
+    pred.away && pred.away.score != null ? pred.away.score : "";
 
-    const pts = computePoints(
-      Number(predHomeVal),
-      Number(predAwayVal),
-      finHome === "" ? NaN : Number(finHome),
-      finAway === "" ? NaN : Number(finAway)
-    );
+  const finHome =
+    fixture &&
+    fixture.goals &&
+    fixture.goals.home !== null &&
+    fixture.goals.home !== undefined
+      ? fixture.goals.home
+      : "";
+  const finAway =
+    fixture &&
+    fixture.goals &&
+    fixture.goals.away !== null &&
+    fixture.goals.away !== undefined
+      ? fixture.goals.away
+      : "";
 
-    const html = `
-      <div class="match-card" data-fixture="${esc(String(pred.fixtureId))}">
-        <div class="match-header">MATCH ${idx}</div>
+  const pts = computePoints(
+    Number(predHomeVal),
+    Number(predAwayVal),
+    finHome === "" ? NaN : Number(finHome),
+    finAway === "" ? NaN : Number(finAway)
+  );
 
-        <p class="match-time">${esc(niceTime)}</p>
-        <hr class="hr" />
-        <div class="teams">
-          <div class="team home-team">
-            <img class="team-logo home-logo" alt="${esc(homeName)} logo" />
-            <p>${esc(homeName)}</p>
+  const html = `
+    <div class="match-card" data-fixture="${esc(String(pred.fixtureId))}">
+      <div class="match-header">MATCH ${idx}</div>
+
+      <p class="match-time">${esc(niceTime)}</p>
+      <hr class="hr" />
+      <div class="teams">
+        <div class="team home-team">
+          <img class="team-logo home-logo" alt="${esc(homeName)} logo" />
+          <p>${esc(homeName)}</p>
+        </div>
+
+        <div class="score-section">
+          <p class="label">Your prediction</p>
+          <div class="score-box">
+            <span><input type="number" value="${esc(
+              predHomeVal
+            )}" min="0" readonly /></span>
+            <span>–</span>
+            <span><input type="number" value="${esc(
+              predAwayVal
+            )}" min="0" readonly /></span>
           </div>
 
-          <div class="score-section">
-            <p class="label">Your prediction</p>
-            <div class="score-box">
-              <span><input type="number" value="${esc(
-                predHomeVal
-              )}" min="0" readonly /></span>
-              <span>–</span>
-              <span><input type="number" value="${esc(
-                predAwayVal
-              )}" min="0" readonly /></span>
-            </div>
-
-            <p class="label">Final score</p>
-            <div class="score-box">
-              <span><input type="number" value="${esc(
-                finHome === "" ? "" : String(finHome)
-              )}" min="0" readonly /></span>
-              <span>–</span>
-              <span><input type="number" value="${esc(
-                finAway === "" ? "" : String(finAway)
-              )}" min="0" readonly /></span>
-            </div>
-          </div>
-
-          <div class="team away-team">
-            <img class="team-logo away-logo" alt="${esc(awayName)} logo" />
-            <p>${esc(awayName)}</p>
+          <p class="label">Final score</p>
+          <div class="score-box">
+            <span><input type="number" value="${esc(
+              finHome === "" ? "" : String(finHome)
+            )}" min="0" readonly /></span>
+            <span>–</span>
+            <span><input type="number" value="${esc(
+              finAway === "" ? "" : String(finAway)
+            )}" min="0" readonly /></span>
           </div>
         </div>
 
-        <p class="points-earned">${pts === null ? "" : `Points: ${pts}`}</p>
+        <div class="team away-team">
+          <img class="team-logo away-logo" alt="${esc(awayName)} logo" />
+          <p>${esc(awayName)}</p>
+        </div>
       </div>
-    `;
-    return { html, pts };
+
+      <p class="points-earned">${pts === null ? "" : `Points: ${pts}`}</p>
+    </div>
+  `;
+  return { html, pts };
+}
+function attachLogos(cardEl, pred, fixture) {
+  const homeLogoEl = cardEl.querySelector(".home-logo");
+  const awayLogoEl = cardEl.querySelector(".away-logo");
+
+  // AFCON: prefer logos stored with prediction/fixture (from your static groups)
+  if (leagueKey === "AFCON") {
+    const homeLogo =
+      (fixture && fixture.home && fixture.home.logo) ||
+      (pred.home && pred.home.logo);
+    const awayLogo =
+      (fixture && fixture.away && fixture.away.logo) ||
+      (pred.away && pred.away.logo);
+
+    if (homeLogoEl && homeLogo) homeLogoEl.src = homeLogo;
+    if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
   }
 
-  function attachLogos(cardEl, pred, fixture) {
-    const homeLogoEl = cardEl.querySelector(".home-logo");
-    const awayLogoEl = cardEl.querySelector(".away-logo");
+  // Fallback / other leagues: use global ensureLogo helper
+  if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
 
-    // AFCON: prefer logos stored with prediction/fixture (from your static groups)
-    if (leagueKey === "AFCON") {
-      const homeLogo =
-        (fixture && fixture.home && fixture.home.logo) ||
-        (pred.home && pred.home.logo);
-      const awayLogo =
-        (fixture && fixture.away && fixture.away.logo) ||
-        (pred.away && pred.away.logo);
+  const homeTeam =
+    (fixture && fixture.home) ||
+    { id: pred.home && pred.home.id, name: pred.home && pred.home.name };
+  const awayTeam =
+    (fixture && fixture.away) ||
+    { id: pred.away && pred.away.id, name: pred.away && pred.away.name };
 
-      if (homeLogoEl && homeLogo) homeLogoEl.src = homeLogo;
-      if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
+  if (homeLogoEl) window.FBL.ensureLogo(homeTeam, homeLogoEl);
+  if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
+}
+// Function to normalize the names of teams (to handle variations in name formatting)
+function normalizeName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")  // strip accents
+    .replace(/[^a-z0-9]+/g, "")  // remove any non-alphanumeric characters
+    .trim();
+}
+
+// Function to find the AFCON fixture based on teams
+function findAfconFixture(pred, fixturesList) {
+  if (!fixturesList || !fixturesList.length) return null;
+
+  const predHome = normalizeName(pred.home && pred.home.name);
+  const predAway = normalizeName(pred.away && pred.away.name);
+  if (!predHome || !predAway) return null;
+
+  // 1) same home/away
+  let candidates = fixturesList.filter((f) => {
+    const fh = normalizeName(f.home && f.home.name);
+    const fa = normalizeName(f.away && f.away.name);
+    return fh === predHome && fa === predAway;
+  });
+
+  if (!candidates.length) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  // 2) if more than one, pick closest by date to kickoff
+  const target = Date.parse(pred.kickoff || pred.timestamp || 0);
+  if (!Number.isFinite(target)) return candidates[0];
+
+  let best = candidates[0];
+  let bestDiff = Infinity;
+
+  candidates.forEach((f) => {
+    const t = Date.parse(f.utcDate || f.timestamp || 0);
+    if (!Number.isFinite(t)) return;
+    const diff = Math.abs(t - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = f;
     }
+  });
 
-    // Fallback / other leagues: use global ensureLogo helper
-    if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
-
-    const homeTeam =
-      (fixture && fixture.home) ||
-      { id: pred.home && pred.home.id, name: pred.home && pred.home.name };
-    const awayTeam =
-      (fixture && fixture.away) ||
-      { id: pred.away && pred.away.id, name: pred.away && pred.away.name };
-
-    if (homeLogoEl) window.FBL.ensureLogo(homeTeam, homeLogoEl);
-    if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
-  }
+  return best;
+}
 
   // ---------- MAIN ----------
   async function renderResultsPage() {
@@ -505,8 +473,7 @@
     // ✅ Sort newest predictions first (today's at the top)
     preds.sort(
       (a, b) =>
-        new Date(b.timestamp || 0).getTime() -
-        new Date(a.timestamp || 0).getTime()
+        new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
     );
 
     if (!preds.length) {

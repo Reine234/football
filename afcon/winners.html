@@ -95,7 +95,33 @@
     nav.nav .nav-item span {
       display: block;
     }
+/* Matchday tabs container (horizontal scroll) */
+    .matchday-tabs {
+      display: flex;
+      overflow-x: auto; /* Enable horizontal scrolling */
+      gap: 5px;
+      margin: 15px 0;
+    }
 
+    .matchday-tabs .matchday-tab {
+      flex: 0 0 auto;
+      border: none;
+      outline: none;
+      border-radius: 8px;
+      padding: 6px 16px;
+      background-color: #FFF4E3;
+      color: #000000;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .matchday-tabs .matchday-tab.active {
+      background-color: #00c49a; /* Light green when active */
+      color: #ffffff;
+      font-weight: 600;
+    }
     nav.nav .nav-item.nav-active span {
       color: var(--fbl-accent);
     }
@@ -370,7 +396,11 @@
           <button class="tab">First Round Standings</button>
           <button class="tab">Overall</button>
         </div>
-
+ <div class="centralized">
+    <!-- Matchday tabs -->
+    <div class="matchday-tabs">
+      <!-- Dynamically generated tabs go here -->
+    </div>
         <table class="table">
           <thead>
             <tr>

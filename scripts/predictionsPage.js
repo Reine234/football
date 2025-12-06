@@ -52,37 +52,34 @@
     }
 
     async function savePredictionsForRound(leagueKey, roundNum, pending) {
-      const uid = await waitForUid();
-      if (!uid) throw new Error("Not logged in");
-      if (!db || !db.batch) throw new Error("Firestore not available");
+    const uid = await waitForUid();
+    if (!uid) throw new Error("Not logged in");
 
-      console.log("[STORE] saving", pending.length, "for", leagueKey, "round", roundNum);
+    const batch = db.batch();
 
-      const batch = db.batch();
-
-      pending.forEach((p) => {
+    pending.forEach((p) => {
         const fixtureId = String(p.fixtureId);
-        const docId = `${uid}_${leagueKey}_${fixtureId}`;
+        const docId = `${uid}_${leagueKey}_${roundNum}_${fixtureId}`;
         const ref = db.collection("predictions").doc(docId);
 
         batch.set(
-          ref,
-          {
-            ...p,
-            uid,
-            league: leagueKey,
-            matchday: String(roundNum),
-            fixtureId,
-            timestamp: p.timestamp || new Date().toISOString(),
-          },
-          { merge: true }
+            ref,
+            {
+                ...p,
+                uid,
+                league: leagueKey,
+                matchday: String(roundNum),  // Save the matchday here
+                fixtureId,
+                timestamp: p.timestamp || new Date().toISOString(),
+            },
+            { merge: true }
         );
-      });
+    });
 
-      await batch.commit();
-      console.log("[STORE] saved OK");
-      return true;
-    }
+    await batch.commit();
+    console.log("[STORE] saved", pending.length, "to", leagueKey, "round", roundNum);
+    return true;
+}
 
     async function loadPredictionsForLeague(leagueKey) {
       const uid = await waitForUid();
