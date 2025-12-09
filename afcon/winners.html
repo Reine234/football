@@ -341,6 +341,42 @@
     .table tbody tr + tr td {
       border-top: 1px solid #f3f4f6;
     }
+        /* Matchday "status" strip (WhatsApp-style) */
+    .matchday-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 6px 2px 10px;
+      margin-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .matchday-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .matchday-pill {
+      border: none;
+      outline: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      min-width: 68px;
+      font-size: 10px;
+      font-weight: 500;
+      background: #e5f9f4;
+      color: #047857;
+      cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .matchday-pill.active {
+      background: linear-gradient(135deg, #34d399, #22c55e);
+      color: #ffffff;
+      box-shadow: 0 0 0 2px #dcfce7, 0 4px 10px rgba(16, 185, 129, 0.5);
+    }
+
   </style>
 </head>
 
