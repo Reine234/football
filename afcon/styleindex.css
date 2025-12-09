@@ -108,56 +108,60 @@ nav.nav .nav-item.nav-active::after {
   opacity: 1;
 }
 
-/* League tabs */
+/* Scrollable group tabs: Group A–F */
 .league-tabs {
   display: flex;
-  justify-content: center;
-  gap: 5px;
-  margin: 15px;
- 
+  flex-wrap: nowrap;           /* stay on one line */
+  overflow-x: auto;            /* scroll left/right if needed */
+  overflow-y: hidden;
+  gap: 6px;
+  padding: 8px 0;
+  margin: 15px 0;
+  -webkit-overflow-scrolling: touch; /* smooth on mobile */
+
+  /* hide scrollbar in most browsers */
+  scrollbar-width: none;       /* Firefox */
 }
 
+.league-tabs::-webkit-scrollbar {
+  display: none;               /* Chrome / Safari / Edge (WebKit) */
+}
 
-.centralized {
-  max-width: px;
-  margin: 0 auto;
-  padding: 0 px;
-}
-.tab {
-   
-  border: none;
-  background: #eee;
-  padding: 6px 14px;
-  border-radius: 20px;
- 
-  cursor: pointer;
- 
-}
-/* default (like the top pill in your image) */
+/* Each tab keeps its size and can scroll horizontally */
 .league-tabs .tab {
-  flex: 1;
+  flex: 0 0 auto;              /* DO NOT stretch, keep natural width */
+  white-space: nowrap;
   border: none;
   outline: none;
   border-radius: 988px;
   padding: 6px 16px;
-  background-color: #FFF4E3;        /* very light orange */
+  background-color: #FFF4E3;
   color: #000000;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease,
-              color 0.2s ease,
-              box-shadow 0.2s ease,
-              transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
 }
 
-/* active (like the bottom pill in your image) */
+/* Active tab – same style you had before */
 .league-tabs .tab.active {
   background-color: #F5A623;
   color: #000000;
   font-weight: 700;
   box-shadow: 0 4px 10px rgba(245, 166, 35, 0.45);
   transform: translateY(-1px);
+}
+
+
+
+.centralized {
+  max-width: px;
+  margin: 0 auto;
+  padding: 0 px;
 }
 
 /* Matches */
@@ -243,6 +247,7 @@ nav.nav .nav-item.nav-active::after {
 
 .day {
   margin-top: 15px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .day h4 {
