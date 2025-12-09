@@ -40,6 +40,42 @@
     return leagueKeyFromSlug(slug);
   }
 
+  // 🔧 only fallback is plain "Player" now (no UID tail)
+  function computeDisplayNameFromData(data, fallbackUid) {
+    return (
+      data.userName ||
+      data.username ||
+      data.displayName ||
+      (data.email ? data.email.split("@")[0] : null) ||
+      "Player"
+    );
+  }
+
+  function normalizeLeagueString(str) {
+    return String(str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function leagueSynonyms(leagueKey) {
+    const k = String(leagueKey || "").toUpperCase();
+    if (k === "PREMIER_LEAGUE") {
+      return ["premierleague", "premier", "epl"];
+    }
+    if (k === "BUNDESLIGA") {
+      return ["bundesliga"];
+    }
+    if (k === "LALIGA") {
+      return ["laliga", "laligasantander", "laligaes", "laligaea", "laligas"];
+    }
+    if (k === "AFCON") {
+      return ["afcon", "can", "coupeafriquedesnations"];
+    }
+    return [normalizeLeagueString(k)];
+  }
+
   // ---------- Points computation (same logic as resultsPage) ----------
   function computePoints(predH, predA, finH, finA) {
     if (!Number.isFinite(finH) || !Number.isFinite(finA)) return null;
@@ -117,6 +153,7 @@
     if (tabs.length) {
       tabs.forEach((tab) => {
         const href = (tab.getAttribute("data-href") || "").toLowerCase();
+        // mark active if this href matches the end of the current path
         if (href && path.endsWith(href.split("../").pop())) {
           tab.classList.add("active");
         }
@@ -128,22 +165,107 @@
     }
   }
 
-  // ---------- Daily Rankings from Firestore ----------
-  async function loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, matchday) {
+  // 🎯 Only include users who exist in the database (filter out deleted users)
+  async function enrichUsernamesFromUsersCollection(db, scoresByUid) {
+    if (!db) return;
+    const uids = Object.keys(scoresByUid);
+    if (!uids.length) return;
+
+    try {
+      await Promise.all(
+        uids.map(async (uid) => {
+          try {
+            const snap = await db.collection("users").doc(uid).get();
+            if (!snap.exists) {
+              // If the user does not exist, skip
+              return;
+            }
+            const data = snap.data() || {};
+            const email = data.email || data.userEmail || null;
+            const bestName =
+              data.userName ||
+              data.username ||
+              data.displayName ||
+              (email ? email.split("@")[0] : null);
+
+            if (bestName && bestName !== "Player") {
+              scoresByUid[uid].username = bestName; // Only assign if the name is valid
+            }
+          } catch (e) {
+            console.warn("[Winners] user lookup failed for", uid, e);
+            // Skip user if lookup fails
+          }
+        })
+      );
+    } catch (err) {
+      console.warn("[Winners] enrichUsernamesFromUsersCollection failed:", err);
+    }
+  }
+
+  // ---------- Matchday "status" strip (WhatsApp-style) ----------
+  function ensureMatchdayStrip(matchdays, currentMatchday, onSelectMatchday) {
+    if (!matchdays || !matchdays.length) return;
+
+    const card = document.querySelector(".card");
+    const tableEl = card && card.querySelector(".table");
+    if (!card || !tableEl) return;
+
+    let strip = card.querySelector(".matchday-strip");
+    if (!strip) {
+      strip = document.createElement("div");
+      strip.className = "matchday-strip";
+      // Insert *above* the rankings table (under the tabs)
+      card.insertBefore(strip, tableEl);
+    }
+
+    // Build pills like WhatsApp statuses (one per matchday)
+    strip.innerHTML = matchdays
+      .map((md) => {
+        const activeClass = md === currentMatchday ? " active" : "";
+        return `
+          <button class="matchday-pill${activeClass}" data-md="${md}">
+            MD ${md}
+          </button>
+        `;
+      })
+      .join("");
+
+    const pills = strip.querySelectorAll(".matchday-pill");
+    pills.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const md = parseInt(btn.getAttribute("data-md"), 10);
+        if (!Number.isFinite(md) || md === currentMatchday) return;
+        if (typeof onSelectMatchday === "function") {
+          onSelectMatchday(md);
+        }
+      });
+    });
+  }
+
+  // ---------- Daily Rankings from Firestore (now per matchday) ----------
+  async function loadDailyRankings(
+    db,
+    leagueKey,
+    currentUser,
+    tbody,
+    userPointsEl,
+    selectedMatchday // may be null on first call
+  ) {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="3">Loading rankings…</td></tr>';
 
     try {
-      // 1) fixtures for this league (for final scores)
+      // 1) fixtures for this league (for final scores if points are missing)
       const { byId: fixturesById } = await fetchFixturesForCurrentLeague(leagueKey);
 
-      // 2) all predictions; we'll filter by league and matchday
-      const snap = await db.collection("predictions")
-        .where("matchday", "==", matchday) // Filter by matchday
-        .get();
+      // 2) all predictions; we'll filter by league
+      const snap = await db.collection("predictions").get();
 
       const wantedLeagues = leagueSynonyms(leagueKey);
-      const scoresByUid = {};
+
+      // scoresByMatchday[md][uid] = { uid, username, points }
+      const scoresByMatchday = {};
+      const matchdaySet = new Set();
 
       snap.forEach((doc) => {
         const data = doc.data() || {};
@@ -151,18 +273,31 @@
         if (!uid) return;
 
         // filter by league
-        const rawLeague = data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+        const rawLeague =
+          data.league || data.leagueKey || data.leagueSlug || data.leagueName;
         const normLeague = normalizeLeagueString(rawLeague);
         if (!wantedLeagues.includes(normLeague)) return;
 
         const fixtureId = String(data.fixtureId || "");
         if (!fixtureId) return;
 
+        const mdRaw = data.matchday;
+        const mdNum = parseInt(mdRaw, 10);
+        if (!Number.isFinite(mdNum)) return; // ignore docs without matchday
+
+        matchdaySet.add(mdNum);
+
         const fixture = fixturesById[fixtureId];
 
-        const predHome = Number(data.home && data.home.score != null ? data.home.score : NaN);
-        const predAway = Number(data.away && data.away.score != null ? data.away.score : NaN);
+        // predicted scores
+        const predHome = Number(
+          data.home && data.home.score != null ? data.home.score : NaN
+        );
+        const predAway = Number(
+          data.away && data.away.score != null ? data.away.score : NaN
+        );
 
+        // final scores (from fixtures)
         let finHome = NaN;
         let finAway = NaN;
         if (fixture && fixture.goals) {
@@ -176,25 +311,59 @@
 
         let pts = null;
 
+        // Prefer points already stored by resultsPage.js
         if (typeof data.points === "number" && Number.isFinite(data.points)) {
           pts = data.points;
         } else {
           pts = computePoints(predHome, predAway, finHome, finAway);
         }
 
+        // no final score yet -> pts === null -> ignore for ranking
         if (pts == null) return;
 
-        if (!scoresByUid[uid]) {
-          scoresByUid[uid] = {
+        if (!scoresByMatchday[mdNum]) {
+          scoresByMatchday[mdNum] = {};
+        }
+        if (!scoresByMatchday[mdNum][uid]) {
+          scoresByMatchday[mdNum][uid] = {
             uid,
             username: computeDisplayNameFromData(data, uid), // temp name
             points: 0,
           };
         }
-        scoresByUid[uid].points += pts;
+        scoresByMatchday[mdNum][uid].points += pts;
       });
 
-      // Replace generic names with email prefixes from users collection
+      const matchdays = Array.from(matchdaySet).sort((a, b) => a - b);
+
+      // If no matchdays at all
+      if (!matchdays.length) {
+        tbody.innerHTML = '<tr><td colspan="3">No rankings yet.</td></tr>';
+        if (userPointsEl) userPointsEl.textContent = "0";
+        return;
+      }
+
+      // If no matchday chosen yet, use the latest (like the most recent status)
+      if (!Number.isFinite(selectedMatchday)) {
+        selectedMatchday = matchdays[matchdays.length - 1];
+      }
+
+      // Build / update the WhatsApp-style matchday strip
+      ensureMatchdayStrip(matchdays, selectedMatchday, (newMd) => {
+        // when a pill is clicked, reload rankings for that matchday
+        loadDailyRankings(
+          db,
+          leagueKey,
+          currentUser,
+          tbody,
+          userPointsEl,
+          newMd
+        );
+      });
+
+      const scoresByUid = scoresByMatchday[selectedMatchday] || {};
+
+      // 🔥 Try to replace generic names with email prefixes from users collection
       await enrichUsernamesFromUsersCollection(db, scoresByUid);
 
       const rows = Object.values(scoresByUid);
@@ -204,7 +373,8 @@
       });
 
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="3">No rankings yet.</td></tr>';
+        tbody.innerHTML =
+          '<tr><td colspan="3">No rankings yet for this matchday.</td></tr>';
       } else {
         tbody.innerHTML = rows
           .map(
@@ -219,7 +389,7 @@
           .join("");
       }
 
-      // update current user's points in the top strip
+      // update current user's points in the top strip *for this matchday*
       if (currentUser && userPointsEl) {
         const myRow = scoresByUid[currentUser.uid];
         const myPoints = myRow ? myRow.points : 0;
@@ -227,16 +397,18 @@
       }
     } catch (err) {
       console.error("[Winners] Failed to load rankings", err);
-      tbody.innerHTML = '<tr><td colspan="3">Unable to load rankings.</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="3">Unable to load rankings.</td></tr>';
     }
   }
 
   // ---------- Classification tabs ----------
-
   function initClassificationTabs(db, leagueKey, currentUser) {
     const tabs = document.querySelectorAll(".tab-row .tab");
     const tbody = document.querySelector(".card .table tbody");
-    const userPointsEl = document.querySelector(".user-strip .user-points .value");
+    const userPointsEl = document.querySelector(
+      ".user-strip .user-points .value"
+    );
 
     if (!tabs.length || !tbody) return;
 
@@ -251,17 +423,25 @@
         setActive(tab);
 
         if (label.includes("daily")) {
-          loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, 1); // Matchday 1 by default
+          // Daily Rankings -> per-matchday, status-style
+          loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, null);
         } else if (label.includes("first round")) {
           tbody.innerHTML =
             '<tr><td colspan="3">First round standings coming soon.</td></tr>';
+          const strip = document.querySelector(".matchday-strip");
+          if (strip) strip.innerHTML = "";
+          if (userPointsEl) userPointsEl.textContent = "--";
         } else if (label.includes("overall")) {
           tbody.innerHTML =
             '<tr><td colspan="3">Overall standings coming soon.</td></tr>';
+          const strip = document.querySelector(".matchday-strip");
+          if (strip) strip.innerHTML = "";
+          if (userPointsEl) userPointsEl.textContent = "--";
         }
       });
     });
 
+    // initial tab = Daily Rankings (or first tab)
     const initial =
       Array.from(tabs).find((t) =>
         (t.textContent || "").toLowerCase().includes("daily")
@@ -269,14 +449,17 @@
 
     if (initial) {
       setActive(initial);
-      loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, 1); // Matchday 1 by default
+      // first load -> no matchday chosen yet (it will pick the latest)
+      loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, null);
     }
   }
 
   // ---------- User strip ----------
   function initUserStrip(user) {
     const userNameEl = document.querySelector(".user-strip .user-pill span");
-    const userPointsEl = document.querySelector(".user-strip .user-points .value");
+    const userPointsEl = document.querySelector(
+      ".user-strip .user-points .value"
+    );
 
     if (user) {
       const name =
@@ -304,6 +487,7 @@
 
     const db = firebase.firestore();
 
+    // Guests can see rankings; logged-in users see their total in the pill
     firebase.auth().onAuthStateChanged((user) => {
       initUserStrip(user);
       initClassificationTabs(db, leagueKey, user);
@@ -316,56 +500,3 @@
     boot();
   }
 })();
-// Function to get league synonyms (based on league key)
-function leagueSynonyms(leagueKey) {
-    const k = String(leagueKey || "").toUpperCase();
-    if (k === "PREMIER_LEAGUE") {
-        return ["premierleague", "premier", "epl"];
-    }
-    if (k === "BUNDESLIGA") {
-        return ["bundesliga"];
-    }
-    if (k === "LALIGA") {
-        return ["laliga", "laligasantander", "laligaes", "laligaea", "laligas"];
-    }
-    if (k === "AFCON") {
-        return ["afcon", "can", "coupeafriquedesnations"];
-    }
-    return [normalizeLeagueString(k)];
-}
-// 🎯 Only include users who exist in the database (filter out deleted users)
-async function enrichUsernamesFromUsersCollection(db, scoresByUid) {
-  if (!db) return;
-  const uids = Object.keys(scoresByUid);
-  if (!uids.length) return;
-
-  try {
-    await Promise.all(
-      uids.map(async (uid) => {
-        try {
-          const snap = await db.collection("users").doc(uid).get();
-          if (!snap.exists) {
-            // If the user does not exist, skip
-            return;
-          }
-          const data = snap.data() || {};
-          const email = data.email || data.userEmail || null;
-          const bestName =
-            data.userName ||
-            data.username ||
-            data.displayName ||
-            (email ? email.split("@")[0] : null);
-
-          if (bestName && bestName !== "Player") {
-            scoresByUid[uid].username = bestName;  // Only assign if the name is valid
-          }
-        } catch (e) {
-          console.warn("[Winners] user lookup failed for", uid, e);
-          // Skip user if lookup fails
-        }
-      })
-    );
-  } catch (err) {
-    console.warn("[Winners] enrichUsernamesFromUsersCollection failed:", err);
-  }
-}
