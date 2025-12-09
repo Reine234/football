@@ -201,34 +201,43 @@
       console.warn("[Winners] enrichUsernamesFromUsersCollection failed:", err);
     }
   }
-
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
   function ensureMatchdayStrip(matchdays, currentMatchday, onSelectMatchday) {
     if (!matchdays || !matchdays.length) return;
 
     const card = document.querySelector(".card");
-    const tableEl = card && card.querySelector(".table");
-    if (!card || !tableEl) return;
+    if (!card) return;
+
+    // Try to find a table INSIDE this card
+    let tableEl = card.querySelector(".table");
 
     let strip = card.querySelector(".matchday-strip");
     if (!strip) {
       strip = document.createElement("div");
       strip.className = "matchday-strip";
-      // Insert *above* the rankings table (under the tabs)
-      card.insertBefore(strip, tableEl);
+
+      // SAFETY: only insertBefore if the table is actually a child of this card
+      if (tableEl && tableEl.parentNode === card) {
+        card.insertBefore(strip, tableEl);
+      } else {
+        // Fallback: just append at the bottom of the card
+        card.appendChild(strip);
+      }
     }
 
     // Build pills like WhatsApp statuses (one per matchday)
     strip.innerHTML = matchdays
-      .map((md) => {
-        const activeClass = md === currentMatchday ? " active" : "";
-        return `
-          <button class="matchday-pill${activeClass}" data-md="${md}">
-            MD ${md}
-          </button>
-        `;
-      })
-      .join("");
+      strip.innerHTML = matchdays
+  .map((md) => {
+    const activeClass = md === currentMatchday ? " active" : "";
+    return `
+      <button class="matchday-pill${activeClass}" data-md="${md}">
+        Matchday ${md}
+      </button>
+    `;
+  })
+  .join("");
+
 
     const pills = strip.querySelectorAll(".matchday-pill");
     pills.forEach((btn) => {
@@ -241,6 +250,7 @@
       });
     });
   }
+
 
   // ---------- Daily Rankings from Firestore (now per matchday) ----------
   async function loadDailyRankings(
