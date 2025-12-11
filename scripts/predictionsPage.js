@@ -103,7 +103,7 @@
   })();
 
   // ------------------------------------------------------------
-  // League detection
+  // League detection + selection
   // ------------------------------------------------------------
   function detectLeagueKeyFromPath() {
     const path = (window.location.pathname || "").toLowerCase();
@@ -114,41 +114,12 @@
   }
 
   const folderLeagueKey = detectLeagueKeyFromPath();
-  // 🔹 AFCON fallback for production / direct-links:
-  // If no FBL_selectedRound is in sessionStorage, build a default selection
-  // from the AFCON master fixtures so the page still works.
-  if (folderLeagueKey === "AFCON" && !selected) {
-    let master = null;
-
-    if (
-      window.ALL_LEAGUES_FIXTURES &&
-      Array.isArray(window.ALL_LEAGUES_FIXTURES.AFCON)
-    ) {
-      master = window.ALL_LEAGUES_FIXTURES.AFCON;
-    } else if (Array.isArray(window.AFCON_FIXTURES)) {
-      master = window.AFCON_FIXTURES;
-    } else if (Array.isArray(window.FBL_AFCON_FIXTURES)) {
-      master = window.FBL_AFCON_FIXTURES;
-    }
-
-    if (master && master.length) {
-      selected = {
-        leagueKey: "AFCON",
-        roundNum: 1,          // default to Matchday 1 if nothing is set
-        fixtures: master,     // full list; later we filter by matchday
-      };
-      console.log(
-        "[PredictionsPage] (AFCON) built default selection from master fixtures",
-        selected
-      );
-    }
-  }
 
   // Universal loader, but:
   //  - AFCON: DO NOT use FBL.loadSelectedRound (we only use sessionStorage)
   //  - others: first FBL.loadSelectedRound, then sessionStorage as fallback
   function loadSelectedRoundUniversal(folderLeagueKey) {
-    // AFCON: only use sessionStorage (set by AFCON index/matchcard pages)
+    // AFCON -> only sessionStorage (set by AFCON index/matchcard pages)
     if (folderLeagueKey === "AFCON") {
       try {
         const raw = sessionStorage.getItem("FBL_selectedRound");
@@ -166,7 +137,7 @@
       return null;
     }
 
-    // Non-AFCON leagues: original behaviour (FBL.loadSelectedRound, then sessionStorage)
+    // Non-AFCON leagues: original behaviour
     try {
       if (window.FBL && typeof window.FBL.loadSelectedRound === "function") {
         const sel = window.FBL.loadSelectedRound();
@@ -195,7 +166,37 @@
     return null;
   }
 
-  let selected  = loadSelectedRoundUniversal(folderLeagueKey);
+  let selected = loadSelectedRoundUniversal(folderLeagueKey);
+
+  // 🔹 AFCON fallback for production / direct-links:
+  // If no FBL_selectedRound is in sessionStorage, build a default selection
+  // from the AFCON master fixtures so the page still works.
+  if (folderLeagueKey === "AFCON" && !selected) {
+    let master = null;
+
+    if (
+      window.ALL_LEAGUES_FIXTURES &&
+      Array.isArray(window.ALL_LEAGUES_FIXTURES.AFCON)
+    ) {
+      master = window.ALL_LEAGUES_FIXTURES.AFCON;
+    } else if (Array.isArray(window.AFCON_FIXTURES)) {
+      master = window.AFCON_FIXTURES;
+    } else if (Array.isArray(window.FBL_AFCON_FIXTURES)) {
+      master = window.FBL_AFCON_FIXTURES;
+    }
+
+    if (master && master.length) {
+      selected = {
+        leagueKey: "AFCON",
+        roundNum: 1,      // default Matchday 1
+        fixtures: master, // full list; we'll filter by matchday later
+      };
+      console.log(
+        "[PredictionsPage] (AFCON) built default selection from master fixtures",
+        selected
+      );
+    }
+  }
 
   // ------------------------------------------------------------
   // Decide leagueKey safely
@@ -264,7 +265,7 @@
     return null;
   }
 
-  // 🔹 AFCON helper: always something like "Group A", "Group B", ...
+  // AFCON label "Group A", "Group B", ...
   function getAfconGroupLabel(f) {
     const raw =
       f.group ||
@@ -295,6 +296,14 @@
     }
 
     return "Group " + str;
+  }
+
+  // Group code "A".."F" from the label
+  function getAfconGroupCode(f) {
+    const label = getAfconGroupLabel(f);
+    if (!label) return null;
+    const m = label.match(/Group\s+([A-F])/i);
+    return m ? m[1].toUpperCase() : null;
   }
 
   // ------------------------------------------------------------
@@ -351,7 +360,7 @@
 
   let pageFixtures;
 
-  // 👉 AFCON: ALWAYS show all fixtures for this matchday across all groups
+  // AFCON: ALWAYS show all fixtures for this matchday across all groups
   if (leagueKey === "AFCON") {
     pageFixtures = effectiveAllFixtures.slice();
   } else if (mode === "single" && selFixtureId) {
@@ -460,8 +469,6 @@
   }
 
   // ------------------------------------------------------------
-  // Render fixtures (with AFCON grouping & sorting)
-  // -------------------------------  // ------------------------------------------------------------
   // Render fixtures (with AFCON grouping & strict A→F ordering)
   // ------------------------------------------------------------
   function renderFixtures() {
@@ -487,25 +494,21 @@
         const la = getAfconGroupLabel(a); // e.g. "Group A"
         const lb = getAfconGroupLabel(b); // e.g. "Group B"
 
-        // Try to extract the letter A–F from "Group X"
         const ma = la.match(/Group\s+([A-F])/i);
         const mb = lb.match(/Group\s+([A-F])/i);
 
         if (ma && mb) {
-          const ga = ma[1].toUpperCase().charCodeAt(0); // 'A'..'F'
+          const ga = ma[1].toUpperCase().charCodeAt(0);
           const gb = mb[1].toUpperCase().charCodeAt(0);
           if (ga !== gb) return ga - gb; // strict A→F
         } else if (ma && !mb) {
-          // Proper groups (A–F) come before anything without a clear letter
           return -1;
         } else if (!ma && mb) {
           return 1;
         } else if (la !== lb) {
-          // Fallback: plain string compare
           return la.localeCompare(lb);
         }
 
-        // Same group → sort by kickoff time
         const tA = new Date(a.utcDate || a.utc_date || a.date || 0).getTime();
         const tB = new Date(b.utcDate || b.utc_date || b.date || 0).getTime();
         return tA - tB;
@@ -529,7 +532,7 @@
           const label = getAfconGroupLabel(f);
           if (label && label !== lastGroupLabel) {
             lastGroupLabel = label;
-            groupHeader = `<h4 class="afcon-group-title">${label}</h4>`;
+            groupHeader = `<h4 class="afcon-group-title">${label} - Matchday ${roundNum}</h4>`;
           }
         }
 
@@ -597,7 +600,6 @@
       display(aVal, pred.awayScore);
     });
   }
-
 
   // ------------------------------------------------------------
   // Global +/- handler on window (capture phase)
@@ -706,10 +708,20 @@
       const homeTeam = getHomeTeam(f);
       const awayTeam = getAwayTeam(f);
 
+      let groupCode  = null;
+      let groupLabel = null;
+      if (leagueKey === "AFCON") {
+        groupLabel = getAfconGroupLabel(f);
+        groupCode  = getAfconGroupCode(f);
+      }
+
       return {
         league:    leagueKey,
         fixtureId: String(f.id),
         matchday:  roundNum,
+
+        group:      groupCode,   // "A", "B", ...
+        groupLabel: groupLabel,  // "Group A", ...
 
         home: {
           id:    homeTeam.id,
@@ -797,13 +809,15 @@
     const rows = touched
       .map((f) => {
         const p = userPred[String(f.id)];
+        const homeTeam = getHomeTeam(f);
+        const awayTeam = getAwayTeam(f);
         return `
         <div class="gprompt__row">
           <img class="gprompt__logo gprompt__logo--home" />
-          <div class="gprompt__team">${getHomeTeam(f).name}</div>
+          <div class="gprompt__team">${homeTeam.name}</div>
           <div class="gprompt__score">${p.homeScore} - ${p.awayScore}</div>
           <img class="gprompt__logo gprompt__logo--away" />
-          <div class="gprompt__team">${getAwayTeam(f).name}</div>
+          <div class="gprompt__team">${awayTeam.name}</div>
         </div>`;
       })
       .join("");
@@ -848,6 +862,7 @@
     });
 
   // ------------------------------------------------------------
+  //
   // Initial render + wire clicks
   // ------------------------------------------------------------
   renderFixtures();
