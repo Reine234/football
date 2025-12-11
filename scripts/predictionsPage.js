@@ -114,6 +114,35 @@
   }
 
   const folderLeagueKey = detectLeagueKeyFromPath();
+  // 🔹 AFCON fallback for production / direct-links:
+  // If no FBL_selectedRound is in sessionStorage, build a default selection
+  // from the AFCON master fixtures so the page still works.
+  if (folderLeagueKey === "AFCON" && !selected) {
+    let master = null;
+
+    if (
+      window.ALL_LEAGUES_FIXTURES &&
+      Array.isArray(window.ALL_LEAGUES_FIXTURES.AFCON)
+    ) {
+      master = window.ALL_LEAGUES_FIXTURES.AFCON;
+    } else if (Array.isArray(window.AFCON_FIXTURES)) {
+      master = window.AFCON_FIXTURES;
+    } else if (Array.isArray(window.FBL_AFCON_FIXTURES)) {
+      master = window.FBL_AFCON_FIXTURES;
+    }
+
+    if (master && master.length) {
+      selected = {
+        leagueKey: "AFCON",
+        roundNum: 1,          // default to Matchday 1 if nothing is set
+        fixtures: master,     // full list; later we filter by matchday
+      };
+      console.log(
+        "[PredictionsPage] (AFCON) built default selection from master fixtures",
+        selected
+      );
+    }
+  }
 
   // Universal loader, but:
   //  - AFCON: DO NOT use FBL.loadSelectedRound (we only use sessionStorage)
