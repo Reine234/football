@@ -168,9 +168,10 @@
   <script src="../scripts/firebase-init.js"></script>
   <script src="../scripts/config.js"></script>
   <script src="../scripts/api.js"></script>
-  <script src="../scripts/predictionsPage.js"></script>
+  <script src="afconFixtures.js"></script>
+  
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+<script src="../scripts/winnersPage.js"></script>
  <script>
     document.addEventListener("DOMContentLoaded", () => {
       const groupLabel = "Group B";
@@ -262,7 +263,7 @@
       if (navItems[2]) {
         navItems[2].style.cursor = "pointer";
         navItems[2].addEventListener("click", () => {
-          alert("Winners page coming soon!");
+           window.location.href = "winners.html";
         });
       }
       if (navItems[3]) {
@@ -314,25 +315,38 @@
         }
       });
 
-      // ---- Go to predictions with fixtures for this matchday ----
-      function goToAfconPredictions() {
-        const fixturesForDay = groupFixtures.filter(
-          f => f.roundNum === currentDay
-        );
 
-        if (window.FBL && typeof FBL.persistSelectedRound === "function") {
-          FBL.persistSelectedRound("AFCON", currentDay, fixturesForDay);
-        }
-        window.location.href = "predictions.html";
-      }
 
-      // match cards clickable
+function goToAfconPredictions() {
+  // ✅ Use the global helper from afconFixtures.js
+  const fixturesForDay = window.getAfconFixturesForMatchday(currentDay);
+
+  const payload = {
+    leagueKey: "AFCON",
+    roundNum: currentDay,
+    fixtures: fixturesForDay,  // <-- now ALL groups for that matchday
+  };
+
+  sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+  sessionStorage.setItem("FBL_leagueKey", "AFCON");
+  sessionStorage.setItem("FBL_mode", "all"); // predict all matches for that day
+
+  console.log(
+    "[AFCON] going to predictions with",
+    fixturesForDay.length,
+    "fixtures for matchday",
+    currentDay
+  );
+
+  window.location.href = "predictions.html";
+}
+
+
       document.querySelectorAll(".match-card").forEach(card => {
         card.style.cursor = "pointer";
         card.addEventListener("click", goToAfconPredictions);
       });
 
-      // Bet + button
       const betBtn = document.getElementById("bet-button-main");
       if (betBtn) {
         betBtn.addEventListener("click", (e) => {
@@ -341,7 +355,6 @@
         });
       }
 
-      // initial
       updateDayHeaderAndVisibility();
     });
   </script>

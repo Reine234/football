@@ -201,14 +201,15 @@
       console.warn("[Winners] enrichUsernamesFromUsersCollection failed:", err);
     }
   }
+
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
-  function ensureMatchdayStrip(matchdays, currentMatchday, onSelectMatchday) {
+  // Added leagueKey so we can customize the label for AFCON.
+  function ensureMatchdayStrip(matchdays, currentMatchday, leagueKey, onSelectMatchday) {
     if (!matchdays || !matchdays.length) return;
 
     const card = document.querySelector(".card");
     if (!card) return;
 
-    // Try to find a table INSIDE this card
     let tableEl = card.querySelector(".table");
 
     let strip = card.querySelector(".matchday-strip");
@@ -216,28 +217,30 @@
       strip = document.createElement("div");
       strip.className = "matchday-strip";
 
-      // SAFETY: only insertBefore if the table is actually a child of this card
       if (tableEl && tableEl.parentNode === card) {
         card.insertBefore(strip, tableEl);
       } else {
-        // Fallback: just append at the bottom of the card
         card.appendChild(strip);
       }
     }
 
-    // Build pills like WhatsApp statuses (one per matchday)
     strip.innerHTML = matchdays
-      strip.innerHTML = matchdays
-  .map((md) => {
-    const activeClass = md === currentMatchday ? " active" : "";
-    return `
-      <button class="matchday-pill${activeClass}" data-md="${md}">
-        Matchday ${md}
-      </button>
-    `;
-  })
-  .join("");
+      .map((md) => {
+        const activeClass = md === currentMatchday ? " active" : "";
 
+        // 🔹 For AFCON, show "Group Matchday X"
+        const labelText =
+          leagueKey === "AFCON"
+            ? `Group Matchday ${md}`
+            : `Matchday ${md}`;
+
+        return `
+          <button class="matchday-pill${activeClass}" data-md="${md}">
+            ${labelText}
+          </button>
+        `;
+      })
+      .join("");
 
     const pills = strip.querySelectorAll(".matchday-pill");
     pills.forEach((btn) => {
@@ -250,7 +253,6 @@
       });
     });
   }
-
 
   // ---------- Daily Rankings from Firestore (now per matchday) ----------
   async function loadDailyRankings(
@@ -359,7 +361,7 @@
       }
 
       // Build / update the WhatsApp-style matchday strip
-      ensureMatchdayStrip(matchdays, selectedMatchday, (newMd) => {
+      ensureMatchdayStrip(matchdays, selectedMatchday, leagueKey, (newMd) => {
         // when a pill is clicked, reload rankings for that matchday
         loadDailyRankings(
           db,

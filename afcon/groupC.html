@@ -165,8 +165,9 @@
   <script src="../scripts/firebase-init.js"></script>
   <script src="../scripts/config.js"></script>
   <script src="../scripts/api.js"></script>
-<script src="../scripts/predictionsPage.js"></script>
+  <script src="afconFixtures.js"></script>
 
+<script src="../scripts/winnersPage.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
   <script>
@@ -174,72 +175,80 @@
       const groupLabel = "Group D";
 
       const groupFixtures = [
-        {
-          id: "AFGD-1",
-          utcDate: "2025-12-23T19:00:00Z",
-          roundNum: 1,
-          roundText: "Matchday 1",
-          leagueId: "AFCON",
-          home: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
-          away: { id: "BOT", name: "Botswana", logo: "../img/botswana.png" },
-          goals: { home: null, away: null },
-          status: { short: "NS", long: "Not Started" }
-        },
-        {
-          id: "AFGD-2",
-          utcDate: "2025-12-23T14:30:00Z",
-          roundNum: 1,
-          roundText: "Matchday 1",
-          leagueId: "AFCON",
-          home: { id: "COD", name: "DR Congo", logo: "../img/drcongo.png" },
-          away: { id: "BEN", name: "Benin", logo: "../img/benin.png" },
-          goals: { home: null, away: null },
-          status: { short: "NS", long: "Not Started" }
-        },
-        {
-          id: "AFGD-3",
-          utcDate: "2025-12-27T19:00:00Z",
-          roundNum: 2,
-          roundText: "Matchday 2",
-          leagueId: "AFCON",
-          home: { id: "COD", name: "DR Congo", logo: "../img/drcongo.png" },
-          away: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
-          goals: { home: null, away: null },
-          status: { short: "NS", long: "Not Started" }
-        },
-        {
-          id: "AFGD-4",
-          utcDate: "2025-12-27T14:30:00Z",
-          roundNum: 2,
-          roundText: "Matchday 2",
-          leagueId: "AFCON",
-          home: { id: "BEN", name: "Benin", logo: "../img/benin.png" },
-          away: { id: "BOT", name: "Botswana", logo: "../img/botswana.png" },
-          goals: { home: null, away: null },
-          status: { short: "NS", long: "Not Started" }
-        },
-        {
-          id: "AFGD-5",
-          utcDate: "2025-12-30T17:30:00Z",
-          roundNum: 3,
-          roundText: "Matchday 3",
-          leagueId: "AFCON",
-          home: { id: "BOT", name: "Botswana", logo: "../img/botswana.png" },
-          away: { id: "COD", name: "DR Congo", logo: "../img/drcongo.png" },
-          goals: { home: null, away: null },
-          status: { short: "NS", long: "Not Started" }
-        },
-        {
-          id: "AFGD-6",
-          utcDate: "2025-12-30T17:30:00Z",
-          roundNum: 3,
-          roundText: "Matchday 3",
-          leagueId: "AFCON",
-          home: { id: "BEN", name: "Benin", logo: "../img/benin.png" },
-          away: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
-          goals: { home: null, away: null },
-          status: { short: "NS", long: "Not Started" }
-        }
+       // ===== GROUP C =====
+{
+  id: "AFGC-1",
+  group: "C",
+  utcDate: "2025-12-23T19:00:00Z",
+  roundNum: 1,
+  roundText: "Matchday 1",
+  leagueId: null,
+  home: { id: "NGA", name: "Nigeria",   logo: "../img/nigeria.png" },
+  away: { id: "TZA", name: "Tanzania",  logo: "../img/tanzania.png" },
+  goals: { home: null, away: null },
+  status: { short: "NS", long: "Not Started" },
+},
+{
+  id: "AFGC-2",
+  group: "C",
+  utcDate: "2025-12-23T14:30:00Z",
+  roundNum: 1,
+  roundText: "Matchday 1",
+  leagueId: null,
+  home: { id: "TUN", name: "Tunisia",  logo: "../img/tunisia.png" },
+  away: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
+  goals: { home: null, away: null },
+  status: { short: "NS", long: "Not Started" },
+},
+{
+  id: "AFGC-3",
+  group: "C",
+  utcDate: "2025-12-27T19:00:00Z",
+  roundNum: 2,
+  roundText: "Matchday 2",
+  leagueId: null,
+  home: { id: "NGA", name: "Nigeria",  logo: "../img/nigeria.png" },
+  away: { id: "TUN", name: "Tunisia",  logo: "../img/tunisia.png" },
+  goals: { home: null, away: null },
+  status: { short: "NS", long: "Not Started" },
+},
+{
+  id: "AFGC-4",
+  group: "C",
+  utcDate: "2025-12-27T14:30:00Z",
+  roundNum: 2,
+  roundText: "Matchday 2",
+  leagueId: null,
+  home: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
+  away: { id: "TZA", name: "Tanzania", logo: "../img/tanzania.png" },
+  goals: { home: null, away: null },
+  status: { short: "NS", long: "Not Started" },
+},
+{
+  id: "AFGC-5",
+  group: "C",
+  utcDate: "2025-12-30T17:30:00Z",
+  roundNum: 3,
+  roundText: "Matchday 3",
+  leagueId: null,
+  home: { id: "NGA", name: "Nigeria",  logo: "../img/nigeria.png" },
+  away: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
+  goals: { home: null, away: null },
+  status: { short: "NS", long: "Not Started" },
+},
+{
+  id: "AFGC-6",
+  group: "C",
+  utcDate: "2025-12-30T17:30:00Z",
+  roundNum: 3,
+  roundText: "Matchday 3",
+  leagueId: null,
+  home: { id: "TZA", name: "Tanzania", logo: "../img/tanzania.png" },
+  away: { id: "TUN", name: "Tunisia",  logo: "../img/tunisia.png" },
+  goals: { home: null, away: null },
+  status: { short: "NS", long: "Not Started" },
+},
+
       ];
 
       const navItems = document.querySelectorAll(".nav .nav-item");
@@ -258,7 +267,7 @@
       if (navItems[2]) {
         navItems[2].style.cursor = "pointer";
         navItems[2].addEventListener("click", () => {
-          alert("Winners page coming soon!");
+             window.location.href = "winners.html";
         });
       }
       if (navItems[3]) {
@@ -306,16 +315,30 @@
           updateDayHeaderAndVisibility();
         }
       });
+function goToAfconPredictions() {
+  // ✅ Use the global helper from afconFixtures.js
+  const fixturesForDay = window.getAfconFixturesForMatchday(currentDay);
 
-      function goToAfconPredictions() {
-        const fixturesForDay = groupFixtures.filter(
-          f => f.roundNum === currentDay
-        );
-        if (window.FBL && typeof FBL.persistSelectedRound === "function") {
-          FBL.persistSelectedRound("AFCON", currentDay, fixturesForDay);
-        }
-        window.location.href = "predictions.html";
-      }
+  const payload = {
+    leagueKey: "AFCON",
+    roundNum: currentDay,
+    fixtures: fixturesForDay,  // <-- now ALL groups for that matchday
+  };
+
+  sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+  sessionStorage.setItem("FBL_leagueKey", "AFCON");
+  sessionStorage.setItem("FBL_mode", "all"); // predict all matches for that day
+
+  console.log(
+    "[AFCON] going to predictions with",
+    fixturesForDay.length,
+    "fixtures for matchday",
+    currentDay
+  );
+
+  window.location.href = "predictions.html";
+}
+
 
       document.querySelectorAll(".match-card").forEach(card => {
         card.style.cursor = "pointer";
@@ -407,5 +430,3 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-</body>
-</html>

@@ -168,7 +168,9 @@
   <script src="../scripts/firebase-init.js"></script>
   <script src="../scripts/config.js"></script>
   <script src="../scripts/api.js"></script>
+  <script src="afconFixtures.js"></script>
 <script src="../scripts/predictionsPage.js"></script>
+<script src="../scripts/winnersPage.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 
@@ -320,54 +322,46 @@
         updateDayHeaderAndVisibility();
       }
     });
+function goToAfconPredictions() {
+  // ✅ Use the global helper from afconFixtures.js
+  const fixturesForDay = window.getAfconFixturesForMatchday(currentDay);
 
-    // -----------------------------
-    // 4) TELL predictionsPage.js WHICH FIXTURES TO USE
-    //    (this is the missing piece)
-    // -----------------------------
-    function goToAfconPredictions() {
-      // Fixtures for THIS matchday only
-      const fixturesForDay = groupAFixtures.filter(
-        (f) => f.roundNum === currentDay
-      );
+  const payload = {
+    leagueKey: "AFCON",
+    roundNum: currentDay,
+    fixtures: fixturesForDay,  // <-- now ALL groups for that matchday
+  };
 
-      // Save into sessionStorage in the SAME format the other leagues use
-      const payload = {
-        leagueKey: "AFCON",
-        roundNum: currentDay,
-        fixtures: fixturesForDay
-      };
-      sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
-      sessionStorage.setItem("FBL_leagueKey", "AFCON");
+  sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+  sessionStorage.setItem("FBL_leagueKey", "AFCON");
+  sessionStorage.setItem("FBL_mode", "all"); // predict all matches for that day
 
-      // If your global helper exists, also call it (doesn't break anything)
-      if (window.FBL && typeof window.FBL.persistSelectedRound === "function") {
-        window.FBL.persistSelectedRound("AFCON", currentDay, fixturesForDay);
+  console.log(
+    "[AFCON] going to predictions with",
+    fixturesForDay.length,
+    "fixtures for matchday",
+    currentDay
+  );
+
+  window.location.href = "predictions.html";
+}
+
+
+      document.querySelectorAll(".match-card").forEach(card => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", goToAfconPredictions);
+      });
+
+      const betBtn = document.getElementById("bet-button-main");
+      if (betBtn) {
+        betBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          goToAfconPredictions();
+        });
       }
 
-      // Now go to the AFCON predictions page in the SAME folder
-      window.location.href = "predictions.html";
-    }
-
-    // Entire match card clickable → open predictions
-    const cards = document.querySelectorAll(".match-card");
-    cards.forEach((card) => {
-      card.style.cursor = "pointer";
-      card.addEventListener("click", goToAfconPredictions);
+      updateDayHeaderAndVisibility();
     });
-
-    // Bet+ button also uses same behaviour
-    const betBtn = document.getElementById("bet-button-main");
-    if (betBtn) {
-      betBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        goToAfconPredictions();
-      });
-    }
-
-    // Initial view = Matchday 1
-    updateDayHeaderAndVisibility();
-  });
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
