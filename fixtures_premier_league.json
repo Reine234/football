@@ -1,0 +1,62 @@
+[
+  {
+    "id": "EPL-MD18-001",
+    "league": "PREMIER_LEAGUE",
+    "matchday": 18,
+    "date": "2025-12-17",
+    "time": "20:00",
+    "venue": "Emirates Stadium",
+    "home": "Arsenal",
+    "away": "West Ham"
+  },
+  {
+    "id": "EPL-MD18-002",
+    "league": "PREMIER_LEAGUE",
+    "matchday": 18,
+    "date": "2025-12-18",
+    "time": "19:30",
+    "venue": "Anfield",
+    "home": "Liverpool",
+    "away": "Manchester United"
+  },
+  {
+    "id": "EPL-MD18-003",
+    "league": "PREMIER_LEAGUE",
+    "matchday": 18,
+    "date": "2025-12-18",
+    "time": "17:30",
+    "venue": "Etihad Stadium",
+    "home": "Manchester City",
+    "away": "Brighton"
+  },
+  {
+    "id": "EPL-MD19-001",
+    "league": "PREMIER_LEAGUE",
+    "matchday": 19,
+    "date": "2025-12-26",
+    "time": "15:00",
+    "venue": "Tottenham Hotspur Stadium",
+    "home": "Tottenham",
+    "away": "Chelsea"
+  },
+  {
+    "id": "EPL-MD19-002",
+    "league": "PREMIER_LEAGUE",
+    "matchday": 19,
+    "date": "2025-12-26",
+    "time": "15:00",
+    "venue": "St James' Park",
+    "home": "Newcastle",
+    "away": "Aston Villa"
+  },
+  {
+    "id": "EPL-MD20-001",
+    "league": "PREMIER_LEAGUE",
+    "matchday": 20,
+    "date": "2025-12-30",
+    "time": "20:00",
+    "venue": "Old Trafford",
+    "home": "Manchester United",
+    "away": "Everton"
+  }
+]

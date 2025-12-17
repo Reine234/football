@@ -61,7 +61,7 @@
     (window.FBL_CFG && window.FBL_CFG.API_BASE) ||
     window.location.origin
   ).replace(/\/$/, "");
-  const API_USERS = apiBase + "/api/users.php";
+  const API_USERS = apiBase + "/api/users.php"; // (kept, even if unused)
 
   // ---------- UTILS ----------
   const esc = (s) =>
@@ -207,26 +207,34 @@
       }
     }
   }
-// This function is needed for the error you're encountering
-async function fetchFixturesForCurrentLeague() {
-  if (!window.FBL || typeof window.FBL.fetchFixturesForLeague !== "function") {
-    console.warn("resultsPage: fetchFixturesForLeague not defined.");
-    return { byId: {}, list: [] };
-  }
-  try {
-    const all = await window.FBL.fetchFixturesForLeague(leagueKey); // Fetch fixtures based on the current league
-    const byId = {};
-    (all || []).forEach((f) => {
-      byId[String(f.id)] = f;  // Create a dictionary of fixtures
-    });
-    return { byId, list: all || [] };
-  } catch (e) {
-    console.warn("resultsPage: fetchFixturesForLeague failed", e);
-    return { byId: {}, list: [] };
-  }
-}
 
-
+  // ---------- FIXTURES FOR CURRENT LEAGUE ----------
+  async function fetchFixturesForCurrentLeague() {
+    if (!window.FBL || typeof window.FBL.fetchFixturesForLeague !== "function") {
+      console.warn("resultsPage: fetchFixturesForLeague not defined.");
+      return { byId: {}, list: [] };
+    }
+    try {
+      const all = await window.FBL.fetchFixturesForLeague(leagueKey);
+      const byId = {};
+      (all || []).forEach((f) => {
+        // Support both top-level id and nested fixture.id
+        const fid =
+          f.id != null
+            ? f.id
+            : f.fixture && f.fixture.id != null
+            ? f.fixture.id
+            : null;
+        if (fid != null) {
+          byId[String(fid)] = f;
+        }
+      });
+      return { byId, list: all || [] };
+    } catch (e) {
+      console.warn("resultsPage: fetchFixturesForLeague failed", e);
+      return { byId: {}, list: [] };
+    }
+  }
 function buildCardHTML(idx, pred, fixture) {
   const homeName =
     (fixture && fixture.home && fixture.home.name) ||
@@ -250,20 +258,31 @@ function buildCardHTML(idx, pred, fixture) {
   const predAwayVal =
     pred.away && pred.away.score != null ? pred.away.score : "";
 
-  const finHome =
+  // 🔹 Try to read real final scores from fixtures (API / fake script)
+  let finHome =
     fixture &&
     fixture.goals &&
     fixture.goals.home !== null &&
     fixture.goals.home !== undefined
       ? fixture.goals.home
       : "";
-  const finAway =
+  let finAway =
     fixture &&
     fixture.goals &&
     fixture.goals.away !== null &&
     fixture.goals.away !== undefined
       ? fixture.goals.away
       : "";
+
+  // 🔥 AFCON ONLY: if no final scores, fall back to our own fake scores
+  if (
+    leagueKey === "AFCON" &&
+    (finHome === "" || finAway === "" || finHome == null || finAway == null)
+  ) {
+    const fake = generateFakeFinalScore(pred, fixture);
+    finHome = fake.home;
+    finAway = fake.away;
+  }
 
   const pts = computePoints(
     Number(predHomeVal),
@@ -319,83 +338,111 @@ function buildCardHTML(idx, pred, fixture) {
   `;
   return { html, pts };
 }
-function attachLogos(cardEl, pred, fixture) {
-  const homeLogoEl = cardEl.querySelector(".home-logo");
-  const awayLogoEl = cardEl.querySelector(".away-logo");
 
-  // AFCON: prefer logos stored with prediction/fixture (from your static groups)
-  if (leagueKey === "AFCON") {
-    const homeLogo =
-      (fixture && fixture.home && fixture.home.logo) ||
-      (pred.home && pred.home.logo);
-    const awayLogo =
-      (fixture && fixture.away && fixture.away.logo) ||
-      (pred.away && pred.away.logo);
 
-    if (homeLogoEl && homeLogo) homeLogoEl.src = homeLogo;
-    if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
+
+  function attachLogos(cardEl, pred, fixture) {
+    const homeLogoEl = cardEl.querySelector(".home-logo");
+    const awayLogoEl = cardEl.querySelector(".away-logo");
+
+    // AFCON: prefer logos stored with prediction/fixture (from your static groups / TSDB)
+    if (leagueKey === "AFCON") {
+      const homeLogo =
+        (fixture &&
+          fixture.home &&
+          fixture.home.logo) ||
+        (fixture &&
+          fixture.teams &&
+          fixture.teams.home &&
+          fixture.teams.home.logo) ||
+        (pred.home && pred.home.logo);
+      const awayLogo =
+        (fixture &&
+          fixture.away &&
+          fixture.away.logo) ||
+        (fixture &&
+          fixture.teams &&
+          fixture.teams.away &&
+          fixture.teams.away.logo) ||
+        (pred.away && pred.away.logo);
+
+      if (homeLogoEl && homeLogo) homeLogoEl.src = homeLogo;
+      if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
+    }
+
+    // Fallback / other leagues: use global ensureLogo helper
+    if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
+
+    const homeTeam =
+      (fixture && (fixture.home || (fixture.teams && fixture.teams.home))) ||
+      { id: pred.home && pred.home.id, name: pred.home && pred.home.name };
+    const awayTeam =
+      (fixture && (fixture.away || (fixture.teams && fixture.teams.away))) ||
+      { id: pred.away && pred.away.id, name: pred.away && pred.away.name };
+
+    if (homeLogoEl) window.FBL.ensureLogo(homeTeam, homeLogoEl);
+    if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
   }
 
-  // Fallback / other leagues: use global ensureLogo helper
-  if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
+  // Function to normalize the names of teams (to handle variations in name formatting)
+  function normalizeName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")  // strip accents
+      .replace(/[^a-z0-9]+/g, "")       // remove any non-alphanumeric characters
+      .trim();
+  }
 
-  const homeTeam =
-    (fixture && fixture.home) ||
-    { id: pred.home && pred.home.id, name: pred.home && pred.home.name };
-  const awayTeam =
-    (fixture && fixture.away) ||
-    { id: pred.away && pred.away.id, name: pred.away && pred.away.name };
+  // Function to find the AFCON fixture based on teams
+  function findAfconFixture(pred, fixturesList) {
+    if (!fixturesList || !fixturesList.length) return null;
 
-  if (homeLogoEl) window.FBL.ensureLogo(homeTeam, homeLogoEl);
-  if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
-}
-// Function to normalize the names of teams (to handle variations in name formatting)
-function normalizeName(name) {
-  return String(name || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")  // strip accents
-    .replace(/[^a-z0-9]+/g, "")  // remove any non-alphanumeric characters
-    .trim();
-}
+    const predHome = normalizeName(pred.home && pred.home.name);
+    const predAway = normalizeName(pred.away && pred.away.name);
+    if (!predHome || !predAway) return null;
 
-// Function to find the AFCON fixture based on teams
-function findAfconFixture(pred, fixturesList) {
-  if (!fixturesList || !fixturesList.length) return null;
+    // 1) same home/away
+    let candidates = fixturesList.filter((f) => {
+      const homeName =
+        (f.home && f.home.name) ||
+        (f.teams && f.teams.home && f.teams.home.name);
+      const awayName =
+        (f.away && f.away.name) ||
+        (f.teams && f.teams.away && f.teams.away.name);
 
-  const predHome = normalizeName(pred.home && pred.home.name);
-  const predAway = normalizeName(pred.away && pred.away.name);
-  if (!predHome || !predAway) return null;
+      const fh = normalizeName(homeName);
+      const fa = normalizeName(awayName);
+      return fh === predHome && fa === predAway;
+    });
 
-  // 1) same home/away
-  let candidates = fixturesList.filter((f) => {
-    const fh = normalizeName(f.home && f.home.name);
-    const fa = normalizeName(f.away && f.away.name);
-    return fh === predHome && fa === predAway;
-  });
+    if (!candidates.length) return null;
+    if (candidates.length === 1) return candidates[0];
 
-  if (!candidates.length) return null;
-  if (candidates.length === 1) return candidates[0];
+    // 2) if more than one, pick closest by date to kickoff
+    const target = Date.parse(pred.kickoff || pred.timestamp || 0);
+    if (!Number.isFinite(target)) return candidates[0];
 
-  // 2) if more than one, pick closest by date to kickoff
-  const target = Date.parse(pred.kickoff || pred.timestamp || 0);
-  if (!Number.isFinite(target)) return candidates[0];
+    let best = candidates[0];
+    let bestDiff = Infinity;
 
-  let best = candidates[0];
-  let bestDiff = Infinity;
+    candidates.forEach((f) => {
+      const t = Date.parse(
+        f.utcDate ||
+          (f.fixture && f.fixture.date) ||
+          f.timestamp ||
+          0
+      );
+      if (!Number.isFinite(t)) return;
+      const diff = Math.abs(t - target);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = f;
+      }
+    });
 
-  candidates.forEach((f) => {
-    const t = Date.parse(f.utcDate || f.timestamp || 0);
-    if (!Number.isFinite(t)) return;
-    const diff = Math.abs(t - target);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = f;
-    }
-  });
-
-  return best;
-}
+    return best;
+  }
 
   // ---------- MAIN ----------
   async function renderResultsPage() {
@@ -434,7 +481,6 @@ function findAfconFixture(pred, fixturesList) {
             .get();
 
           snap.forEach((doc) => preds.push(doc.data()));
-          // original fallback sort (oldest first) will be overridden below
         }
       }
     } catch (e) {
@@ -458,6 +504,7 @@ function findAfconFixture(pred, fixturesList) {
       const kickoffIso =
         p.kickoff ||
         (fixture && fixture.utcDate) ||
+        (fixture && fixture.fixture && fixture.fixture.date) ||
         p.timestamp ||
         "";
       const ko = Date.parse(kickoffIso);

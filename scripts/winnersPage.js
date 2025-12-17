@@ -204,215 +204,268 @@
 
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
   // Added leagueKey so we can customize the label for AFCON.
-  function ensureMatchdayStrip(matchdays, currentMatchday, leagueKey, onSelectMatchday) {
-    if (!matchdays || !matchdays.length) return;
+  // ---------- Matchday "status" strip (WhatsApp-style) ----------
+// Now supports AFCON group + matchday, e.g. "Group A|1".
+function ensureMatchdayStrip(matchdays, currentKey, leagueKey, onSelectMatchday) {
+  if (!matchdays || !matchdays.length) return;
 
-    const card = document.querySelector(".card");
-    if (!card) return;
+  const card = document.querySelector(".card");
+  if (!card) return;
 
-    let tableEl = card.querySelector(".table");
+  let tableEl = card.querySelector(".table");
 
-    let strip = card.querySelector(".matchday-strip");
-    if (!strip) {
-      strip = document.createElement("div");
-      strip.className = "matchday-strip";
+  let strip = card.querySelector(".matchday-strip");
+  if (!strip) {
+    strip = document.createElement("div");
+    strip.className = "matchday-strip";
 
-      if (tableEl && tableEl.parentNode === card) {
-        card.insertBefore(strip, tableEl);
-      } else {
-        card.appendChild(strip);
-      }
+    // 🔹 Find the direct child of .card that contains the table
+    let target = tableEl;
+    while (target && target.parentNode !== card) {
+      target = target.parentNode;
     }
 
-    strip.innerHTML = matchdays
-      .map((md) => {
-        const activeClass = md === currentMatchday ? " active" : "";
+    if (target && target.parentNode === card) {
+      // strip ABOVE the block that holds the table
+      card.insertBefore(strip, target);
+    } else {
+      // fallback if structure is weird
+      card.appendChild(strip);
+    }
+  }
 
-        // 🔹 For AFCON, show "Group Matchday X"
-        const labelText =
-          leagueKey === "AFCON"
-            ? `Group Matchday ${md}`
-            : `Matchday ${md}`;
+  strip.innerHTML = matchdays
+    .map((key) => {
+      const isActive = key === currentKey;
+      let labelText = "";
 
-        return `
-          <button class="matchday-pill${activeClass}" data-md="${md}">
-            ${labelText}
-          </button>
-        `;
-      })
-      .join("");
+      if (leagueKey === "AFCON" && key.includes("|")) {
+        // key example: "Group A|1"
+        const [groupLabel, mdStr] = key.split("|");
+        const md = parseInt(mdStr, 10);
+        labelText = `${groupLabel} · Matchday ${Number.isFinite(md) ? md : mdStr}`;
+      } else {
+        // other leagues: key is just "1", "2", ...
+        const md = parseInt(key, 10);
+        labelText = `Matchday ${Number.isFinite(md) ? md : key}`;
+      }
 
-    const pills = strip.querySelectorAll(".matchday-pill");
-    pills.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const md = parseInt(btn.getAttribute("data-md"), 10);
-        if (!Number.isFinite(md) || md === currentMatchday) return;
-        if (typeof onSelectMatchday === "function") {
-          onSelectMatchday(md);
-        }
-      });
+      return `
+        <button class="matchday-pill${isActive ? " active" : ""}" data-md-key="${key}">
+          ${labelText}
+        </button>
+      `;
+    })
+    .join("");
+
+  const pills = strip.querySelectorAll(".matchday-pill");
+  pills.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-md-key");
+      if (!key || key === currentKey) return;
+      if (typeof onSelectMatchday === "function") {
+        onSelectMatchday(key);
+      }
     });
-  }
+  });
+}
 
-  // ---------- Daily Rankings from Firestore (now per matchday) ----------
-  async function loadDailyRankings(
-    db,
-    leagueKey,
-    currentUser,
-    tbody,
-    userPointsEl,
-    selectedMatchday // may be null on first call
-  ) {
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="3">Loading rankings…</td></tr>';
+  // ---------- Daily Ra// ---------- Daily Rankings from Firestore (now per matchday AND group for AFCON) ----------
+async function loadDailyRankings(
+  db,
+  leagueKey,
+  currentUser,
+  tbody,
+  userPointsEl,
+  selectedMatchdayKey // may be null on first call
+) {
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="3">Loading rankings…</td></tr>';
 
-    try {
-      // 1) fixtures for this league (for final scores if points are missing)
-      const { byId: fixturesById } = await fetchFixturesForCurrentLeague(leagueKey);
+  try {
+    // 1) fixtures for this league (for final scores if points are missing)
+    const { byId: fixturesById } = await fetchFixturesForCurrentLeague(leagueKey);
 
-      // 2) all predictions; we'll filter by league
-      const snap = await db.collection("predictions").get();
+    // 2) all predictions; we'll filter by league
+    const snap = await db.collection("predictions").get();
 
-      const wantedLeagues = leagueSynonyms(leagueKey);
+    const wantedLeagues = leagueSynonyms(leagueKey);
 
-      // scoresByMatchday[md][uid] = { uid, username, points }
-      const scoresByMatchday = {};
-      const matchdaySet = new Set();
+    // scoresByKey[key][uid] = { uid, username, points }
+    const scoresByKey = {};
+    const keySet = new Set();
 
-      snap.forEach((doc) => {
-        const data = doc.data() || {};
-        const uid = data.uid;
-        if (!uid) return;
+    snap.forEach((doc) => {
+      const data = doc.data() || {};
+      const uid = data.uid;
+      if (!uid) return;
 
-        // filter by league
-        const rawLeague =
-          data.league || data.leagueKey || data.leagueSlug || data.leagueName;
-        const normLeague = normalizeLeagueString(rawLeague);
-        if (!wantedLeagues.includes(normLeague)) return;
+      // filter by league
+      const rawLeague =
+        data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+      const normLeague = normalizeLeagueString(rawLeague);
+      if (!wantedLeagues.includes(normLeague)) return;
 
-        const fixtureId = String(data.fixtureId || "");
-        if (!fixtureId) return;
+      const fixtureId = String(data.fixtureId || "");
+      if (!fixtureId) return;
 
-        const mdRaw = data.matchday;
-        const mdNum = parseInt(mdRaw, 10);
-        if (!Number.isFinite(mdNum)) return; // ignore docs without matchday
+      const mdRaw = data.matchday;
+      const mdNum = parseInt(mdRaw, 10);
+      if (!Number.isFinite(mdNum)) return; // ignore docs without matchday
 
-        matchdaySet.add(mdNum);
+      const fixture = fixturesById[fixtureId];
 
-        const fixture = fixturesById[fixtureId];
+      // predicted scores
+      const predHome = Number(
+        data.home && data.home.score != null ? data.home.score : NaN
+      );
+      const predAway = Number(
+        data.away && data.away.score != null ? data.away.score : NaN
+      );
 
-        // predicted scores
-        const predHome = Number(
-          data.home && data.home.score != null ? data.home.score : NaN
-        );
-        const predAway = Number(
-          data.away && data.away.score != null ? data.away.score : NaN
-        );
-
-        // final scores (from fixtures)
-        let finHome = NaN;
-        let finAway = NaN;
-        if (fixture && fixture.goals) {
-          if (fixture.goals.home !== null && fixture.goals.home !== undefined) {
-            finHome = Number(fixture.goals.home);
-          }
-          if (fixture.goals.away !== null && fixture.goals.away !== undefined) {
-            finAway = Number(fixture.goals.away);
-          }
+      // final scores (from fixtures)
+      let finHome = NaN;
+      let finAway = NaN;
+      if (fixture && fixture.goals) {
+        if (fixture.goals.home !== null && fixture.goals.home !== undefined) {
+          finHome = Number(fixture.goals.home);
         }
-
-        let pts = null;
-
-        // Prefer points already stored by resultsPage.js
-        if (typeof data.points === "number" && Number.isFinite(data.points)) {
-          pts = data.points;
-        } else {
-          pts = computePoints(predHome, predAway, finHome, finAway);
+        if (fixture.goals.away !== null && fixture.goals.away !== undefined) {
+          finAway = Number(fixture.goals.away);
         }
-
-        // no final score yet -> pts === null -> ignore for ranking
-        if (pts == null) return;
-
-        if (!scoresByMatchday[mdNum]) {
-          scoresByMatchday[mdNum] = {};
-        }
-        if (!scoresByMatchday[mdNum][uid]) {
-          scoresByMatchday[mdNum][uid] = {
-            uid,
-            username: computeDisplayNameFromData(data, uid), // temp name
-            points: 0,
-          };
-        }
-        scoresByMatchday[mdNum][uid].points += pts;
-      });
-
-      const matchdays = Array.from(matchdaySet).sort((a, b) => a - b);
-
-      // If no matchdays at all
-      if (!matchdays.length) {
-        tbody.innerHTML = '<tr><td colspan="3">No rankings yet.</td></tr>';
-        if (userPointsEl) userPointsEl.textContent = "0";
-        return;
       }
 
-      // If no matchday chosen yet, use the latest (like the most recent status)
-      if (!Number.isFinite(selectedMatchday)) {
-        selectedMatchday = matchdays[matchdays.length - 1];
-      }
+      let pts = null;
 
-      // Build / update the WhatsApp-style matchday strip
-      ensureMatchdayStrip(matchdays, selectedMatchday, leagueKey, (newMd) => {
-        // when a pill is clicked, reload rankings for that matchday
-        loadDailyRankings(
-          db,
-          leagueKey,
-          currentUser,
-          tbody,
-          userPointsEl,
-          newMd
-        );
-      });
-
-      const scoresByUid = scoresByMatchday[selectedMatchday] || {};
-
-      // 🔥 Try to replace generic names with email prefixes from users collection
-      await enrichUsernamesFromUsersCollection(db, scoresByUid);
-
-      const rows = Object.values(scoresByUid);
-      rows.sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        return String(a.username).localeCompare(String(b.username));
-      });
-
-      if (!rows.length) {
-        tbody.innerHTML =
-          '<tr><td colspan="3">No rankings yet for this matchday.</td></tr>';
+      // Prefer points already stored by resultsPage.js
+      if (typeof data.points === "number" && Number.isFinite(data.points)) {
+        pts = data.points;
       } else {
-        tbody.innerHTML = rows
-          .map(
-            (row, idx) => ` 
-              <tr>
-                <td>${idx + 1}</td>
-                <td>${esc(row.username)}</td>
-                <td>${row.points}</td>
-              </tr>
-            `
-          )
-          .join("");
+        pts = computePoints(predHome, predAway, finHome, finAway);
       }
 
-      // update current user's points in the top strip *for this matchday*
-      if (currentUser && userPointsEl) {
-        const myRow = scoresByUid[currentUser.uid];
-        const myPoints = myRow ? myRow.points : 0;
-        userPointsEl.textContent = String(myPoints);
+      // no final score yet -> pts === null -> ignore for ranking
+      if (pts == null) return;
+
+      // 🔹 Build the "key" for this ranking bucket
+      let key;
+      if (leagueKey === "AFCON") {
+        // e.g. groupLabel = "Group A" or fallback "Group ?"
+        const groupLabel =
+          data.groupLabel ||
+          (data.group ? `Group ${data.group}` : "Group ?");
+        key = `${groupLabel}|${mdNum}`; // "Group A|1"
+      } else {
+        key = String(mdNum); // "1", "2", ...
       }
-    } catch (err) {
-      console.error("[Winners] Failed to load rankings", err);
-      tbody.innerHTML =
-        '<tr><td colspan="3">Unable to load rankings.</td></tr>';
+
+      keySet.add(key);
+
+      if (!scoresByKey[key]) {
+        scoresByKey[key] = {};
+      }
+      if (!scoresByKey[key][uid]) {
+        scoresByKey[key][uid] = {
+          uid,
+          username: computeDisplayNameFromData(data, uid), // temp name
+          points: 0,
+        };
+      }
+      scoresByKey[key][uid].points += pts;
+    });
+
+    let matchdays = Array.from(keySet);
+
+    // Sort keys nicely
+    if (leagueKey === "AFCON") {
+      // sort by matchday number, then group label
+      matchdays.sort((a, b) => {
+        const [gA, mA] = a.split("|");
+        const [gB, mB] = b.split("|");
+        const nA = parseInt(mA, 10);
+        const nB = parseInt(mB, 10);
+        if (Number.isFinite(nA) && Number.isFinite(nB) && nA !== nB) {
+          return nA - nB;
+        }
+        return String(gA).localeCompare(String(gB));
+      });
+    } else {
+      // other leagues: matchdays are just "1", "2", ...
+      matchdays.sort((a, b) => {
+        const nA = parseInt(a, 10);
+        const nB = parseInt(b, 10);
+        if (Number.isFinite(nA) && Number.isFinite(nB)) {
+          return nA - nB;
+        }
+        return String(a).localeCompare(String(b));
+      });
     }
+
+    // If no matchdays at all
+    if (!matchdays.length) {
+      tbody.innerHTML = '<tr><td colspan="3">No rankings yet.</td></tr>';
+      if (userPointsEl) userPointsEl.textContent = "0";
+      return;
+    }
+
+    // If no key chosen yet, use the latest (like the most recent status)
+    if (!selectedMatchdayKey) {
+      selectedMatchdayKey = matchdays[matchdays.length - 1];
+    }
+
+    // Build / update the WhatsApp-style matchday strip
+    ensureMatchdayStrip(matchdays, selectedMatchdayKey, leagueKey, (newKey) => {
+      // when a pill is clicked, reload rankings for that key
+      loadDailyRankings(
+        db,
+        leagueKey,
+        currentUser,
+        tbody,
+        userPointsEl,
+        newKey
+      );
+    });
+
+    const scoresByUid = scoresByKey[selectedMatchdayKey] || {};
+
+    // 🔥 Try to replace generic names with email prefixes from users collection
+    await enrichUsernamesFromUsersCollection(db, scoresByUid);
+
+    const rows = Object.values(scoresByUid);
+    rows.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return String(a.username).localeCompare(String(b.username));
+    });
+
+    if (!rows.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="3">No rankings yet for this matchday.</td></tr>';
+    } else {
+      tbody.innerHTML = rows
+        .map(
+          (row, idx) => ` 
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${esc(row.username)}</td>
+              <td>${row.points}</td>
+            </tr>
+          `
+        )
+        .join("");
+    }
+
+    // update current user's points in the top strip *for this key*
+    if (currentUser && userPointsEl) {
+      const myRow = scoresByUid[currentUser.uid];
+      const myPoints = myRow ? myRow.points : 0;
+      userPointsEl.textContent = String(myPoints);
+    }
+  } catch (err) {
+    console.error("[Winners] Failed to load rankings", err);
+    tbody.innerHTML =
+      '<tr><td colspan="3">Unable to load rankings.</td></tr>';
   }
+}
 
   // ---------- Classification tabs ----------
   function initClassificationTabs(db, leagueKey, currentUser) {

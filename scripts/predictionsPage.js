@@ -468,6 +468,24 @@
     }
   }
 
+  // 🔹 NEW: format match date for display above each matchcard
+  function formatMatchDate(f) {
+    const raw = f.utcDate || f.utc_date || f.date;
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return "";
+    try {
+      return d.toLocaleDateString(undefined, {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (_) {
+      return d.toLocaleDateString();
+    }
+  }
+
   // ------------------------------------------------------------
   // Render fixtures (with AFCON grouping & strict A→F ordering)
   // ------------------------------------------------------------
@@ -525,6 +543,7 @@
 
         const homeTeam = getHomeTeam(f);
         const awayTeam = getAwayTeam(f);
+        const dateStr  = formatMatchDate(f);
 
         // AFCON: group title above each block
         let groupHeader = "";
@@ -538,6 +557,7 @@
 
         return `
           ${groupHeader}
+          ${dateStr ? `<p class="match-date">${dateStr}</p>` : ""}
           <div class="match-card" data-fixture="${f.id}">
             <div class="teams">
               <div class="team left">
@@ -862,7 +882,6 @@
     });
 
   // ------------------------------------------------------------
-  //
   // Initial render + wire clicks
   // ------------------------------------------------------------
   renderFixtures();
