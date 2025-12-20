@@ -31,6 +31,26 @@
 
   </header>
 
+  <!-- Full page notifications / wallet panel -->
+  <section class="bell-page" id="bellPage" aria-hidden="true">
+    <div class="bell-page__inner">
+      <div class="bell-page__top">
+        <h2 class="bell-page__title" data-i18n="nav.notifications">Notifications</h2>
+        <button class="bell-close" id="bellClose" aria-label="Close" data-i18n-attr="aria-label" data-i18n="common.closeAria">✕</button>
+      </div>
+
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label" data-i18n="wallet.withdrawBonus">Withdraw Bonus</span>
+          <span class="tab-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label" data-i18n="wallet.wallet">Wallet</span>
+          <span class="tab-arrow">›</span>
+        </a>
 
         <!-- Withdraw Bonus Prompt (Modal) -->
         <div class="wb-modal" id="wbModal" aria-hidden="true">
@@ -324,7 +344,7 @@
   <script src="../scripts/i18n.js"></script>
   <script>
     // Apply saved language (or default)
-    window.FBL_I18N && window.FBL_I18N.apply();
+    window.FBL_I18N && window.FBL_I18N.applyLang();
   </script>
 
   <!-- your existing scripts remain unchanged below -->

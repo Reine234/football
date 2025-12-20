@@ -67,7 +67,7 @@ app.get("/results.html", (_req, res) =>
   res.redirect(302, "/afcon/results.html")
 );
 app.get("/index.html", (_req, res) =>
-  res.redirect(302, "/afcon/land.html")
+  res.redirect(302, "/afcon/index.html")
 );
 app.get("/winners.html", (_req, res) =>
   res.redirect(302, "/afcon/winners.html")

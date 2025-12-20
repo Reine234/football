@@ -36,6 +36,10 @@
       "nav.winners": "Gagnants",
       "nav.rules": "Règles",
 
+    "nav.notifications": "Notifications",
+    "common.closeAria": "Fermer",
+    "wallet.withdrawBonus": "Retirer le bonus",
+    "wallet.wallet": "Portefeuille",
       "common.betPlus": "Parier +",
 
       "afcon.groupA.heading": "CAN 2025 — Groupe A",
@@ -55,6 +59,29 @@
       "afcon.groupA.day1.date": "Mardi, 23 Déc 2025",
       "afcon.groupA.day2.date": "Samedi, 27 Déc 2025",
       "afcon.groupA.day3.date": "Mardi, 30 Déc 2025",
+      
+      "afcon.groupB.day1.date": "Lundi, 22 Déc 2025",
+      "afcon.groupB.day2.date": "Vendredi, 26 Déc 2025",
+      "afcon.groupB.day3.date": "Lundi, 29 Déc 2025",
+
+      
+      "afcon.groupC.day1.date": "Mardi, 23 Déc 2025",
+      "afcon.groupC.day2.date": "Samedi, 27 Déc 2025",
+      "afcon.groupC.day3.date": "Mardi, 30 Déc 2025",
+
+      
+      "afcon.groupD.day1.date": "Mardi, 23 Déc 2025",
+      "afcon.groupD.day2.date": "Samedi, 27 Déc 2025",
+      "afcon.groupD.day3.date": "Mardi, 30 Déc 2025",
+
+      
+      "afcon.groupE.day1.date": "Mardi, 23 Déc 2025",
+      "afcon.groupE.day2.date": "Samedi, 27 Déc 2025",
+      "afcon.groupE.day3.date": "Mardi, 30 Déc 2025",
+
+        "afcon.groupF.day1.date": "Mardi, 23 Déc 2025",
+        "afcon.groupF.day2.date": "Samedi, 27 Déc 2025",
+        "afcon.groupF.day3.date": "Mardi, 30 Déc 2025",
     },
 
     en: {
@@ -89,6 +116,10 @@
       "nav.winners": "Winners",
       "nav.rules": "Rules",
 
+    "nav.notifications": "Notifications",
+    "common.closeAria": "Close",
+    "wallet.withdrawBonus": "Withdraw Bonus",
+    "wallet.wallet": "Wallet",
       "common.betPlus": "Bet +",
 
       "afcon.groupA.heading": "AFCON 2025 — Group A",
@@ -108,6 +139,26 @@
       "afcon.groupA.day1.date": "Tuesday, 23 Dec 2025",
       "afcon.groupA.day2.date": "Saturday, 27 Dec 2025",
       "afcon.groupA.day3.date": "Tuesday, 30 Dec 2025",
+      
+      "afcon.groupB.day1.date": "Monday, 22 Dec 2025",
+      "afcon.groupB.day2.date": "Friday, 26 Dec 2025",
+      "afcon.groupB.day3.date": "Monday, 29 Dec 2025",
+
+        "afcon.groupC.day1.date": "Tuesday, 23 Dec 2025",
+        "afcon.groupC.day2.date": "Saturday, 27 Dec 2025",
+        "afcon.groupC.day3.date": "Tuesday, 30 Dec 2025",
+
+        "afcon.groupD.day1.date": "Tuesday, 23 Dec 2025",
+        "afcon.groupD.day2.date": "Saturday, 27 Dec 2025",
+        "afcon.groupD.day3.date": "Tuesday, 30 Dec 2025",
+
+        "afcon.groupE.day1.date": "Tuesday, 23 Dec 2025",
+        "afcon.groupE.day2.date": "Saturday, 27 Dec 2025",
+        "afcon.groupE.day3.date": "Tuesday, 30 Dec 2025",
+
+        "afcon.groupF.day1.date": "Tuesday, 23 Dec 2025",
+        "afcon.groupF.day2.date": "Saturday, 27 Dec 2025",
+        "afcon.groupF.day3.date": "Tuesday, 30 Dec 2025",
     }
   };
 
