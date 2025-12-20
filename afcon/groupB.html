@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FansBetLiga — AFCON Group B</title>
+  <title data-i18n="afcon.groupB.title">FansBetLiga — AFCON Group B</title>
 
   <link rel="stylesheet" href="../afcon/styleindex.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap">
@@ -12,49 +12,131 @@
       font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
   </style>
-</head>
-<body data-league="AFCON">
+</head><body data-league="AFCON">
   <header class="topbar">
-    <h1 class="logo">FANSBETLIGA</h1>
-    <a href="#" class="about">About</a>
+    <h1 class="logo" data-i18n="app.brand">FANSBETLIGA</h1>
+
+    <!-- Bell button --><button class="bell-btn has-unread" id="bellBtn"
+  aria-label=""
+  data-i18n-attr="aria-label"
+  data-i18n-key="nav.notificationsAria"
+  aria-expanded="false">
+  <img src="/img/Doorbell.png" alt="" class="bell-icon"
+    data-i18n-attr="alt"
+    data-i18n-key="nav.notificationsAlt" />
+</button>
+
   </header>
+
+  <!-- Full page notifications / wallet panel -->
+  <section class="bell-page" id="bellPage" aria-hidden="true">
+    <div class="bell-page__inner">
+      <div class="bell-page__top">
+        <h2 class="bell-page__title" data-i18n="nav.notifications">Notifications</h2>
+        <button class="bell-close" id="bellClose"
+          aria-label="Close"
+          data-i18n="common.closeAria"
+          data-i18n-attr="aria-label">✕</button>
+      </div>
+<div class="tab-row">
+        <a class="tab-card" href="">
+          <span class="tab-label" data-i18n="wallet.withdrawBonus">Withdraw Bonus</span>
+          <span class="tab-arrow">›</span>
+        </a>
+</div>
+ <div class="tab-row">
+ <a class="tab-card" href="/afcon/wallet.html">
+  <span class="tab-label" data-i18n="wallet.wallet">Wallet</span>
+  <span class="tab-arrow">›</span>
+</a>
+      </div>
+      </div>
+  </section>
+
+  <script>
+    const bellBtn = document.getElementById("bellBtn");
+    const bellPage = document.getElementById("bellPage");
+    const bellClose = document.getElementById("bellClose");
+
+    function openBellPage() {
+      bellPage.classList.add("open");
+      bellPage.setAttribute("aria-hidden", "false");
+      bellBtn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeBellPage() {
+      bellPage.classList.remove("open");
+      bellPage.setAttribute("aria-hidden", "true");
+      bellBtn.setAttribute("aria-expanded", "false");
+    }
+
+    bellBtn.addEventListener("click", () => {
+      const isOpen = bellPage.classList.contains("open");
+      if (isOpen) closeBellPage();
+      else openBellPage();
+    });
+
+    bellClose.addEventListener("click", closeBellPage);
+
+    // optional: ESC closes
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeBellPage();
+    });
+  </script>
+
+  <!-- ✅ i18n (optional but recommended for all pages) -->
+  <script src="../scripts/translations.en.js"></script>
+  <script src="../scripts/translations.fr.js"></script>
+  <script src="../scripts/i18n.js"></script>
+  <script>
+    // apply saved language on page load (safe if i18n not loaded yet)
+    window.FBL_I18N && window.FBL_I18N.apply && window.FBL_I18N.apply();
+  </script>
+
+
 
   <!-- Bottom nav -->
   <nav class="nav">
-    <div class="nav-item"><img src="../img/home.png" alt="Home"><span>Home</span></div>
-    <div class="nav-item"><img src="../img/results.png" alt="Results"><span>Results</span></div>
-    <div class="nav-item"><img src="../img/winners.png" alt="Winners"><span>Winners</span></div>
-    <div class="nav-item"><img src="../img/rules.png" alt="Rules"><span>Rules</span></div>
+    <div class="nav-item"><img src="../img/home.png" alt="Home"><span data-i18n="nav.home">Home</span></div>
+    <div class="nav-item"><img src="../img/results.png" alt="Results"><span data-i18n="nav.results">Results</span></div>
+    <div class="nav-item"><img src="../img/winners.png" alt="Winners"><span data-i18n="nav.winners">Winners</span></div>
+    <div class="nav-item"><img src="../img/rules.png" alt="Rules"><span data-i18n="nav.rules">Rules</span></div>
   </nav>
 
   <div class="season-title">
     <span class="back-arrow"></span>
-    <h2>AFCON 2025 — Group B</h2>
+    <h2 data-i18n="afcon.groupB.heading">AFCON 2025 — Group B</h2>
   </div>
 
   <!-- Group tabs -->
   <div class="league-tabs">
-    <button class="tab" onclick="window.location.href='groupA.html'">Group A</button>
-    <button class="tab active" onclick="window.location.href='groupB.html'">Group B</button>
-    <button class="tab" onclick="window.location.href='groupC.html'">Group C</button>
-    <button class="tab" onclick="window.location.href='groupD.html'">Group D</button>
-    <button class="tab" onclick="window.location.href='groupE.html'">Group E</button>
-    <button class="tab" onclick="window.location.href='groupF.html'">Group F</button>
+    <button class="tab" onclick="window.location.href='groupA.html'" data-i18n="afcon.groupA.tab">Group A</button>
+    <button class="tab active" onclick="window.location.href='groupB.html'" data-i18n="afcon.groupB.tab">Group B</button>
+    <button class="tab" onclick="window.location.href='groupC.html'" data-i18n="afcon.groupC.tab">Group C</button>
+    <button class="tab" onclick="window.location.href='groupD.html'" data-i18n="afcon.groupD.tab">Group D</button>
+    <button class="tab" onclick="window.location.href='groupE.html'" data-i18n="afcon.groupE.tab">Group E</button>
+    <button class="tab" onclick="window.location.href='groupF.html'" data-i18n="afcon.groupF.tab">Group F</button>
   </div>
 
   <section class="matches">
     <div class="matches-header">
-      <h3 data-group="Group B">Group B - Matchday 1 of 3</h3>
+      <h3 data-group="Group B" data-i18n="afcon.groupB.matchdayHeader">Group B - Matchday 1 of 3</h3>
       <div class="page-controls">
-        <button id="prev-day" class="arrow">&lt;</button>
+        <button id="prev-day" class="arrow"
+          aria-label="Previous"
+          data-i18n="common.prevAria"
+          data-i18n-attr="aria-label">&lt;</button>
         <span id="day-number">1</span>
-        <button id="next-day" class="arrow">&gt;</button>
+        <button id="next-day" class="arrow"
+          aria-label="Next"
+          data-i18n="common.nextAria"
+          data-i18n-attr="aria-label">&gt;</button>
       </div>
     </div>
 
     <!-- Matchday 1 -->
     <div class="day" data-matchday="1">
-      <h4>Monday, 22 Dec 2025</h4>
+      <h4 data-i18n="afcon.groupB.day1.date">Monday, 22 Dec 2025</h4>
       <div class="match-card cyan" data-fixture-id="AFGB-1">
         <div class="match-info">
           <p class="time">19:00</p>
@@ -89,7 +171,7 @@
 
     <!-- Matchday 2 -->
     <div class="day" data-matchday="2">
-      <h4>Friday, 26 Dec 2025</h4>
+      <h4 data-i18n="afcon.groupB.day2.date">Friday, 26 Dec 2025</h4>
       <div class="match-card cyan" data-fixture-id="AFGB-3">
         <div class="match-info">
           <p class="time">19:00</p>
@@ -124,7 +206,7 @@
 
     <!-- Matchday 3 -->
     <div class="day" data-matchday="3">
-      <h4>Monday, 29 Dec 2025</h4>
+      <h4 data-i18n="afcon.groupB.day3.date">Monday, 29 Dec 2025</h4>
       <div class="match-card cyan" data-fixture-id="AFGB-5">
         <div class="match-info">
           <p class="time">17:30</p>
@@ -157,7 +239,7 @@
       </div>
     </div>
 
-    <a id="bet-button-main" class="fixed-button" href="predictions.html">Bet +</a>
+    <a id="bet-button-main" class="fixed-button" href="predictions.html" data-i18n="common.betPlus">Bet +</a>
   </section>
 
   <!-- Firebase + app scripts (same environment as other leagues) -->

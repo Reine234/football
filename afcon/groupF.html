@@ -12,12 +12,79 @@
       font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
   </style>
-</head>
-<body data-league="AFCON">
+</head><body data-league="AFCON">
   <header class="topbar">
     <h1 class="logo">FANSBETLIGA</h1>
-    <a href="#" class="about">About</a>
+
+  <button class="bell-btn has-unread" id="bellBtn"
+  aria-label=""
+  data-i18n-attr="aria-label"
+  data-i18n-key="nav.notificationsAria"
+  aria-expanded="false">
+  <img src="/img/Doorbell.png" alt="" class="bell-icon"
+    data-i18n-attr="alt"
+    data-i18n-key="nav.notificationsAlt" />
+</button>
+
   </header>
+
+  <!-- Full page notifications / wallet panel -->
+  <section class="bell-page" id="bellPage" aria-hidden="true">
+    <div class="bell-page__inner">
+      <div class="bell-page__top">
+        <h2 class="bell-page__title">Notifications</h2>
+        <button class="bell-close" id="bellClose" aria-label="Close">✕</button>
+      </div>
+      <div class="tab-row">
+        <a class="tab-card" href="">
+          <span class="tab-label">Withdraw Bonus</span>
+          <span class="tab-arrow">›</span>
+        </a>
+</div>
+ <div class="tab-row">
+ <a class="tab-card" href="/afcon/wallet.html">
+  <span class="tab-label">Wallet</span>
+  <span class="tab-arrow">›</span>
+</a>
+      </div>
+
+    </div>
+  </section>
+
+  <script>
+    const bellBtn = document.getElementById("bellBtn");
+    const bellPage = document.getElementById("bellPage");
+    const bellClose = document.getElementById("bellClose");
+
+    function openBellPage() {
+      bellPage.classList.add("open");
+      bellPage.setAttribute("aria-hidden", "false");
+      bellBtn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeBellPage() {
+      bellPage.classList.remove("open");
+      bellPage.setAttribute("aria-hidden", "true");
+      bellBtn.setAttribute("aria-expanded", "false");
+    }
+
+    bellBtn.addEventListener("click", () => {
+      const isOpen = bellPage.classList.contains("open");
+      if (isOpen) closeBellPage();
+      else openBellPage();
+    });
+
+    bellClose.addEventListener("click", closeBellPage);
+
+    // optional: ESC closes
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeBellPage();
+    });
+  </script>
+
+
+
+
 
   <nav class="nav">
     <div class="nav-item"><img src="../img/home.png" alt="Home"><span>Home</span></div>
@@ -420,6 +487,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+</script>
+
+<!-- ✅ i18n loader (minimal add) -->
+<script src="../scripts/translations.fr.js"></script>
+<script src="../scripts/translations.en.js"></script>
+<script src="../scripts/i18n.js"></script>
+<script>
+  // Apply saved language across all pages
+  if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
+    window.FBL_I18N.apply();
+  }
 </script>
 
 </body>

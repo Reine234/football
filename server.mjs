@@ -56,7 +56,7 @@ app.use("/data", (_req, res) => res.sendStatus(404));
 
 // Default route → REDIRECT to /afcon/ so relative links work
 app.get("/", (_req, res) => {
-  res.redirect(302, "/afcon/");
+  res.redirect(302, "/afcon/land.html");
 });
 
 // Optional safety: if any old root links are hit, forward them too
@@ -67,7 +67,7 @@ app.get("/results.html", (_req, res) =>
   res.redirect(302, "/afcon/results.html")
 );
 app.get("/index.html", (_req, res) =>
-  res.redirect(302, "/afcon/index.html")
+  res.redirect(302, "/afcon/land.html")
 );
 app.get("/winners.html", (_req, res) =>
   res.redirect(302, "/afcon/winners.html")

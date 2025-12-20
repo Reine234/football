@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FansWallet</title>
+
+  <style>
+    :root{
+      --bg: #efefed;
+      --card: #ffffff;
+      --teal: #00b29b;
+      --mint: #c9fff1;
+      --mint-2:#ddfff7;
+      --text: #0f1115;
+      --muted:#7a7f87;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+      --radius-xl: 18px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      background: var(--bg);
+      color: var(--text);
+      display:flex;
+      justify-content:center;
+      padding: 18px 12px 40px;
+      font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #e9e9fc;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap');
+
+    .app{
+      width: 390px;
+      max-width: 100%;
+    }
+
+    .top-pill{
+      border-radius: 999px;
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      box-shadow: var(--shadow);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .brand .logo-img{
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display:block;
+    }
+    .brand .name{
+      color: var(--teal);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .user{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight: 600;
+      color:#20242b;
+      background-color: #ffffff;
+      border-radius: 13px;
+      padding: 4px 8px;
+      min-height: 38px;
+    }
+    .avatar{
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #e9eef3;
+      display:grid;
+      place-items:center;
+      font-size: 12px;
+      font-weight: 800;
+      color:#1f2a37;
+      border: 2px solid #ffffff;
+      box-shadow: 0 6px 14px rgba(0,0,0,.08);
+    }
+
+    .section{ margin-top: 16px; }
+
+    .balances{
+      display:flex;
+      gap: 12px;
+    }
+
+    .balance-card{
+      flex:1;
+      background: var(--teal);
+      color: #ffffff;
+      border-radius: var(--radius-xl);
+      padding: 20px 18px;
+      box-shadow: var(--shadow);
+      min-height: 138px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .balance-card .label{
+      font-weight: 700;
+      opacity: .95;
+      letter-spacing: .2px;
+      margin-bottom: 10px;
+    }
+
+    .balance-card .amount{
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: .3px;
+      line-height: 1.1;
+    }
+
+    .balance-card .currency{
+      font-size: 13px;
+      font-weight: 800;
+      opacity: .95;
+      margin-top: 6px;
+    }
+
+    .card{
+      background: var(--card);
+      border-radius: var(--radius-xl);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title{
+      font-size: 18px;
+      font-weight: 900;
+      margin: 2px 0 12px;
+    }
+
+    /* ✅ Make actions clickable BUT keep your exact design */
+    .action{
+      width: 100%;
+      background: var(--mint);
+      border-radius: 14px;
+      padding: 14px 14px;
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      margin-top: 10px;
+
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: transform .08s ease, filter .15s ease;
+    }
+    .action:hover{
+      filter: brightness(0.98);
+    }
+    .action:active{
+      transform: scale(0.995);
+    }
+
+    .icon-wrap{
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.7);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      flex: 0 0 34px;
+    }
+
+    .icon-wrap img{
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      display:block;
+    }
+
+    .action .label{
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    .card-head-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .view-all{
+      color: var(--teal);
+      font-weight: 900;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      gap: 6px;
+      white-space:nowrap;
+    }
+
+    .txn{
+      background: var(--mint-2);
+      border-radius: 14px;
+      padding: 14px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .txn-left{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .txn-meta{ min-width: 0; }
+
+    .txn-title{
+      font-weight: 900;
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .txn-date{
+      margin-top: 4px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .txn-amount{
+      font-weight: 900;
+      font-size: 15px;
+      white-space:nowrap;
+    }
+
+    .amt-plus{ color: #1aa34a; }
+    .amt-minus{ color: #e13b3b; }
+
+    @media (max-width: 360px){
+      .balances{ flex-direction: column; }
+      .balance-card{ min-height: 120px; }
+    }
+
+    /* ===========================
+       MODALS (Deposit / Withdraw)
+       =========================== */
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 17, 21, 0.45);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 14px 12px;
+      z-index: 9999;
+    }
+    .modal-backdrop.open{ display:flex; }
+
+    .modal{
+      width: 390px;
+      max-width: 100%;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transform: translateY(10px);
+      animation: slideUp .16s ease forwards;
+    }
+    @keyframes slideUp{
+      to { transform: translateY(0); }
+    }
+
+    .modal-top{
+      padding: 14px 14px 10px;
+      background: #f7f7f7;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .modal-title{
+      font-weight: 900;
+      margin: 0;
+      font-size: 16px;
+      color: #0f1115;
+    }
+    .modal-close{
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      color: #111;
+      padding: 6px 8px;
+      border-radius: 10px;
+    }
+    .modal-close:hover{
+      background: rgba(0,0,0,.06);
+    }
+
+    .modal-body{
+      padding: 14px;
+    }
+
+    .field{
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .field label{
+      font-size: 12px;
+      font-weight: 800;
+      color: #2b2f36;
+    }
+    .field input{
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .field input:focus{
+      border-color: #7fdc9a;
+      box-shadow: 0 0 0 3px rgba(127, 220, 154, 0.25);
+    }
+
+    .provider-row{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .provider-pill{
+      background: var(--mint-2);
+      border: 1px solid #dff7ef;
+      border-radius: 14px;
+      padding: 12px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s ease, border-color .15s ease;
+      font-weight: 800;
+      font-size: 13px;
+      color:#111;
+    }
+    .provider-pill:hover{
+      background: #e6f7ec;
+      border-color: #bdeecb;
+    }
+    .provider-pill input{
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
+    .dot{
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 2px solid #9a9a9a;
+      background: #fff;
+      flex: 0 0 14px;
+    }
+    .provider-pill input:checked + .dot{
+      border-color: #27c266;
+      background: #27c266;
+      box-shadow: 0 0 0 3px rgba(39, 194, 102, 0.20);
+    }
+
+    .modal-actions{
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn{
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-primary{
+      background: var(--teal);
+      color: #fff;
+    }
+    .btn-primary:hover{ filter: brightness(0.98); }
+
+    .btn-ghost{
+      background: #f3f3f3;
+      color:#111;
+    }
+    .btn-ghost:hover{ filter: brightness(0.98); }
+
+    .note{
+      margin-top: 10px;
+      font-size: 12px;
+      color: #555;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px){
+      .provider-row{ grid-template-columns: 1fr; }
+      .modal-backdrop{ align-items: flex-end; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- Top pill -->
+    <div class="top-pill">
+      <div class="brand">
+        <img class="logo-img" src="/img/Wallet.png" alt="Wallet logo" />
+        <div class="name">FansWallet</div>
+      </div>
+
+      <div class="user">
+        <div class="avatar"></div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Balance cards -->
+    <div class="section balances">
+      <div class="balance-card">
+        <div class="label">Current Balance</div>
+        <div class="amount"></div>
+        <div class="currency">FCFA</div>
+      </div>
+
+      <div class="balance-card">
+        <div class="label">Bonus Balance</div>
+        <div class="amount"></div>
+        <div class="currency">FCFA</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section card">
+      <div class="card-title">Quick Actions</div>
+
+      <!-- ✅ Add money => opens deposit modal -->
+      <button class="action" type="button" id="btnOpenDeposit">
+        <div class="icon-wrap">
+          <img src="/img/Plus.png" alt="Add money" />
+        </div>
+        <div class="label">Add money</div>
+      </button>
+
+      <!-- ✅ Withdraw Funds => opens withdraw modal -->
+      <button class="action" type="button" id="btnOpenWithdraw">
+        <div class="icon-wrap">
+          <img src="/img/moneytansfer.png" alt="Withdraw" />
+        </div>
+        <div class="label">Withdraw Funds</div>
+      </button>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="section card">
+      <div class="card-head-row">
+        <div class="card-title" style="margin:0;">Recent Transactions</div>
+        <a class="view-all" href="#">
+          <span>View All</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <div class="txn">
+        <div class="txn-left">
+          <div class="icon-wrap">
+            <img src="/img/down.png" alt="Deposit" />
+          </div>
+          <div class="txn-meta">
+            <div class="txn-title">Deposit</div>
+            <div class="txn-date"></div>
+          </div>
+        </div>
+        <div class="txn-amount amt-plus"></div>
+      </div>
+
+      <div class="txn">
+        <div class="txn-left">
+          <div class="icon-wrap">
+            <img src="/img/Up.png" alt="Withdrawal" />
+          </div>
+          <div class="txn-meta">
+            <div class="txn-title">Withdrawal</div>
+            <div class="txn-date"></div>
+          </div>
+        </div>
+        <div class="txn-amount amt-minus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       DEPOSIT MODAL
+       ========================= -->
+  <div class="modal-backdrop" id="depositModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Make a deposit">
+      <div class="modal-top">
+        <h3 class="modal-title">Make a deposit</h3>
+        <button class="modal-close" type="button" data-close="depositModal" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="provider-row">
+          <label class="provider-pill">
+            <input type="radio" name="deposit_provider" value="momo" checked />
+            <span class="dot"></span>
+            <span>MTN Mobile Money</span>
+          </label>
+
+          <label class="provider-pill">
+            <input type="radio" name="deposit_provider" value="orange" />
+            <span class="dot"></span>
+            <span>Orange Money</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label>Amount (FCFA)</label>
+          <input type="number" min="0" step="100" placeholder="e.g. 5000" />
+        </div>
+
+        <div class="field">
+          <label>Phone number</label>
+          <input type="tel" placeholder="e.g. 6XXXXXXXX" />
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="button">Deposit</button>
+          <button class="btn btn-ghost" type="button" data-close="depositModal">Cancel</button>
+        </div>
+
+        <div class="note">
+          After you confirm, you will receive a payment prompt on your phone.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       WITHDRAW MODAL
+       ========================= -->
+  <div class="modal-backdrop" id="withdrawModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Withdraw funds">
+      <div class="modal-top">
+        <h3 class="modal-title">Withdraw funds</h3>
+        <button class="modal-close" type="button" data-close="withdrawModal" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="provider-row">
+          <label class="provider-pill">
+            <input type="radio" name="withdraw_provider" value="momo" checked />
+            <span class="dot"></span>
+            <span>MTN Mobile Money</span>
+          </label>
+
+          <label class="provider-pill">
+            <input type="radio" name="withdraw_provider" value="orange" />
+            <span class="dot"></span>
+            <span>Orange Money</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label>Amount (FCFA)</label>
+          <input type="number" min="0" step="100" placeholder="e.g. 10000" />
+        </div>
+
+        <div class="field">
+          <label>Phone number</label>
+          <input type="tel" placeholder="e.g. 6XXXXXXXX" />
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-primary" type="button">Withdraw</button>
+          <button class="btn btn-ghost" type="button" data-close="withdrawModal">Cancel</button>
+        </div>
+
+        <div class="note">
+          Withdrawals may take a few minutes depending on the operator.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add("open");
+      el.setAttribute("aria-hidden", "false");
+    }
+    function closeModal(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove("open");
+      el.setAttribute("aria-hidden", "true");
+    }
+
+    // Open buttons
+    document.getElementById("btnOpenDeposit")?.addEventListener("click", () => openModal("depositModal"));
+    document.getElementById("btnOpenWithdraw")?.addEventListener("click", () => openModal("withdrawModal"));
+
+    // Close buttons (X + Cancel)
+    document.querySelectorAll("[data-close]").forEach(btn => {
+      btn.addEventListener("click", () => closeModal(btn.getAttribute("data-close")));
+    });
+
+    // Click outside modal to close
+    document.getElementById("depositModal")?.addEventListener("click", (e) => {
+      if (e.target.id === "depositModal") closeModal("depositModal");
+    });
+    document.getElementById("withdrawModal")?.addEventListener("click", (e) => {
+      if (e.target.id === "withdrawModal") closeModal("withdrawModal");
+    });
+
+    // ESC to close
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      closeModal("depositModal");
+      closeModal("withdrawModal");
+    });
+  </script>
+</body>
+</html>

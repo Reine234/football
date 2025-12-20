@@ -234,8 +234,7 @@
       console.warn("resultsPage: fetchFixturesForLeague failed", e);
       return { byId: {}, list: [] };
     }
-  }
-function buildCardHTML(idx, pred, fixture) {
+  }function buildCardHTML(idx, pred, fixture) {
   const homeName =
     (fixture && fixture.home && fixture.home.name) ||
     (pred.home && pred.home.name) ||
@@ -258,7 +257,7 @@ function buildCardHTML(idx, pred, fixture) {
   const predAwayVal =
     pred.away && pred.away.score != null ? pred.away.score : "";
 
-  // 🔹 Try to read real final scores from fixtures (API / fake script)
+  // 🔹 Try to read real final scores from fixtures ONLY (no simulation)
   let finHome =
     fixture &&
     fixture.goals &&
@@ -274,21 +273,15 @@ function buildCardHTML(idx, pred, fixture) {
       ? fixture.goals.away
       : "";
 
-  // 🔥 AFCON ONLY: if no final scores, fall back to our own fake scores
-  if (
-    leagueKey === "AFCON" &&
-    (finHome === "" || finAway === "" || finHome == null || finAway == null)
-  ) {
-    const fake = generateFakeFinalScore(pred, fixture);
-    finHome = fake.home;
-    finAway = fake.away;
-  }
+  // ✅ If no final scores yet, show placeholders (and points will be blank)
+  const finHomeForCalc = finHome === "" ? NaN : Number(finHome);
+  const finAwayForCalc = finAway === "" ? NaN : Number(finAway);
 
   const pts = computePoints(
     Number(predHomeVal),
     Number(predAwayVal),
-    finHome === "" ? NaN : Number(finHome),
-    finAway === "" ? NaN : Number(finAway)
+    finHomeForCalc,
+    finAwayForCalc
   );
 
   const html = `
@@ -338,6 +331,7 @@ function buildCardHTML(idx, pred, fixture) {
   `;
   return { html, pts };
 }
+
 
 
 

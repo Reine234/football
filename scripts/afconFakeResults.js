@@ -1,4 +1,7 @@
 // /scripts/afconFakeResults.js
+// DISABLED: AFCON simulation is off (real API only)
+console.log("[AFCON FAKE] disabled");
+
 (function () {
   // Only run this if we explicitly ask for simulation in the URL:
   // e.g. results.html?simulateAfcon=1
@@ -60,5 +63,3 @@
     });
   };
 })();
-window.FBL.fetchFixturesForLeague("AFCON").then(f => console.log(f[0]));
-sessionStorage.clear()

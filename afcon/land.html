@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FansBetLiga</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --teal:#18b9b1;
+      --teal-dark:#0ea29b;
+      --bg1:#eaf6ff;
+      --bg2:#dff2ff;
+      --text:#0f1b23;
+      --muted:#2e3a44;
+      --card:#ffffff;
+      --shadow: 0 14px 35px rgba(0,0,0,.14);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+  margin:0;
+  color: var(--text);
+  display:flex;
+  justify-content:center;
+  padding: 18px 12px 40px;
+  font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ✅ cloud background image */
+  background-image: url("/img/cloud2.png"); /* <-- change this to your image path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+    
+
+    /* phone frame (o
+
+    /* top bar */
+    .topbar{
+      background: #00B894;
+      color: #fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 12px 14px;
+    }
+
+    .brand{
+      font-weight: 900;
+      letter-spacing: .8px;
+      font-size: 14px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+
+    .about-link{
+      color:#fff;
+      text-decoration:none;
+      font-weight:700;
+      font-size: 13px;
+      opacity:.95;
+    }
+
+    .lang-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap: 6px;
+    }
+
+    .lang-select{
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      background: rgba(255,255,255,.18);
+      color:#fff;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 10px;
+      padding: 8px 30px 8px 10px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor:pointer;
+      outline:none;
+      line-height: 1;
+    }
+
+    .lang-caret{
+      position:absolute;
+      right: 10px;
+      pointer-events:none;
+      font-weight:900;
+      opacity:.95;
+      font-size: 12px;
+    }
+
+    /* hero area */
+    .hero{
+      position:relative;
+      padding: 26px 18px 28px;
+      background:
+        radial-gradient(1200px 400px at 50% -50%, rgba(255,255,255,.85), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0)),
+        url("/img/land-clouds.png");
+      background-size: cover;
+      background-position: center;
+      min-height: 340px;
+    }
+
+    /* if you don’t have /img/land-clouds.png, keep a soft fallback */
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(220px 120px at 25% 45%, rgba(255,255,255,.75), transparent 70%),
+        radial-gradient(260px 140px at 70% 55%, rgba(255,255,255,.70), transparent 72%),
+        radial-gradient(220px 120px at 45% 80%, rgba(255,255,255,.55), transparent 70%);
+      pointer-events:none;
+      opacity:.85;
+    }
+
+    .hero-inner{
+      position:relative;
+      z-index:1;
+    }
+
+    .headline{
+      margin: 0 0 10px;
+      font-size: 26px;
+      line-height: 1.15;
+      font-weight: 900;
+      letter-spacing: -.3px;
+    }
+
+    .subhead{
+      margin: 0 0 18px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* CTA banner button */
+    .cta-btn{
+      display:block;
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor:pointer;
+      text-decoration:none;
+    }
+
+    .cta-card{
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,.06);
+      background: linear-gradient(180deg, #eafff9, #d7fff4);
+    }
+
+    .cta-img{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    /* If you prefer a “built” banner (no image), uncomment below and remove <img> in HTML
+    .cta-card{
+      padding: 18px 18px;
+      background: linear-gradient(180deg, #2ad6bb, #1bbca8);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+    }
+    .cta-title{
+      font-weight: 900;
+      font-size: 16px;
+    }
+    */
+
+
+
+/* CTA banner button (no image) */
+.cta-btn{
+  display:block;
+  width:100%;
+  text-decoration:none;
+}
+.cta-banner{
+  position: relative;
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  width:100%;
+  padding: 18px 16px;
+  border-radius: 18px;
+  box-shadow: 0 14px 35px rgba(0,0,0,.16);
+  border: 1px solid rgba(0,0,0,.06);
+
+  /* ✅ more color + yellow glow */
+  background:
+    radial-gradient(140px 90px at 22% 18%, rgba(255, 231, 120, .85), transparent 65%),
+    radial-gradient(160px 110px at 85% 0%, rgba(255,255,255,.35), transparent 70%),
+    radial-gradient(120px 70px at 12% 30%, rgba(255,255,255,.35), transparent 70%),
+    linear-gradient(180deg, #3af6cc 0%, #14d3ac 35%, #0bb493 100%);
+  overflow:hidden;
+  transform: translateZ(0);
+}
+
+
+.cta-banner::before{
+  /* glossy highlight */
+  content:"";
+  position:absolute;
+  left:-20%;
+  top:-40%;
+  width: 160%;
+  height: 120%;
+  background: linear-gradient(120deg, rgba(255,255,255,.42), rgba(255,255,255,0) 55%);
+  transform: rotate(-10deg);
+  opacity: .55;
+  pointer-events:none;
+}
+
+.cta-banner::after{
+  /* soft bottom glow */
+  content:"";
+  position:absolute;
+  inset:auto 0 0 0;
+  height: 45%;
+  background: radial-gradient(60% 100% at 50% 100%, rgba(0,0,0,.18), transparent 70%);
+  opacity:.35;
+  pointer-events:none;
+}
+
+.cta-banner:hover{
+  filter: saturate(1.08);
+  transform: translateY(-1px);
+  transition: 180ms ease;
+}
+.cta-banner:active{
+  transform: translateY(0px) scale(.995);
+}
+
+/* Text */
+.cta-text{
+  position:relative;
+  z-index:2;
+  flex:1;
+  min-width: 0;
+}
+.cta-title{
+  color:#fff;
+  font-weight: 900;
+  letter-spacing: .2px;
+  font-size: 18px;
+  line-height:1.1;
+  text-shadow: 0 6px 14px rgba(0,0,0,.25);
+}
+.cta-sub{
+  margin-top: 6px;
+  color: rgba(255,255,255,.92);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .2px;
+  text-shadow: 0 6px 14px rgba(0,0,0,.22);
+}
+
+/* Coin stack (pure CSS) */
+.cta-coin-stack{
+  position: relative;
+  width: 82px;
+  height: 62px;
+  flex: 0 0 82px;
+  z-index: 2;
+}
+
+.coin{
+  position:absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, #fff6b0 0%, #ffe06a 35%, #f5b800 70%, #cc8a00 100%);
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.22),
+    inset 0 2px 0 rgba(255,255,255,.55),
+    inset 0 -3px 0 rgba(0,0,0,.18);
+  border: 1px solid rgba(130,80,0,.25);
+}
+
+.coin::after{
+  /* inner rim */
+  content:"";
+  position:absolute;
+  inset: 5px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.22);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.08);
+  opacity:.9;
+}
+
+/* Positions to look like a stacked pile */
+.c1{ left: 6px;  top: 22px; transform: rotate(-6deg); }
+.c2{ left: 24px; top: 18px; transform: rotate(8deg); }
+.c3{ left: 42px; top: 22px; transform: rotate(-3deg); }
+.c4{ left: 18px; top: 34px; transform: rotate(10deg); }
+.c5{ left: 36px; top: 36px; transform: rotate(-10deg); }
+.c6{ left: 10px; top: 6px;  transform: rotate(4deg);  width: 28px; height: 28px; opacity:.95; }
+.c7{ left: 30px; top: 4px;  transform: rotate(-7deg); width: 28px; height: 28px; opacity:.98; }
+.c8{ left: 50px; top: 8px;  transform: rotate(6deg);  width: 28px; height: 28px; opacity:.96; }
+.c9{ left: 58px; top: 30px; transform: rotate(12deg); width: 26px; height: 26px; opacity:.92; }
+
+/* Sparkles */
+.cta-sparkles{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+}
+
+.spark{
+  position:absolute;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, rgba(255,255,255,1), rgba(255,255,255,0));
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.7));
+  opacity: .85;
+  animation: twinkle 1.8s infinite ease-in-out;
+}
+
+.spark::before,
+.spark::after{
+  content:"";
+  position:absolute;
+  inset: 0;
+  background: inherit;
+  transform: rotate(45deg);
+}
+
+.s1{ left: 22%; top: 22%; animation-delay: 0s;  transform: scale(.9); }
+.s2{ left: 64%; top: 18%; animation-delay: .4s; transform: scale(.7); }
+.s3{ left: 78%; top: 52%; animation-delay: .8s; transform: scale(.85); }
+.s4{ left: 40%; top: 60%; animation-delay: 1.2s; transform: scale(.6); }
+.s5{ left: 12%; top: 56%; animation-delay: 1.5s; transform: scale(.75); }
+
+@keyframes twinkle{
+  0%, 100% { opacity: .35; transform: translateY(0) scale(.75); }
+  50%      { opacity: 1;   transform: translateY(-2px) scale(1); }
+}
+
+
+
+
+    /* spacing bottom */
+    .spacer{ height: 10px; }
+  </style>
+</head>
+
+<body>
+  <div class="phone">
+    <header class="topbar">
+      <div class="brand">FANSBETLIGA</div>
+
+      <div class="top-actions">
+        <!-- Language dropdown (between brand and About, as requested) -->
+        <div class="lang-wrap" aria-label="Language selector">
+          <select id="langSelect" class="lang-select">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
+          <span class="lang-caret">▾</span>
+        </div>
+
+        <a class="about-link" href="#" id="aboutLink" data-i18n="about">About</a>
+      </div>
+    </header>
+
+    <main class="hero">
+      <div class="hero-inner">
+        <h1 class="headline" data-i18n="headline">
+          La CAN se joue aussi entre les fans
+        </h1>
+        <p class="subhead" data-i18n="subhead">
+          Pronostique les matchs et gagne 25 000 FCFA à la fin de chaque journée.
+        </p>
+
+       <a class="cta-btn" href="/afcon/index.html" aria-label="Go to AFCON">
+  <div class="cta-banner">
+    <div class="cta-coin-stack" aria-hidden="true">
+      <span class="coin c1"></span>
+      <span class="coin c2"></span>
+      <span class="coin c3"></span>
+      <span class="coin c4"></span>
+      <span class="coin c5"></span>
+      <span class="coin c6"></span>
+      <span class="coin c7"></span>
+      <span class="coin c8"></span>
+      <span class="coin c9"></span>
+    </div>
+
+    <div class="cta-text">
+      <div class="cta-title">Gagner 25,000 FCFA</div>
+      <div class="cta-sub"></div>
+    </div>
+
+    <div class="cta-sparkles" aria-hidden="true">
+      <span class="spark s1"></span>
+      <span class="spark s2"></span>
+      <span class="spark s3"></span>
+      <span class="spark s4"></span>
+      <span class="spark s5"></span>
+    </div>
+  </div>
+</a>
+
+
+        <div class="spacer"></div>
+      </div>
+    </main>
+  </div>
+<script>
+  document.getElementById("btnFR")?.addEventListener("click", () => {
+    window.FBL_I18N?.setLang("fr");
+  });
+
+  document.getElementById("btnEN")?.addEventListener("click", () => {
+    window.FBL_I18N?.setLang("en");
+  });
+</script>
+
+  <script>
+    // --- Simple i18n for this page + persist language for whole site ---
+    const STRINGS = {
+      en: {
+       
+      },
+      fr: {
+        about: "About",
+        headline: "La CAN se joue aussi entre les fans:",
+        subhead: "Pronostique les matchs et gagne 25 000 FCFA à la fin de chaque journée."
+      }
+    };
+
+    const LANG_KEY = "FBL_LANG";
+
+    function applyLang(lang) {
+      const dict = STRINGS[lang] || STRINGS.en;
+      document.documentElement.lang = lang;
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const k = el.getAttribute("data-i18n");
+        if (dict[k] != null) el.textContent = dict[k];
+      });
+
+      localStorage.setItem(LANG_KEY, lang);
+      const sel = document.getElementById("langSelect");
+      if (sel) sel.value = lang;
+    }
+
+    // load saved language (or default en)
+    const saved = localStorage.getItem(LANG_KEY) || "en";
+    applyLang(saved);
+
+    document.getElementById("langSelect").addEventListener("change", (e) => {
+      applyLang(e.target.value);
+      // Note: other pages can read localStorage FBL_LANG and update their UI too.
+    });
+  </script>
+</body>
+</html>

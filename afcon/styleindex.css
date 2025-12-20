@@ -160,8 +160,242 @@ nav.nav .nav-item.nav-active::after {
   font-size: 13px;
   font-weight: 600;
 }
+/* clickable icon on the right */
+.topbar .about{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #fff;               /* makes SVG inherit white */
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.topbar .about-icon{
+  width: 27px;
+  height: 27px;
+  fill: currentColor;        /* inherits white from .about */
+}
+
+/* optional hover */
+.topbar .about:hover{
+  background: rgba(255,255,255,0.12);
+}
+
+/* right-side menu container */
+.menu-wrap{
+  position: relative;
+  margin-left: auto;
+}
+
+/* icon button */
+.menu-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #fff;              /* icon is white */
+}
+
+.menu-btn:hover{
+  background: rgba(255,255,255,0.12);
+}
+
+.menu-icon{
+  width: 26px;
+  height: 26px;
+  fill: currentColor;
+}
+
+/* popup menu */
+.menu-popup{
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 170px;
+  min-height: 500px;
+  background: #fff;      /* light gray */
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+  padding: 8px;
+  display: none;
+  z-index: 9999;
+}
+
+.menu-popup.open{
+  display: block;
+}
+
+/* menu items */
+.menu-item{
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #000;              /* black text */
+  text-decoration: none;
+  font-size: 14px;
+  background: #d8fadd;
+   gap: 10px;
+}
+/* Topbar */
 
 
+.logo{
+  color:#fff;
+  font-size:18px;
+  letter-spacing:1px;
+  margin:0;
+}
+
+/* Bell button */
+.bell-btn{
+  position: relative;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+.bell-icon{
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display:block;
+}
+
+/* Glowing unread dot (white glow) */
+.bell-btn.has-unread::after{
+  content:"";
+  position:absolute;
+  top: 4px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 6px rgba(255,255,255,0.9),
+    0 0 14px rgba(255,255,255,0.7);
+}
+
+/* Full page panel */
+.bell-page{
+  position: fixed;
+  inset: 0;
+  background: #f9f5f5;
+  display: none;
+  z-index: 2000;
+}
+
+.bell-page.open{
+  display: block;
+}
+
+.bell-page__inner{
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 18px 16px 24px;
+}
+
+.bell-page__top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.bell-page__title{
+  margin: 0;
+  font-size: 18px;
+  color:111;
+}
+
+.bell-close{
+  border: 0;
+  background: #f1f3f5;
+  color: #111;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Tabs row */
+.tab-row{
+  display:flex;
+  flex-direction: column;
+  gap: 14px;              /* reasonable gap between tabs */
+  margin-bottom: 18px;
+}
+
+/* Tab cards */
+.tab-card{
+  text-decoration: none;
+  width: 300px;          /* reduce this */
+  max-width: 300px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between; /* puts arrow on the right */
+  gap: 12px;
+  padding: 14px 14px;
+  border: 0;
+  border-radius: 12px;     /* small border radius */
+  background: #00B894;     /* light gray */
+  color: #fff;
+  cursor: pointer;
+  text-align:left;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.tab-card:hover{
+  background: #00B894;     /* light green on hover */
+}
+
+.tab-card:active{
+  transform: scale(0.99);
+}
+
+.tab-label{
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tab-arrow{
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+/* Content area */
+.bell-page__content{
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #f1f3f5;
+}
+
+
+
+
+
+
+.menu-item:hover{
+  background: rgba(5, 126, 23, 0.08);
+}
+/* Icons */
+.menu-icon{
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
 
 .centralized {
   max-width: px;
@@ -458,4 +692,120 @@ nav.nav .nav-item.nav-active::after {
   background: #eee;
   border-radius: 8px;
   cursor: pointer;
+}
+/* Withdraw Bonus Modal */
+.wb-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 9999;
+}
+
+.wb-modal.open{
+  display: block;
+}
+
+.wb-modal__backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+}
+
+.wb-modal__panel{
+  position: absolute;
+  top: 90px;
+  right: 14px;
+  left: 14px;
+  max-width: 420px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  overflow: hidden;
+}
+
+.wb-modal__top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 14px 14px;
+  background: #f3f3f3;
+}
+
+.wb-modal__title{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111;
+}
+
+.wb-modal__close{
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.wb-modal__body{
+  padding: 14px;
+}
+
+.wb-row{ margin-bottom: 12px; }
+
+.wb-label{
+  display:block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.wb-providers{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wb-pill{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: #e9e9fc;
+  font-weight: 700;
+  color: #111;
+  cursor: pointer;
+}
+
+.wb-pill input{ accent-color: #00b29b; }
+
+.wb-input{
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  outline: none;
+  font-size: 14px;
+}
+
+.wb-btn{
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: none;
+  background: #00b29b;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.wb-btn:hover{
+  filter: brightness(0.98);
+}
+
+.wb-note{
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #555;
 }
