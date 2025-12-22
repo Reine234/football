@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="league" content="CAN" />
-  <title>FansBetLiga - Results</title>
+
+  <!-- ✅ i18n title key -->
+  <title data-i18n="results.title">FansBetLiga - Results</title>
+
   <link rel="stylesheet" href="/styles/styless.css" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -45,12 +48,27 @@
 
     <section class="matches">
       <div class="matches-header">
-        <h3 id="matchday-title">Matches - Matchday 1 of 3</h3>
+        <!-- ✅ i18n key + vars for matchday title -->
+        <h3
+          id="matchday-title"
+          data-i18n="results.matchdayTitle"
+          data-i18n-vars="n:1,total:3">
+          Matches - Matchday 1 of 3
+        </h3>
 
         <div class="page-controls">
-          <button id="prev-day" class="arrow" aria-label="Previous">&lt;</button>
+          <!-- ✅ aria labels translatable -->
+          <button id="prev-day" class="arrow"
+            aria-label="Previous"
+            data-i18n="common.prevAria"
+            data-i18n-attr="aria-label">&lt;</button>
+
           <span id="day-number"></span>
-          <button id="next-day" class="arrow" aria-label="Next">&gt;</button>
+
+          <button id="next-day" class="arrow"
+            aria-label="Next"
+            data-i18n="common.nextAria"
+            data-i18n-attr="aria-label">&gt;</button>
         </div>
       </div>
 
@@ -78,7 +96,6 @@
   <!-- NAV + LEAGUE TAB WIRING -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Determine which league this page belongs to
       const path = window.location.pathname.toLowerCase();
       let league = "";
       if (path.includes("laliga")) league = "laliga";
@@ -86,28 +103,18 @@
       else if (path.includes("premier")) league = "premier";
       else if (path.includes("afcon")) league = "afcon";
 
-      // Handle bottom nav clicks (use data-nav, not translated labels)
       const navItems = document.querySelectorAll(".nav-item");
       navItems.forEach(item => {
         const key = (item.dataset.nav || "").toLowerCase();
 
         item.addEventListener("click", () => {
-          if (key === "home") {
-            window.location.href = `../${league}/index.html`;
-          }
-          else if (key === "results") {
-            window.location.href = `../${league}/results.html`;
-          }
-          else if (key === "winners") {
-            window.location.href = `../${league}/winners.html`;
-          }
-          else if (key === "rules") {
-            alert("Rules page coming soon!");
-          }
+          if (key === "home") window.location.href = `../${league}/index.html`;
+          else if (key === "results") window.location.href = `../${league}/results.html`;
+          else if (key === "winners") window.location.href = `../${league}/winners.html`;
+          else if (key === "rules") alert("Rules page coming soon!");
         });
       });
 
-      // Handle league tab switching (La Liga / Bundesliga / Premier / Afcon)
       const tabs = document.querySelectorAll(".league-tabs .tab");
       tabs.forEach(tab => {
         tab.addEventListener("click", () => {
@@ -116,7 +123,6 @@
         });
       });
 
-      // Visually mark active tab automatically
       const tabs2 = document.querySelectorAll(".league-tabs .tab");
       tabs2.forEach(tab => {
         const href = (tab.getAttribute("data-href") || "").toLowerCase();
@@ -171,9 +177,7 @@
           tab.classList.add('active');
 
           const href = tab.dataset.href;
-          if (href) {
-            window.location.href = href;
-          }
+          if (href) window.location.href = href;
         });
       });
     });

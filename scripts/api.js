@@ -19,7 +19,7 @@
 
   // AFCON config for TheSportsDB
   // 👉 TODO: set these to the real values from TheSportsDB
-  const AFCON_LEAGUE_ID   = "4495";     // ← likely AFCON league id, please verify
+  const AFCON_LEAGUE_ID   = "4496";     // ← likely AFCON league id, please verify
   const AFCON_SEASON_STR  = "2025";     // ← e.g. "2023" or "2023-2024" depending on TSDB
 
   // We'll call your own server at http://localhost:5000

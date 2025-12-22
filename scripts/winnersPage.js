@@ -264,7 +264,10 @@
         const isActive = key === currentKey;
         let labelText = "";
 
-        if (leagueKey === "AFCON" && key.includes("|")) {
+        // ✅ NEW: AFCON "All"
+        if (leagueKey === "AFCON" && key === "ALL") {
+          labelText = "All";
+        } else if (leagueKey === "AFCON" && key.includes("|")) {
           // key example: "Group A|1"
           const [groupLabel, mdStr] = key.split("|");
           const md = parseInt(mdStr, 10);
@@ -323,6 +326,9 @@
       const scoresByKey = {};
       const keySet = new Set();
 
+      // ✅ NEW: AFCON "ALL" bucket across any matchday/group
+      const allByUid = {};
+
       snap.forEach((doc) => {
         const data = doc.data() || {};
         const uid = data.uid;
@@ -372,9 +378,6 @@
           pts = computePoints(predHome, predAway, finHome, finAway);
         }
 
-        // no final score yet -> pts === null -> ignore for ranking
-        if (pts == null) return;
-
         // 🔹 Build the "key" for this ranking bucket
         let key;
         if (leagueKey === "AFCON") {
@@ -398,7 +401,25 @@
             points: 0,
           };
         }
-        scoresByKey[key][uid].points += pts;
+
+        // ✅ Change: include users even if match not finished (pts === null => add 0)
+        if (pts != null) {
+          scoresByKey[key][uid].points += pts;
+        }
+
+        // ✅ NEW: AFCON "ALL" leaderboard accumulator
+        if (leagueKey === "AFCON") {
+          if (!allByUid[uid]) {
+            allByUid[uid] = {
+              uid,
+              username: computeDisplayNameFromData(data, uid),
+              points: 0,
+            };
+          }
+          if (pts != null) {
+            allByUid[uid].points += pts;
+          }
+        }
       });
 
       let matchdays = Array.from(keySet);
@@ -416,6 +437,11 @@
           }
           return String(gA).localeCompare(String(gB));
         });
+
+        // ✅ NEW: Add "ALL" at the front if there is any AFCON data
+        if (Object.keys(allByUid).length) {
+          matchdays.unshift("ALL");
+        }
       } else {
         matchdays.sort((a, b) => {
           const nA = parseInt(a, 10);
@@ -434,9 +460,13 @@
         return;
       }
 
-      // If no key chosen yet, use the latest
+      // ✅ NEW: AFCON default selection = ALL (if present)
       if (!selectedMatchdayKey) {
-        selectedMatchdayKey = matchdays[matchdays.length - 1];
+        if (leagueKey === "AFCON" && matchdays.includes("ALL")) {
+          selectedMatchdayKey = "ALL";
+        } else {
+          selectedMatchdayKey = matchdays[matchdays.length - 1];
+        }
       }
 
       // Build / update the matchday strip
@@ -444,7 +474,11 @@
         loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, newKey);
       });
 
-      const scoresByUid = scoresByKey[selectedMatchdayKey] || {};
+      // ✅ NEW: use ALL bucket for AFCON when selected
+      const scoresByUid =
+        leagueKey === "AFCON" && selectedMatchdayKey === "ALL"
+          ? allByUid
+          : (scoresByKey[selectedMatchdayKey] || {});
 
       // Replace generic names with best from users collection
       await enrichUsernamesFromUsersCollection(db, scoresByUid);

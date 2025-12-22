@@ -142,11 +142,11 @@
           <div class="teams">
             <div class="team">
               <img src="../img/algeria.png" alt="Algeria">
-              <p>Algeria</p>
+              <p data-i18n="team.afcon.algeria">Algeria</p>
             </div>
             <div class="team">
               <img src="../img/sudan.png" alt="Sudan">
-              <p>Sudan</p>
+              <p data-i18n="team.afcon.sudan">Sudan</p>
             </div>
           </div>
         </div>
@@ -157,11 +157,11 @@
           <div class="teams">
             <div class="team">
               <img src="../img/burkinafaso.png" alt="Burkina Faso">
-              <p>Burkina Faso</p>
+              <p data-i18n="team.afcon.burkinafaso">Burkina Faso</p>
             </div>
             <div class="team">
               <img src="../img/equatorialguinea.png" alt="Equatorial Guinea">
-              <p>Equatorial Guinea</p>
+              <p data-i18n="team.afcon.eqguinea">Equatorial Guinea</p>
             </div>
           </div>
         </div>
@@ -177,11 +177,11 @@
           <div class="teams">
             <div class="team">
               <img src="../img/algeria.png" alt="Algeria">
-              <p>Algeria</p>
+              <p data-i18n="team.afcon.algeria">Algeria</p>
             </div>
             <div class="team">
               <img src="../img/burkinafaso.png" alt="Burkina Faso">
-              <p>Burkina Faso</p>
+              <p data-i18n="team.afcon.burkinafaso">Burkina Faso</p>
             </div>
           </div>
         </div>
@@ -192,11 +192,11 @@
           <div class="teams">
             <div class="team">
               <img src="../img/equatorialguinea.png" alt="Equatorial Guinea">
-              <p>Equatorial Guinea</p>
+              <p data-i18n="team.afcon.eqguinea">Equatorial Guinea</p>
             </div>
             <div class="team">
               <img src="../img/sudan.png" alt="Sudan">
-              <p>Sudan</p>
+              <p data-i18n="team.afcon.sudan">Sudan</p>
             </div>
           </div>
         </div>
@@ -212,11 +212,11 @@
           <div class="teams">
             <div class="team">
               <img src="../img/equatorialguinea.png" alt="Equatorial Guinea">
-              <p>Equatorial Guinea</p>
+              <p data-i18n="team.afcon.eqguinea">Equatorial Guinea</p>
             </div>
             <div class="team">
               <img src="../img/algeria.png" alt="Algeria">
-              <p>Algeria</p>
+              <p data-i18n="team.afcon.algeria">Algeria</p>
             </div>
           </div>
         </div>
@@ -227,11 +227,11 @@
           <div class="teams">
             <div class="team">
               <img src="../img/burkinafaso.png" alt="Burkina Faso">
-              <p>Burkina Faso</p>
+              <p data-i18n="team.afcon.burkinafaso">Burkina Faso</p>
             </div>
             <div class="team">
               <img src="../img/sudan.png" alt="Sudan">
-              <p>Sudan</p>
+              <p data-i18n="team.afcon.sudan">Sudan</p>
             </div>
           </div>
         </div>
@@ -366,13 +366,20 @@
       const nextBtn = document.getElementById("next-day");
 
       function updateDayHeaderAndVisibility() {
+        // ✅ DO NOT overwrite translated header text; only update vars + re-apply i18n
         const h3 = document.querySelector(".matches-header h3");
         if (h3) {
-          h3.textContent = `${groupLabel} - Matchday ${currentDay} of ${totalDays}`;
+          h3.setAttribute("data-i18n", "afcon.groupE.matchdayHeader");
+          h3.setAttribute("data-i18n-vars", `n:${currentDay},total:${totalDays}`);
+          if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+            window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
+          }
         }
+
         if (dayNumberEl) {
           dayNumberEl.textContent = currentDay;
         }
+
         days.forEach(day => {
           const d = Number(day.dataset.matchday || 1);
           day.style.display = d === currentDay ? "" : "none";
@@ -510,8 +517,8 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="../scripts/i18n.js"></script>
 <script>
   // Apply saved language across all pages
-  if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
-    window.FBL_I18N.apply();
+  if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+    window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
   }
 </script>
 

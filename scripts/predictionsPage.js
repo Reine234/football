@@ -9,6 +9,85 @@
     AFCON:          { name: "Afcon",          totalRounds: 6 },
   };
 
+  // --- TEAM I18N HELPERS (AFCON) ---
+  // Map displayed names -> i18n keys (use the same keys you used in HTML pages)
+  function fblTeamI18nKey(name) {
+    const n = String(name || "").trim().toLowerCase();
+
+    // normalize common accents/apostrophes
+    const norm = n
+      .replace(/’/g, "'")
+      .replace(/\s+/g, " ");
+
+    const map = {
+      "morocco": "team.afcon.morocco",
+      "comoros": "team.afcon.comoros",
+      "mali": "team.afcon.mali",
+      "zambia": "team.afcon.zambia",
+
+      "egypt": "team.afcon.egypt",
+      "zimbabwe": "team.afcon.zimbabwe",
+      "south africa": "team.afcon.southafrica",
+      "angola": "team.afcon.angola",
+
+      "nigeria": "team.afcon.nigeria",
+      "tanzania": "team.afcon.tanzania",
+      "tunisia": "team.afcon.tunisia",
+      "uganda": "team.afcon.uganda",
+
+      "senegal": "team.afcon.senegal",
+      "botswana": "team.afcon.botswana",
+      "dr congo": "team.afcon.drcongo",
+      "d.r. congo": "team.afcon.drcongo",
+      "congo dr": "team.afcon.drcongo",
+      "benin": "team.afcon.benin",
+
+      "algeria": "team.afcon.algeria",
+      "sudan": "team.afcon.sudan",
+      "burkina faso": "team.afcon.burkinafaso",
+      "equatorial guinea": "team.afcon.equatorialguinea",
+
+      "cameroon": "team.afcon.cameroon",
+      "gabon": "team.afcon.gabon",
+      "mozambique": "team.afcon.mozambique",
+      "côte d’ivoire": "team.afcon.cotedivoire",
+      "côte d'ivoire": "team.afcon.cotedivoire",
+      "cote d'ivoire": "team.afcon.cotedivoire",
+      "cote d’ivoire": "team.afcon.cotedivoire",
+    };
+
+    return map[norm] || map[norm.replace(/[^\w\s']/g, "")] || null;
+  }
+
+  // After you inject results HTML, call this once to translate the page
+  function reapplyI18n() {
+    try {
+      if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
+        window.FBL_I18N.apply();
+        return;
+      }
+      if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+        const lang = (window.FBL_I18N.getLang && window.FBL_I18N.getLang()) || "en";
+        window.FBL_I18N.applyLang(lang);
+      }
+    } catch (_) {}
+  }
+
+  // If key exists -> render <span data-i18n="...">Name</span>
+  // Else -> keep your original line-break formatting
+  function teamNameHTML(name) {
+    const key = fblTeamI18nKey(name);
+    if (key) return `<span data-i18n="${key}">${name || ""}</span>`;
+    return breakTeamName(name);
+  }
+
+  // For popup: no <br>, just a span (clean)
+  function teamNameHTMLPlain(name) {
+    const key = fblTeamI18nKey(name);
+    if (key) return `<span data-i18n="${key}">${name || ""}</span>`;
+    return (name || "");
+  }
+
   // ------------------------------------------------------------
   // i18n helpers (SAFE: falls back to English text)
   // ------------------------------------------------------------
@@ -542,7 +621,7 @@
             <div class="teams">
               <div class="team left">
                 <img class="team-logo home-logo" />
-                <p>${breakTeamName(homeTeam.name)}</p>
+                <p>${teamNameHTML(homeTeam.name)}</p>
               </div>
               <div class="match-center">
                 <p class="vs">VS</p>
@@ -550,7 +629,7 @@
               </div>
               <div class="team right">
                 <img class="team-logo away-logo" />
-                <p>${breakTeamName(awayTeam.name)}</p>
+                <p>${teamNameHTML(awayTeam.name)}</p>
               </div>
             </div>
 
@@ -577,6 +656,9 @@
       .join("");
 
     listEl.innerHTML = html;
+
+    // ✅ apply i18n on injected team-name spans
+    reapplyI18n();
 
     fixturesForRender.forEach((f) => {
       const row = listEl.querySelector(`.match-card[data-fixture="${f.id}"]`);
@@ -791,15 +873,18 @@
         return `
         <div class="gprompt__row">
           <img class="gprompt__logo gprompt__logo--home" />
-          <div class="gprompt__team">${homeTeam.name}</div>
+          <div class="gprompt__team">${teamNameHTMLPlain(homeTeam.name)}</div>
           <div class="gprompt__score">${p.homeScore} - ${p.awayScore}</div>
           <img class="gprompt__logo gprompt__logo--away" />
-          <div class="gprompt__team">${awayTeam.name}</div>
+          <div class="gprompt__team">${teamNameHTMLPlain(awayTeam.name)}</div>
         </div>`;
       })
       .join("");
 
     confirmListEl.innerHTML = rows;
+
+    // ✅ apply i18n on injected popup team-name spans
+    reapplyI18n();
 
     touched.forEach((f, i) => {
       const r = confirmListEl.querySelectorAll(".gprompt__row")[i];
