@@ -13,76 +13,73 @@
       AFCON:          { name: "Afcon",          totalRounds: 6 },
     };
 
-  // --- TEAM I18N HELPERS (AFCON) ---
-  // Map displayed names -> i18n keys (use the same keys you used in HTML pages)
-  function fblTeamI18nKey(name) {
-    const n = String(name || "").trim().toLowerCase();
+// --- TEAM I18N HELPERS (AFCON) ---
+// Map displayed names -> i18n keys (use the same keys you used in HTML pages)
+function fblTeamI18nKey(name) {
+  const n = String(name || "").trim().toLowerCase();
 
-    // normalize common accents/apostrophes
-    const norm = n
-      .replace(/’/g, "'")
-      .replace(/\s+/g, " ");
+  // normalize common accents/apostrophes
+  const norm = n
+    .replace(/’/g, "'")
+    .replace(/\s+/g, " ");
 
-    const map = {
-      "morocco": "team.afcon.morocco",
-      "comoros": "team.afcon.comoros",
-      "mali": "team.afcon.mali",
-      "zambia": "team.afcon.zambia",
+  const map = {
+    "morocco": "team.afcon.morocco",
+    "comoros": "team.afcon.comoros",
+    "mali": "team.afcon.mali",
+    "zambia": "team.afcon.zambia",
 
-      "egypt": "team.afcon.egypt",
-      "zimbabwe": "team.afcon.zimbabwe",
-      "south africa": "team.afcon.southafrica",
-      "angola": "team.afcon.angola",
+    "egypt": "team.afcon.egypt",
+    "zimbabwe": "team.afcon.zimbabwe",
+    "south africa": "team.afcon.southafrica",
+    "angola": "team.afcon.angola",
 
-      "nigeria": "team.afcon.nigeria",
-      "tanzania": "team.afcon.tanzania",
-      "tunisia": "team.afcon.tunisia",
-      "uganda": "team.afcon.uganda",
+    "nigeria": "team.afcon.nigeria",
+    "tanzania": "team.afcon.tanzania",
+    "tunisia": "team.afcon.tunisia",
+    "uganda": "team.afcon.uganda",
 
-      "senegal": "team.afcon.senegal",
-      "botswana": "team.afcon.botswana",
-      "dr congo": "team.afcon.drcongo",
-      "d.r. congo": "team.afcon.drcongo",
-      "congo dr": "team.afcon.drcongo",
-      "benin": "team.afcon.benin",
+    "senegal": "team.afcon.senegal",
+    "botswana": "team.afcon.botswana",
+    "dr congo": "team.afcon.drcongo",
+    "d.r. congo": "team.afcon.drcongo",
+    "congo dr": "team.afcon.drcongo",
+    "benin": "team.afcon.benin",
 
-      "algeria": "team.afcon.algeria",
-      "sudan": "team.afcon.sudan",
-      "burkina faso": "team.afcon.burkinafaso",
-      "equatorial guinea": "team.afcon.equatorialguinea",
+    "algeria": "team.afcon.algeria",
+    "sudan": "team.afcon.sudan",
+    "burkina faso": "team.afcon.burkinafaso",
+    "equatorial guinea": "team.afcon.equatorialguinea",
 
-      "cameroon": "team.afcon.cameroon",
-      "gabon": "team.afcon.gabon",
-      "mozambique": "team.afcon.mozambique",
-      "côte d’ivoire": "team.afcon.cotedivoire",
-      "côte d'ivoire": "team.afcon.cotedivoire",
-      "cote d'ivoire": "team.afcon.cotedivoire",
-      "cote d’ivoire": "team.afcon.cotedivoire",
-    };
+    "cameroon": "team.afcon.cameroon",
+    "gabon": "team.afcon.gabon",
+    "mozambique": "team.afcon.mozambique",
+    "côte d’ivoire": "team.afcon.cotedivoire",
+    "côte d'ivoire": "team.afcon.cotedivoire",
+    "cote d'ivoire": "team.afcon.cotedivoire",
+    "cote d’ivoire": "team.afcon.cotedivoire",
+  };
 
-    return map[norm] || map[norm.replace(/[^\w\s']/g, "")] || null;
+  return map[norm] || map[norm.replace(/[^\w\s']/g, "")] || null;
+}
+
+// Create a <span> that i18n.js can translate
+function makeTeamNameNode(name) {
+  const span = document.createElement("span");
+  const key = fblTeamI18nKey(name);
+  if (key) span.setAttribute("data-i18n", key);
+  span.textContent = name || "";
+  return span;
+}
+
+// After you inject results HTML, call this once to translate the page
+function reapplyI18n() {
+  if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+    window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
   }
+}
 
-  // After you inject results HTML, call this once to translate the page
-  function reapplyI18n() {
-    try {
-      if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
-        window.FBL_I18N.apply();
-        return;
-      }
-      if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
-        const lang = (window.FBL_I18N.getLang && window.FBL_I18N.getLang()) || "en";
-        window.FBL_I18N.applyLang(lang);
-      }
-    } catch (_) {}
-  }
 
-  // Return translated HTML for team name (span with data-i18n)
-  function teamNameHTML(name) {
-    const key = fblTeamI18nKey(name);
-    if (key) return `<span data-i18n="${key}">${String(name || "")}</span>`;
-    return esc(name || "");
-  }
 
   // ---------- I18N HELPERS ----------
   function getLangSafe() {
@@ -92,59 +89,21 @@
       return "en";
     }
   }
-function tr(key, vars) {
-  try {
-    const i18n = window.FBL_I18N;
-    const lang = getLangSafe();
-    if (i18n && typeof i18n.t === "function") {
-      let out;
 
-      // Some implementations don't accept vars (3rd arg) — try both safely
-      if (vars && typeof vars === "object") {
-        try {
-          out = i18n.t(lang, key, vars);
-        } catch (_) {
-          out = i18n.t(lang, key);
-        }
-        // If it returned the key, retry without vars
-        if (!out || out === key) out = i18n.t(lang, key);
-      } else {
-        out = i18n.t(lang, key);
-      }
-
-      if (out && out !== key) return out;
-      return out || key;
+  function tr(key, vars) {
+    try {
+      const i18n = window.FBL_I18N;
+      const lang = getLangSafe();
+      if (i18n && typeof i18n.t === "function") return i18n.t(lang, key, vars);
+    } catch (_) {}
+    // fallback: show the key if missing (so you SEE missing keys)
+    if (vars && typeof vars === "object") {
+      let s = key;
+      Object.keys(vars).forEach((k) => (s = s.replaceAll(`{${k}}`, String(vars[k]))));
+      return s;
     }
-  } catch (_) {}
-
-  // fallback: show the key if missing (so you SEE missing keys)
-  if (vars && typeof vars === "object") {
-    let s = key;
-    Object.keys(vars).forEach((k) => (s = s.replaceAll(`{${k}}`, String(vars[k]))));
-    return s;
+    return key;
   }
-  return key;
-}
-
-function waitForI18nReady() {
-  return new Promise((resolve) => {
-    const start = Date.now();
-
-    (function check() {
-      const ok =
-        window.FBL_I18N &&
-        typeof window.FBL_I18N.t === "function" &&
-        typeof window.FBL_I18N.getLang === "function";
-
-      if (ok) return resolve(true);
-
-      // keep waiting a bit (because your translations/i18n load AFTER resultsPage.js)
-      if (Date.now() - start > 4000) return resolve(false);
-
-      setTimeout(check, 50);
-    })();
-  });
-}
 
   // ---------- ROOT ----------
   let root =
@@ -307,8 +266,7 @@ function waitForI18nReady() {
 
     if (headerEl) {
       headerEl.textContent =
-        `${tr("results.matchdayTitle")} - ` +
-
+        `${tr("common.matches")} - ` +
         tr("predictions.matchdayOf", { n: md, total: total });
     }
 
@@ -448,7 +406,7 @@ function waitForI18nReady() {
         <div class="teams">
           <div class="team home-team">
             <img class="team-logo home-logo" alt="${esc(homeName)} logo" />
-            <p>${teamNameHTML(homeName)}</p>
+            <p>${esc(homeName)}</p>
           </div>
 
           <div class="score-section">
@@ -469,7 +427,7 @@ function waitForI18nReady() {
 
           <div class="team away-team">
             <img class="team-logo away-logo" alt="${esc(awayName)} logo" />
-            <p>${teamNameHTML(awayName)}</p>
+            <p>${esc(awayName)}</p>
           </div>
         </div>
 
@@ -776,9 +734,6 @@ function waitForI18nReady() {
     container.innerHTML =
       cardsHtml || `<p style="padding:12px;">${esc(tr("results.noResultsYet"))}</p>`;
 
-    // ✅ translate injected team-name spans
-    reapplyI18n();
-
     // attach logos AFTER DOM is filled
     preds.forEach((pred) => {
       const sel = `.match-card[data-fixture="${CSS.escape(String(pred.fixtureId))}"]`;
@@ -823,14 +778,9 @@ function waitForI18nReady() {
           "../signup.html?next=" + encodeURIComponent(location.pathname);
         return;
       }
-     (async () => {
-  const ready = await waitForI18nReady();
-  if (ready && window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
-    try { window.FBL_I18N.applyLang(window.FBL_I18N.getLang()); } catch (_) {}
-  }
-  renderResultsPage();
-})();
-
+      renderResultsPage();
     });
   })();
 })();
+
+
