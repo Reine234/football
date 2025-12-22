@@ -433,25 +433,25 @@
     <div class="top-pill">
       <div class="brand">
         <img class="logo-img" src="/img/Wallet.png" alt="Wallet logo" />
-        <div class="name">FansWallet</div>
+        <div class="name" data-i18n="wallet.brand">FansWallet</div>
       </div>
 
       <div class="user">
-        <div class="avatar"></div>
-        <div></div>
+        <div class="avatar" aria-label="User avatar"></div>
+        <div aria-label="User name"></div>
       </div>
     </div>
 
     <!-- Balance cards -->
     <div class="section balances">
       <div class="balance-card">
-        <div class="label">Current Balance</div>
+        <div class="label" data-i18n="wallet.currentBalance">Current Balance</div>
         <div class="amount"></div>
         <div class="currency">FCFA</div>
       </div>
 
       <div class="balance-card">
-        <div class="label">Bonus Balance</div>
+        <div class="label" data-i18n="wallet.bonusBalance">Bonus Balance</div>
         <div class="amount"></div>
         <div class="currency">FCFA</div>
       </div>
@@ -459,14 +459,14 @@
 
     <!-- Quick Actions -->
     <div class="section card">
-      <div class="card-title">Quick Actions</div>
+      <div class="card-title" data-i18n="wallet.quickActions">Quick Actions</div>
 
       <!-- ✅ Add money => opens deposit modal -->
       <button class="action" type="button" id="btnOpenDeposit">
         <div class="icon-wrap">
           <img src="/img/Plus.png" alt="Add money" />
         </div>
-        <div class="label">Add money</div>
+        <div class="label" data-i18n="wallet.addMoney">Add money</div>
       </button>
 
       <!-- ✅ Withdraw Funds => opens withdraw modal -->
@@ -474,16 +474,16 @@
         <div class="icon-wrap">
           <img src="/img/moneytansfer.png" alt="Withdraw" />
         </div>
-        <div class="label">Withdraw Funds</div>
+        <div class="label" data-i18n="wallet.withdrawFunds">Withdraw Funds</div>
       </button>
     </div>
 
     <!-- Recent Transactions -->
     <div class="section card">
       <div class="card-head-row">
-        <div class="card-title" style="margin:0;">Recent Transactions</div>
+        <div class="card-title" style="margin:0;" data-i18n="wallet.recentTransactions">Recent Transactions</div>
         <a class="view-all" href="#">
-          <span>View All</span>
+          <span data-i18n="wallet.viewAll">View All</span>
           <span aria-hidden="true">→</span>
         </a>
       </div>
@@ -494,7 +494,7 @@
             <img src="/img/down.png" alt="Deposit" />
           </div>
           <div class="txn-meta">
-            <div class="txn-title">Deposit</div>
+            <div class="txn-title" data-i18n="wallet.deposit">Deposit</div>
             <div class="txn-date"></div>
           </div>
         </div>
@@ -507,7 +507,7 @@
             <img src="/img/Up.png" alt="Withdrawal" />
           </div>
           <div class="txn-meta">
-            <div class="txn-title">Withdrawal</div>
+            <div class="txn-title" data-i18n="wallet.withdrawal">Withdrawal</div>
             <div class="txn-date"></div>
           </div>
         </div>
@@ -522,8 +522,8 @@
   <div class="modal-backdrop" id="depositModal" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-label="Make a deposit">
       <div class="modal-top">
-        <h3 class="modal-title">Make a deposit</h3>
-        <button class="modal-close" type="button" data-close="depositModal" aria-label="Close">×</button>
+        <h3 class="modal-title" data-i18n="wallet.makeDeposit">Make a deposit</h3>
+        <button class="modal-close" type="button" data-close="depositModal" data-i18n-title="common.closeAria" aria-label="Close">×</button>
       </div>
 
       <div class="modal-body">
@@ -531,32 +531,32 @@
           <label class="provider-pill">
             <input type="radio" name="deposit_provider" value="momo" checked />
             <span class="dot"></span>
-            <span>MTN Mobile Money</span>
+            <span data-i18n="wallet.providerMtn">MTN Mobile Money</span>
           </label>
 
           <label class="provider-pill">
             <input type="radio" name="deposit_provider" value="orange" />
             <span class="dot"></span>
-            <span>Orange Money</span>
+            <span data-i18n="wallet.providerOrange">Orange Money</span>
           </label>
         </div>
 
         <div class="field">
-          <label>Amount (FCFA)</label>
-          <input type="number" min="0" step="100" placeholder="e.g. 5000" />
+          <label data-i18n="wallet.amountFcfa">Amount (FCFA)</label>
+          <input type="number" min="0" step="100" placeholder="e.g. 5000" data-i18n-placeholder="wallet.amountPlaceholder" />
         </div>
 
         <div class="field">
-          <label>Phone number</label>
-          <input type="tel" placeholder="e.g. 6XXXXXXXX" />
+          <label data-i18n="wallet.phoneNumber">Phone number</label>
+          <input type="tel" placeholder="e.g. 6XXXXXXXX" data-i18n-placeholder="wallet.phonePlaceholder" />
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn-primary" type="button">Deposit</button>
-          <button class="btn btn-ghost" type="button" data-close="depositModal">Cancel</button>
+          <button class="btn btn-primary" type="button" data-i18n="wallet.depositBtn">Deposit</button>
+          <button class="btn btn-ghost" type="button" data-close="depositModal" data-i18n="common.cancel">Cancel</button>
         </div>
 
-        <div class="note">
+        <div class="note" data-i18n="wallet.depositNote">
           After you confirm, you will receive a payment prompt on your phone.
         </div>
       </div>
@@ -569,8 +569,8 @@
   <div class="modal-backdrop" id="withdrawModal" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-label="Withdraw funds">
       <div class="modal-top">
-        <h3 class="modal-title">Withdraw funds</h3>
-        <button class="modal-close" type="button" data-close="withdrawModal" aria-label="Close">×</button>
+        <h3 class="modal-title" data-i18n="wallet.withdrawTitle">Withdraw funds</h3>
+        <button class="modal-close" type="button" data-close="withdrawModal" data-i18n-title="common.closeAria" aria-label="Close">×</button>
       </div>
 
       <div class="modal-body">
@@ -578,32 +578,32 @@
           <label class="provider-pill">
             <input type="radio" name="withdraw_provider" value="momo" checked />
             <span class="dot"></span>
-            <span>MTN Mobile Money</span>
+            <span data-i18n="wallet.providerMtn">MTN Mobile Money</span>
           </label>
 
           <label class="provider-pill">
             <input type="radio" name="withdraw_provider" value="orange" />
             <span class="dot"></span>
-            <span>Orange Money</span>
+            <span data-i18n="wallet.providerOrange">Orange Money</span>
           </label>
         </div>
 
         <div class="field">
-          <label>Amount (FCFA)</label>
-          <input type="number" min="0" step="100" placeholder="e.g. 10000" />
+          <label data-i18n="wallet.amountFcfa">Amount (FCFA)</label>
+          <input type="number" min="0" step="100" placeholder="e.g. 10000" data-i18n-placeholder="wallet.amountPlaceholderWithdraw" />
         </div>
 
         <div class="field">
-          <label>Phone number</label>
-          <input type="tel" placeholder="e.g. 6XXXXXXXX" />
+          <label data-i18n="wallet.phoneNumber">Phone number</label>
+          <input type="tel" placeholder="e.g. 6XXXXXXXX" data-i18n-placeholder="wallet.phonePlaceholder" />
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn-primary" type="button">Withdraw</button>
-          <button class="btn btn-ghost" type="button" data-close="withdrawModal">Cancel</button>
+          <button class="btn btn-primary" type="button" data-i18n="wallet.withdrawBtn">Withdraw</button>
+          <button class="btn btn-ghost" type="button" data-close="withdrawModal" data-i18n="common.cancel">Cancel</button>
         </div>
 
-        <div class="note">
+        <div class="note" data-i18n="wallet.withdrawNote">
           Withdrawals may take a few minutes depending on the operator.
         </div>
       </div>
@@ -648,5 +648,10 @@
       closeModal("withdrawModal");
     });
   </script>
+
+  <!-- i18n (same pattern as other pages) -->
+  <script src="../scripts/translations.fr.js"></script>
+  <script src="../scripts/translations.en.js"></script>
+  <script src="../scripts/i18n.js"></script>
 </body>
 </html>

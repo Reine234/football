@@ -12,35 +12,35 @@
 <body data-league="AFCON">
   <!-- Top Bar -->
   <header class="topbar">
-    <h1 class="logo">FANSBETLIGA</h1>
-    <a href="#" class="about">About</a>
+    <h1 class="logo" data-i18n="app.brand">FANSBETLIGA</h1>
+    <a href="#" class="about" data-i18n="common.about">About</a>
   </header>
 
   <!-- Bottom navigation -->
   <nav class="nav">
-    <div class="nav-item"><img src="/img/home.png" alt="Home"><span>Home</span></div>
-    <div class="nav-item"><img src="/img/results.png" alt="Results"><span>Results</span></div>
-    <div class="nav-item"><img src="/img/winners.png" alt="Winners"><span>Winners</span></div>
-    <div class="nav-item"><img src="/img/rules.png" alt="Rules"><span>Rules</span></div>
+    <div class="nav-item" data-nav="home"><img src="/img/home.png" alt="Home"><span data-i18n="nav.home">Home</span></div>
+    <div class="nav-item" data-nav="results"><img src="/img/results.png" alt="Results"><span data-i18n="nav.results">Results</span></div>
+    <div class="nav-item" data-nav="winners"><img src="/img/winners.png" alt="Winners"><span data-i18n="nav.winners">Winners</span></div>
+    <div class="nav-item" data-nav="rules"><img src="/img/rules.png" alt="Rules"><span data-i18n="nav.rules">Rules</span></div>
   </nav>
 
   <div class="centralized">
     <!-- League tabs -->
     <div class="league-tabs">
-      <button class="tab" data-href="../laliga/results.html">La Liga</button>
-      <button class="tab" data-href="../bundesliga/results.html">Bundesliga</button>
-      <button class="tab active" data-href="../premier/results.html">Premier League</button>
-        <button class="tab" data-href="../afcon/results.html">Afcon</button>
+      <button class="tab" data-href="../laliga/results.html" data-i18n="league.laliga">La Liga</button>
+      <button class="tab" data-href="../bundesliga/results.html" data-i18n="league.bundesliga">Bundesliga</button>
+      <button class="tab active" data-href="../premier/results.html" data-i18n="league.premier">Premier League</button>
+      <button class="tab" data-href="../afcon/results.html" data-i18n="league.afcon">Afcon</button>
     </div>
 
     <div class="season-title">
       <span class="back-arrow"></span>
-      <h2>Season 2025 - 2026</h2>
+      <h2 data-i18n="results.seasonTitle">Season 2025 - 2026</h2>
     </div>
 
     <div class="user-info">
       <span class="user-name">–</span>
-      <span class="points">Points: <span id="total-points">0</span></span>
+      <span class="points"><span data-i18n="results.pointsLabel">Points:</span> <span id="total-points">0</span></span>
     </div>
 
     <section class="matches">
@@ -48,9 +48,9 @@
         <h3 id="matchday-title">Matches - Matchday 1 of 3</h3>
 
         <div class="page-controls">
-          <button id="prev-day" class="arrow">&lt;</button>
+          <button id="prev-day" class="arrow" aria-label="Previous">&lt;</button>
           <span id="day-number"></span>
-          <button id="next-day" class="arrow">&gt;</button>
+          <button id="next-day" class="arrow" aria-label="Next">&gt;</button>
         </div>
       </div>
 
@@ -71,7 +71,6 @@
   <script src="../scripts/api.js"></script>
   <script src="../scripts/auth.js"></script>
   <script src="../scripts/resultsPage.js"></script>
-  
 
   <script src="../scripts/winnersPage.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -87,28 +86,28 @@
       else if (path.includes("premier")) league = "premier";
       else if (path.includes("afcon")) league = "afcon";
 
-      // Handle top nav clicks
+      // Handle bottom nav clicks (use data-nav, not translated labels)
       const navItems = document.querySelectorAll(".nav-item");
       navItems.forEach(item => {
-        const label = item.querySelector("span").textContent.trim().toLowerCase();
+        const key = (item.dataset.nav || "").toLowerCase();
 
         item.addEventListener("click", () => {
-          if (label === "home") {
+          if (key === "home") {
             window.location.href = `../${league}/index.html`;
           }
-          else if (label === "results") {
+          else if (key === "results") {
             window.location.href = `../${league}/results.html`;
           }
-          else if (label === "winners") {
+          else if (key === "winners") {
             window.location.href = `../${league}/winners.html`;
           }
-          else if (label === "rules") {
+          else if (key === "rules") {
             alert("Rules page coming soon!");
           }
         });
       });
 
-      // Handle league tab switching (La Liga / Bundesliga / Premier)
+      // Handle league tab switching (La Liga / Bundesliga / Premier / Afcon)
       const tabs = document.querySelectorAll(".league-tabs .tab");
       tabs.forEach(tab => {
         tab.addEventListener("click", () => {
@@ -120,7 +119,7 @@
       // Visually mark active tab automatically
       const tabs2 = document.querySelectorAll(".league-tabs .tab");
       tabs2.forEach(tab => {
-        const href = tab.getAttribute("data-href").toLowerCase();
+        const href = (tab.getAttribute("data-href") || "").toLowerCase();
         if (path.includes("laliga") && href.includes("laliga")) tab.classList.add("active");
         else if (path.includes("bundesliga") && href.includes("bundesliga")) tab.classList.add("active");
         else if (path.includes("premier") && href.includes("premier")) tab.classList.add("active");
@@ -138,31 +137,19 @@
 
       const items = Array.from(nav.querySelectorAll('.nav-item'));
 
-      function setActiveByLabel(label) {
-        const targetLabel = label.toLowerCase();
+      function setActiveByKey(key) {
+        const target = (key || "").toLowerCase();
         items.forEach(i => i.classList.remove('nav-active'));
-
-        const found = items.find(i => {
-          const text = (i.querySelector('span')?.textContent || "").trim().toLowerCase();
-          return text === targetLabel;
-        });
-
-        if (found) {
-          found.classList.add('nav-active');
-        }
+        const found = items.find(i => (i.dataset.nav || "").toLowerCase() === target);
+        if (found) found.classList.add('nav-active');
       }
 
       const path = window.location.pathname.toLowerCase();
 
-      if (path.includes('results')) {
-        setActiveByLabel('results');
-      } else if (path.includes('winners')) {
-        setActiveByLabel('winners');
-      } else if (path.includes('rules')) {
-        setActiveByLabel('rules');
-      } else {
-        setActiveByLabel('home');
-      }
+      if (path.includes('results')) setActiveByKey('results');
+      else if (path.includes('winners')) setActiveByKey('winners');
+      else if (path.includes('rules')) setActiveByKey('rules');
+      else setActiveByKey('home');
 
       nav.addEventListener('click', function (e) {
         const item = e.target.closest('.nav-item');
@@ -191,5 +178,9 @@
       });
     });
   </script>
+
+  <script src="../scripts/translations.fr.js"></script>
+  <script src="../scripts/translations.en.js"></script>
+  <script src="../scripts/i18n.js"></script>
 </body>
 </html>

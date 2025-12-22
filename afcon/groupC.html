@@ -12,19 +12,21 @@
       font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
   </style>
-</head><body data-league="AFCON">
+</head>
+
+<body data-league="AFCON">
   <header class="topbar">
     <h1 class="logo" data-i18n="app.brand">FANSBETLIGA</h1>
-<button class="bell-btn has-unread" id="bellBtn"
-  aria-label=""
-  data-i18n-attr="aria-label"
-  data-i18n-key="nav.notificationsAria"
-  aria-expanded="false">
-  <img src="/img/Doorbell.png" alt="" class="bell-icon"
-    data-i18n-attr="alt"
-    data-i18n-key="nav.notificationsAlt" />
-</button>
 
+    <button class="bell-btn has-unread" id="bellBtn"
+      aria-label=""
+      data-i18n-attr="aria-label"
+      data-i18n-key="nav.notificationsAria"
+      aria-expanded="false">
+      <img src="/img/Doorbell.png" alt="" class="bell-icon"
+        data-i18n-attr="alt"
+        data-i18n-key="nav.notificationsAlt" />
+    </button>
   </header>
 
   <!-- Full page notifications / wallet panel -->
@@ -37,20 +39,20 @@
           data-i18n="common.closeAria"
           data-i18n-attr="aria-label">✕</button>
       </div>
-<div class="tab-row">
+
+      <div class="tab-row">
         <a class="tab-card" href="/afcon/wallet.html">
           <span class="tab-label" data-i18n="wallet.withdrawBonus">Withdraw Bonus</span>
           <span class="tab-arrow">›</span>
         </a>
-</div>
- <div class="tab-row">
- <a class="tab-card" href="/afcon/wallet.html">
-  <span class="tab-label" data-i18n="wallet.wallet">Wallet</span>
-  <span class="tab-arrow">›</span>
-</a>
       </div>
 
-      
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label" data-i18n="wallet.wallet">Wallet</span>
+          <span class="tab-arrow">›</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -79,24 +81,15 @@
 
     bellClose.addEventListener("click", closeBellPage);
 
-    // optional: ESC closes
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeBellPage();
     });
   </script>
 
-  <!-- ✅ i18n (optional but recommended for all pages) -->
+  <!-- ✅ i18n -->
   <script src="../scripts/translations.en.js"></script>
   <script src="../scripts/translations.fr.js"></script>
   <script src="../scripts/i18n.js"></script>
-  <script>
-    // apply saved language on page load (safe if i18n not loaded yet)
-    window.FBL_I18N && window.FBL_I18N.apply && window.FBL_I18N.apply();
-  </script>
-
-
-
-
 
   <nav class="nav">
     <div class="nav-item"><img src="../img/home.png" alt="Home"><span data-i18n="nav.home">Home</span></div>
@@ -121,7 +114,14 @@
 
   <section class="matches">
     <div class="matches-header">
-      <h3 data-group="Group C" data-i18n="afcon.groupC.matchdayHeader">Group C - Matchday 1 of 3</h3>
+      <h3
+        data-group="C"
+        data-i18n="afcon.groupC.matchdayHeader"
+        data-i18n-vars="n:1,total:3"
+      >
+        Group C - Matchday 1 of 3
+      </h3>
+
       <div class="page-controls">
         <button id="prev-day" class="arrow"
           aria-label="Previous"
@@ -252,92 +252,13 @@
   <script src="../scripts/api.js"></script>
   <script src="afconFixtures.js"></script>
 
-<script src="../scripts/winnersPage.js"></script>
+  <script src="../scripts/winnersPage.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script>
- window.FBL_I18N && window.FBL_I18N.applyLang();
- </script>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const groupLabel = "Group D";
-
-      const groupFixtures = [
-       // ===== GROUP C =====
-{
-  id: "AFGC-1",
-  group: "C",
-  utcDate: "2025-12-23T19:00:00Z",
-  roundNum: 1,
-  roundText: "Matchday 1",
-  leagueId: null,
-  home: { id: "NGA", name: "Nigeria",   logo: "../img/nigeria.png" },
-  away: { id: "TZA", name: "Tanzania",  logo: "../img/tanzania.png" },
-  goals: { home: null, away: null },
-  status: { short: "NS", long: "Not Started" },
-},
-{
-  id: "AFGC-2",
-  group: "C",
-  utcDate: "2025-12-23T14:30:00Z",
-  roundNum: 1,
-  roundText: "Matchday 1",
-  leagueId: null,
-  home: { id: "TUN", name: "Tunisia",  logo: "../img/tunisia.png" },
-  away: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
-  goals: { home: null, away: null },
-  status: { short: "NS", long: "Not Started" },
-},
-{
-  id: "AFGC-3",
-  group: "C",
-  utcDate: "2025-12-27T19:00:00Z",
-  roundNum: 2,
-  roundText: "Matchday 2",
-  leagueId: null,
-  home: { id: "NGA", name: "Nigeria",  logo: "../img/nigeria.png" },
-  away: { id: "TUN", name: "Tunisia",  logo: "../img/tunisia.png" },
-  goals: { home: null, away: null },
-  status: { short: "NS", long: "Not Started" },
-},
-{
-  id: "AFGC-4",
-  group: "C",
-  utcDate: "2025-12-27T14:30:00Z",
-  roundNum: 2,
-  roundText: "Matchday 2",
-  leagueId: null,
-  home: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
-  away: { id: "TZA", name: "Tanzania", logo: "../img/tanzania.png" },
-  goals: { home: null, away: null },
-  status: { short: "NS", long: "Not Started" },
-},
-{
-  id: "AFGC-5",
-  group: "C",
-  utcDate: "2025-12-30T17:30:00Z",
-  roundNum: 3,
-  roundText: "Matchday 3",
-  leagueId: null,
-  home: { id: "NGA", name: "Nigeria",  logo: "../img/nigeria.png" },
-  away: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
-  goals: { home: null, away: null },
-  status: { short: "NS", long: "Not Started" },
-},
-{
-  id: "AFGC-6",
-  group: "C",
-  utcDate: "2025-12-30T17:30:00Z",
-  roundNum: 3,
-  roundText: "Matchday 3",
-  leagueId: null,
-  home: { id: "TZA", name: "Tanzania", logo: "../img/tanzania.png" },
-  away: { id: "TUN", name: "Tunisia",  logo: "../img/tunisia.png" },
-  goals: { home: null, away: null },
-  status: { short: "NS", long: "Not Started" },
-},
-
-      ];
+      // ✅ FIXED: correct group label (and we won't force h3 text anymore)
+      const groupKey = "C";
 
       const navItems = document.querySelectorAll(".nav .nav-item");
       if (navItems[0]) {
@@ -355,7 +276,7 @@
       if (navItems[2]) {
         navItems[2].style.cursor = "pointer";
         navItems[2].addEventListener("click", () => {
-             window.location.href = "winners.html";
+          window.location.href = "winners.html";
         });
       }
       if (navItems[3]) {
@@ -377,56 +298,59 @@
       const nextBtn = document.getElementById("next-day");
 
       function updateDayHeaderAndVisibility() {
-        const h3 = document.querySelector(".matches-header h3");
-        if (h3) {
-          h3.textContent = `${groupLabel} - Matchday ${currentDay} of ${totalDays}`;
-        }
-        if (dayNumberEl) {
-          dayNumberEl.textContent = currentDay;
-        }
+        // ✅ show correct day number
+        if (dayNumberEl) dayNumberEl.textContent = currentDay;
+
+        // ✅ only toggle visibility (don't overwrite i18n text)
         days.forEach(day => {
           const d = Number(day.dataset.matchday || 1);
           day.style.display = d === currentDay ? "" : "none";
         });
+
+        // ✅ update i18n vars for the matchday header and re-apply language
+        const h3 = document.querySelector(".matches-header h3[data-i18n]");
+        if (h3) {
+          h3.setAttribute("data-i18n", `afcon.group${groupKey}.matchdayHeader`);
+          h3.setAttribute("data-i18n-vars", `n:${currentDay},total:${totalDays}`);
+          if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+            window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
+          }
+        }
       }
 
-      prevBtn.addEventListener("click", () => {
-        if (currentDay > 1) {
-          currentDay--;
-          updateDayHeaderAndVisibility();
-        }
-      });
+      if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+          if (currentDay > 1) {
+            currentDay--;
+            updateDayHeaderAndVisibility();
+          }
+        });
+      }
 
-      nextBtn.addEventListener("click", () => {
-        if (currentDay < totalDays) {
-          currentDay++;
-          updateDayHeaderAndVisibility();
-        }
-      });
-function goToAfconPredictions() {
-  // ✅ Use the global helper from afconFixtures.js
-  const fixturesForDay = window.getAfconFixturesForMatchday(currentDay);
+      if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+          if (currentDay < totalDays) {
+            currentDay++;
+            updateDayHeaderAndVisibility();
+          }
+        });
+      }
 
-  const payload = {
-    leagueKey: "AFCON",
-    roundNum: currentDay,
-    fixtures: fixturesForDay,  // <-- now ALL groups for that matchday
-  };
+      function goToAfconPredictions() {
+        const fixturesForDay = window.getAfconFixturesForMatchday(currentDay);
 
-  sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
-  sessionStorage.setItem("FBL_leagueKey", "AFCON");
-  sessionStorage.setItem("FBL_mode", "all"); // predict all matches for that day
+        const payload = {
+          leagueKey: "AFCON",
+          roundNum: currentDay,
+          fixtures: fixturesForDay,
+        };
 
-  console.log(
-    "[AFCON] going to predictions with",
-    fixturesForDay.length,
-    "fixtures for matchday",
-    currentDay
-  );
+        sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+        sessionStorage.setItem("FBL_leagueKey", "AFCON");
+        sessionStorage.setItem("FBL_mode", "all");
 
-  window.location.href = "predictions.html";
-}
-
+        window.location.href = "predictions.html";
+      }
 
       document.querySelectorAll(".match-card").forEach(card => {
         card.style.cursor = "pointer";
@@ -441,81 +365,66 @@ function goToAfconPredictions() {
         });
       }
 
+      // ✅ initial apply
+      if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+        window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
+      }
       updateDayHeaderAndVisibility();
     });
   </script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const path = window.location.pathname.toLowerCase();
 
-  // Only run on AFCON group pages, not on the main afcon/index.html
-  if (!path.includes('/afcon/') || path.endsWith('/afcon/index.html')) {
-    return;
-  }
+  <!-- keep your two nav override scripts as-is (unchanged) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const path = window.location.pathname.toLowerCase();
+      if (!path.includes('/afcon/') || path.endsWith('/afcon/index.html')) return;
 
-  const navItems = document.querySelectorAll('.nav .nav-item');
+      const navItems = document.querySelectorAll('.nav .nav-item');
+      navItems.forEach(function (item) {
+        const label = (item.querySelector('span')?.textContent || '')
+          .trim()
+          .toLowerCase();
 
-  navItems.forEach(function (item) {
-    const label = (item.querySelector('span')?.textContent || '')
-      .trim()
-      .toLowerCase();
+        if (label === 'home') {
+          item.style.cursor = 'pointer';
+          item.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = '../afcon/index.html';
+          }, true);
+        }
+      });
+    });
+  </script>
 
-    if (label === 'home') {
-      item.style.cursor = 'pointer';
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const HOME_TARGET = "/premier/index.html";
+      const path = window.location.pathname.toLowerCase();
+      if (!path.includes("/afcon/")) return;
 
-      // Override any other handler for this click
-      item.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        // Go back to the AFCON main page (with the league tabs)
-        window.location.href = '../afcon/index.html';   // or simply 'index.html'
-      }, true); // capture = true so this runs before other listeners
-    }
-  });
-});
-</script>
+      const nav = document.querySelector("nav.nav");
+      if (!nav) return;
 
+      const items = Array.from(nav.querySelectorAll(".nav-item"));
+      items.forEach(function (item) {
+        const label = (item.querySelector("span")?.textContent || "")
+          .trim()
+          .toLowerCase();
 
+        if (label === "home") {
+          const clone = item.cloneNode(true);
+          item.parentNode.replaceChild(clone, item);
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  // 👇 CHANGE THIS if your main page is different
-  // Example: "/premier/index.html" or "/bundesliga/index.html"
-  const HOME_TARGET = "/premier/index.html";
-
-  const path = window.location.pathname.toLowerCase();
-  // Only run for afcon group pages
-  if (!path.includes("/afcon/")) return;
-
-  const nav = document.querySelector("nav.nav");
-  if (!nav) return;
-
-  const items = Array.from(nav.querySelectorAll(".nav-item"));
-
-  items.forEach(function (item) {
-    const label = (item.querySelector("span")?.textContent || "")
-      .trim()
-      .toLowerCase();
-
-    if (label === "home") {
-      // 🔥 Remove ALL existing click handlers by cloning the node
-      const clone = item.cloneNode(true);
-      item.parentNode.replaceChild(clone, item);
-
-      clone.style.cursor = "pointer";
-      clone.addEventListener(
-        "click",
-        function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = HOME_TARGET;
-        },
-        false
-      );
-    }
-  });
-});
-</script>
-
+          clone.style.cursor = "pointer";
+          clone.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = HOME_TARGET;
+          }, false);
+        }
+      });
+    });
+  </script>
 </body>
 </html>

@@ -10,6 +10,34 @@
   };
 
   // ------------------------------------------------------------
+  // i18n helpers (SAFE: falls back to English text)
+  // ------------------------------------------------------------
+  function getLangSafe() {
+    try {
+      return window.FBL_I18N?.getLang ? window.FBL_I18N.getLang() : "en";
+    } catch (_) {
+      return "en";
+    }
+  }
+  function tSafe(key, fallback) {
+    try {
+      const lang = getLangSafe();
+      if (window.FBL_I18N?.t) {
+        const out = window.FBL_I18N.t(lang, key);
+        if (out && out !== key) return out;
+      }
+    } catch (_) {}
+    return fallback;
+  }
+  function formatTemplate(template, vars) {
+    let s = String(template || "");
+    Object.keys(vars || {}).forEach((k) => {
+      s = s.replace(new RegExp("\\{" + k + "\\}", "g"), String(vars[k]));
+    });
+    return s;
+  }
+
+  // ------------------------------------------------------------
   // Firestore store (save + load)
   // ------------------------------------------------------------
   (function () {
@@ -169,8 +197,6 @@
   let selected = loadSelectedRoundUniversal(folderLeagueKey);
 
   // 🔹 AFCON fallback for production / direct-links:
-  // If no FBL_selectedRound is in sessionStorage, build a default selection
-  // from the AFCON master fixtures so the page still works.
   if (folderLeagueKey === "AFCON" && !selected) {
     let master = null;
 
@@ -188,8 +214,8 @@
     if (master && master.length) {
       selected = {
         leagueKey: "AFCON",
-        roundNum: 1,      // default Matchday 1
-        fixtures: master, // full list; we'll filter by matchday later
+        roundNum: 1,
+        fixtures: master,
       };
       console.log(
         "[PredictionsPage] (AFCON) built default selection from master fixtures",
@@ -203,13 +229,11 @@
   // ------------------------------------------------------------
   let leagueKey = sessionStorage.getItem("FBL_leagueKey") || folderLeagueKey;
 
-  // For non-AFCON, if selected has a leagueKey, trust it
   if (folderLeagueKey !== "AFCON" && selected && selected.leagueKey) {
     leagueKey = selected.leagueKey;
     sessionStorage.setItem("FBL_leagueKey", leagueKey);
   }
 
-  // For AFCON, ALWAYS force AFCON (ignore any PREM/BUND/LALIGA leak)
   if (folderLeagueKey === "AFCON") {
     leagueKey = "AFCON";
     sessionStorage.setItem("FBL_leagueKey", leagueKey);
@@ -265,7 +289,6 @@
     return null;
   }
 
-  // AFCON label "Group A", "Group B", ...
   function getAfconGroupLabel(f) {
     const raw =
       f.group ||
@@ -281,24 +304,17 @@
     const str = String(raw).trim();
 
     const mLetter = str.match(/^[A-F]$/i);
-    if (mLetter) {
-      return "Group " + mLetter[0].toUpperCase();
-    }
+    if (mLetter) return "Group " + mLetter[0].toUpperCase();
 
     const mGroup = str.match(/group\s*([A-F])/i);
-    if (mGroup) {
-      return "Group " + mGroup[1].toUpperCase();
-    }
+    if (mGroup) return "Group " + mGroup[1].toUpperCase();
 
     const mStartLetter = str.match(/^([A-F])\b/i);
-    if (mStartLetter) {
-      return "Group " + mStartLetter[1].toUpperCase();
-    }
+    if (mStartLetter) return "Group " + mStartLetter[1].toUpperCase();
 
     return "Group " + str;
   }
 
-  // Group code "A".."F" from the label
   function getAfconGroupCode(f) {
     const label = getAfconGroupLabel(f);
     if (!label) return null;
@@ -324,53 +340,32 @@
     }
 
     if (master && master.length) {
-      const byRound = master.filter((f) => {
-        const md = getFixtureMatchday(f);
-        return md === roundNum;
-      });
+      const byRound = master.filter((f) => getFixtureMatchday(f) === roundNum);
 
       if (byRound.length) {
         effectiveAllFixtures = byRound;
-        console.log(
-          "[AFCON] Using master fixtures by matchday",
-          roundNum,
-          "count=",
-          effectiveAllFixtures.length
-        );
+        console.log("[AFCON] Using master fixtures by matchday", roundNum, "count=", effectiveAllFixtures.length);
       } else {
-        console.warn(
-          "[AFCON] No fixtures matched matchday",
-          roundNum,
-          "– falling back to full master AFCON list"
-        );
+        console.warn("[AFCON] No fixtures matched matchday", roundNum, "– falling back to full master AFCON list");
         effectiveAllFixtures = master;
       }
     } else {
-      console.warn(
-        "[AFCON] Master AFCON fixtures not found (ALL_LEAGUES_FIXTURES.AFCON / AFCON_FIXTURES / FBL_AFCON_FIXTURES). " +
-          "Falling back to selected.fixtures only."
-      );
+      console.warn("[AFCON] Master AFCON fixtures not found. Falling back to selected.fixtures only.");
       effectiveAllFixtures = allFixtures;
     }
   }
 
-  // Mode + selected fixture from sessionStorage (set by match-card / Bet+)
   const mode         = sessionStorage.getItem("FBL_mode") || "all";
   const selFixtureId = sessionStorage.getItem("FBL_selectedFixture");
 
   let pageFixtures;
 
-  // AFCON: ALWAYS show all fixtures for this matchday across all groups
   if (leagueKey === "AFCON") {
     pageFixtures = effectiveAllFixtures.slice();
   } else if (mode === "single" && selFixtureId) {
-    pageFixtures = allFixtures.filter(
-      (f) => String(f.id) === String(selFixtureId)
-    );
+    pageFixtures = allFixtures.filter((f) => String(f.id) === String(selFixtureId));
     if (!pageFixtures.length) {
-      console.warn(
-        "[PredictionsPage] single-mode id not found, falling back to all fixtures"
-      );
+      console.warn("[PredictionsPage] single-mode id not found, falling back to all fixtures");
       pageFixtures = allFixtures.slice();
     }
   } else {
@@ -405,6 +400,7 @@
   const confirmListEl  = document.getElementById("confirmList");
   const badgeEl        = document.querySelector(".gprompt__badge");
   const matchdayTextEl = document.getElementById("gprompt-matchday");
+  const promptTitleEl  = document.getElementById("gprompt-title");
 
   // ------------------------------------------------------------
   // Prediction state + helpers
@@ -421,33 +417,19 @@
     if (!name) return "";
     const words = String(name).trim().split(/\s+/);
     if (words.length <= 2) return words.join(" ");
-    if (words.length === 3) {
-      return `${words[0]} ${words[1]}<br>${words[2]}`;
-    }
-    if (words.length === 4) {
-      return `${words[0]} ${words[1]}<br>${words[2]} ${words[3]}`;
-    }
+    if (words.length === 3) return `${words[0]} ${words[1]}<br>${words[2]}`;
+    if (words.length === 4) return `${words[0]} ${words[1]}<br>${words[2]} ${words[3]}`;
     const firstLine = `${words[0]} ${words[1]}`;
     const secondLine = words.slice(2).join(" ");
     return `${firstLine}<br>${secondLine}`;
   }
 
   function getHomeTeam(f) {
-    return (
-      f.home ||
-      (f.teams && f.teams.home) ||
-      f.homeTeam ||
-      { id: null, name: "", logo: null }
-    );
+    return f.home || (f.teams && f.teams.home) || f.homeTeam || { id: null, name: "", logo: null };
   }
 
   function getAwayTeam(f) {
-    return (
-      f.away ||
-      (f.teams && f.teams.away) ||
-      f.awayTeam ||
-      { id: null, name: "", logo: null }
-    );
+    return f.away || (f.teams && f.teams.away) || f.awayTeam || { id: null, name: "", logo: null };
   }
 
   function ensurePredictionSlot(f) {
@@ -456,31 +438,20 @@
     const awayTeam = getAwayTeam(f);
 
     if (!userPred[id]) {
-      userPred[id] = {
-        homeScore: null,
-        awayScore: null,
-        homeTeam,
-        awayTeam,
-      };
+      userPred[id] = { homeScore: null, awayScore: null, homeTeam, awayTeam };
     } else {
       userPred[id].homeTeam = homeTeam;
       userPred[id].awayTeam = awayTeam;
     }
   }
 
-  // 🔹 NEW: format match date for display above each matchcard
   function formatMatchDate(f) {
     const raw = f.utcDate || f.utc_date || f.date;
     if (!raw) return "";
     const d = new Date(raw);
     if (isNaN(d.getTime())) return "";
     try {
-      return d.toLocaleDateString(undefined, {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+      return d.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
     } catch (_) {
       return d.toLocaleDateString();
     }
@@ -492,16 +463,26 @@
   function renderFixtures() {
     if (!listEl) return;
 
+    // Subtitle (bilingual)
     if (subtitleEl) {
-      subtitleEl.innerHTML =
-        `<span class="bold">${leagueInfo.name} Matches</span> - ` +
-        `Matchday ${roundNum} of ${totalRounds}`;
+      const leagueMatches = tSafe("predictions.leagueMatches", "{league} Matches");
+      const matchdayOf = tSafe("predictions.matchdayOf", "Matchday {n} of {total}");
+      const left = `<span class="bold">${formatTemplate(leagueMatches, { league: leagueInfo.name })}</span>`;
+      const right = formatTemplate(matchdayOf, { n: roundNum, total: totalRounds });
+      subtitleEl.innerHTML = `${left} - ${right}`;
     }
-    if (dayNumWrapEl) {
-      dayNumWrapEl.textContent = roundNum;
-    }
+
+    if (dayNumWrapEl) dayNumWrapEl.textContent = roundNum;
     if (prevDayBtn) prevDayBtn.disabled = true;
     if (nextDayBtn) nextDayBtn.disabled = true;
+
+    // Make modal title bilingual even if HTML wasn't translated
+    if (promptTitleEl) {
+      promptTitleEl.textContent = tSafe(
+        "predictions.confirmTitle",
+        "Are you sure you want to submit these scores? Please confirm that all the information is correct."
+      );
+    }
 
     pageFixtures.forEach((f) => ensurePredictionSlot(f));
 
@@ -509,8 +490,8 @@
 
     if (leagueKey === "AFCON") {
       fixturesForRender.sort((a, b) => {
-        const la = getAfconGroupLabel(a); // e.g. "Group A"
-        const lb = getAfconGroupLabel(b); // e.g. "Group B"
+        const la = getAfconGroupLabel(a);
+        const lb = getAfconGroupLabel(b);
 
         const ma = la.match(/Group\s+([A-F])/i);
         const mb = lb.match(/Group\s+([A-F])/i);
@@ -518,14 +499,10 @@
         if (ma && mb) {
           const ga = ma[1].toUpperCase().charCodeAt(0);
           const gb = mb[1].toUpperCase().charCodeAt(0);
-          if (ga !== gb) return ga - gb; // strict A→F
-        } else if (ma && !mb) {
-          return -1;
-        } else if (!ma && mb) {
-          return 1;
-        } else if (la !== lb) {
-          return la.localeCompare(lb);
-        }
+          if (ga !== gb) return ga - gb;
+        } else if (ma && !mb) return -1;
+        else if (!ma && mb) return 1;
+        else if (la !== lb) return la.localeCompare(lb);
 
         const tA = new Date(a.utcDate || a.utc_date || a.date || 0).getTime();
         const tB = new Date(b.utcDate || b.utc_date || b.date || 0).getTime();
@@ -534,6 +511,10 @@
     }
 
     let lastGroupLabel = null;
+
+    const predictionLabelText = tSafe("predictions.enterPredictionScore", "Enter your prediction score");
+    const matchdayWord = tSafe("predictions.matchdayWord", "Matchday");
+    const groupHeaderTpl = tSafe("predictions.groupHeader", "{group} - Matchday {n}");
 
     const html = fixturesForRender
       .map((f) => {
@@ -545,13 +526,12 @@
         const awayTeam = getAwayTeam(f);
         const dateStr  = formatMatchDate(f);
 
-        // AFCON: group title above each block
         let groupHeader = "";
         if (leagueKey === "AFCON") {
           const label = getAfconGroupLabel(f);
           if (label && label !== lastGroupLabel) {
             lastGroupLabel = label;
-            groupHeader = `<h4 class="afcon-group-title">${label} - Matchday ${roundNum}</h4>`;
+            groupHeader = `<h4 class="afcon-group-title">${formatTemplate(groupHeaderTpl, { group: label, n: roundNum })}</h4>`;
           }
         }
 
@@ -576,7 +556,7 @@
 
             <hr class="hr">
 
-            <p class="prediction-label">Enter your prediction score</p>
+            <p class="prediction-label">${predictionLabelText}</p>
 
             <div class="score-inputs">
               <div class="score-box home-box">
@@ -598,11 +578,8 @@
 
     listEl.innerHTML = html;
 
-    // logos + initial values
     fixturesForRender.forEach((f) => {
-      const row = listEl.querySelector(
-        `.match-card[data-fixture="${f.id}"]`
-      );
+      const row = listEl.querySelector(`.match-card[data-fixture="${f.id}"]`);
       if (!row) return;
       const id = String(f.id);
       const pred = userPred[id];
@@ -614,10 +591,8 @@
         window.FBL.ensureLogo(awayTeam, row.querySelector(".away-logo"));
       }
 
-      const hVal = row.querySelector(".home-val");
-      const aVal = row.querySelector(".away-val");
-      display(hVal, pred.homeScore);
-      display(aVal, pred.awayScore);
+      display(row.querySelector(".home-val"), pred.homeScore);
+      display(row.querySelector(".away-val"), pred.awayScore);
     });
   }
 
@@ -655,15 +630,13 @@
           if (cur === null || Number.isNaN(cur)) cur = 0;
           cur = clamp(cur + (isPlus ? 1 : -1));
           pred.homeScore = cur;
-          const hVal = card.querySelector(".home-val");
-          display(hVal, cur);
+          display(card.querySelector(".home-val"), cur);
         } else {
           let cur = pred.awayScore;
           if (cur === null || Number.isNaN(cur)) cur = 0;
           cur = clamp(cur + (isPlus ? 1 : -1));
           pred.awayScore = cur;
-          const aVal = card.querySelector(".away-val");
-          display(aVal, cur);
+          display(card.querySelector(".away-val"), cur);
         }
 
         if (topDoneLink && !topDoneLink.classList.contains("done-active")) {
@@ -715,9 +688,7 @@
   let pending = [];
 
   async function finalizeAndContinue() {
-    const touched = pageFixtures.filter((f) =>
-      isSet(userPred[String(f.id)])
-    );
+    const touched = pageFixtures.filter((f) => isSet(userPred[String(f.id)]));
     if (!touched.length) {
       alert(".");
       return;
@@ -740,21 +711,11 @@
         fixtureId: String(f.id),
         matchday:  roundNum,
 
-        group:      groupCode,   // "A", "B", ...
-        groupLabel: groupLabel,  // "Group A", ...
+        group:      groupCode,
+        groupLabel: groupLabel,
 
-        home: {
-          id:    homeTeam.id,
-          name:  homeTeam.name,
-          logo:  homeTeam.logo || null,
-          score: p.homeScore,
-        },
-        away: {
-          id:    awayTeam.id,
-          name:  awayTeam.name,
-          logo:  awayTeam.logo || null,
-          score: p.awayScore,
-        },
+        home: { id: homeTeam.id, name: homeTeam.name, logo: homeTeam.logo || null, score: p.homeScore },
+        away: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo || null, score: p.awayScore },
 
         kickoff:   f.utcDate || f.utc_date || f.date || null,
         timestamp: new Date().toISOString(),
@@ -774,35 +735,21 @@
     const user = await waitForFirebaseUser();
     if (!user) {
       console.warn("[PredictionsPage] No firebase user -> redirect signup");
-      window.location.href =
-        "../signup.html?next=" + encodeURIComponent(resultsPath);
+      window.location.href = "../signup.html?next=" + encodeURIComponent(resultsPath);
       return;
     }
 
     pending = pending.map((p) => (p.uid ? p : { ...p, uid: user.uid }));
 
-    if (
-      !window.FBL_STORE ||
-      typeof window.FBL_STORE.savePredictionsForRound !== "function"
-    ) {
+    if (!window.FBL_STORE || typeof window.FBL_STORE.savePredictionsForRound !== "function") {
       console.error("[PredictionsPage] FBL_STORE.savePredictionsForRound missing");
       alert("Storage not ready. Please refresh.");
       return;
     }
 
     try {
-      console.log(
-        "[PredictionsPage] saving",
-        pending.length,
-        "predictions to Firestore..."
-      );
-
-      await window.FBL_STORE.savePredictionsForRound(
-        leagueKey,
-        roundNum,
-        pending
-      );
-
+      console.log("[PredictionsPage] saving", pending.length, "predictions to Firestore...");
+      await window.FBL_STORE.savePredictionsForRound(leagueKey, roundNum, pending);
       console.log("[PredictionsPage] saved OK. going to results:", resultsPath);
       window.location.href = resultsPath;
     } catch (err) {
@@ -814,13 +761,23 @@
   function openConfirmPrompt() {
     if (!overlayEl || !confirmListEl) return;
 
-    if (badgeEl) badgeEl.textContent = leagueInfo.name + " Matches";
-    if (matchdayTextEl)
-      matchdayTextEl.textContent = `${roundNum} of ${totalRounds}`;
+    // Badge text bilingual
+    if (badgeEl) {
+      badgeEl.textContent = formatTemplate(
+        tSafe("predictions.leagueMatches", "{league} Matches"),
+        { league: leagueInfo.name }
+      );
+    }
 
-    const touched = pageFixtures.filter((f) =>
-      isSet(userPred[String(f.id)])
-    );
+    // Matchday "n of total" bilingual
+    if (matchdayTextEl) {
+      matchdayTextEl.textContent = formatTemplate(
+        tSafe("predictions.ofTotalShort", "{n} of {total}"),
+        { n: roundNum, total: totalRounds }
+      );
+    }
+
+    const touched = pageFixtures.filter((f) => isSet(userPred[String(f.id)]));
     if (!touched.length) {
       alert(".");
       return;
@@ -841,19 +798,14 @@
         </div>`;
       })
       .join("");
+
     confirmListEl.innerHTML = rows;
 
     touched.forEach((f, i) => {
       const r = confirmListEl.querySelectorAll(".gprompt__row")[i];
       if (!r || !window.FBL.ensureLogo) return;
-      window.FBL.ensureLogo(
-        getHomeTeam(f),
-        r.querySelector(".gprompt__logo--home")
-      );
-      window.FBL.ensureLogo(
-        getAwayTeam(f),
-        r.querySelector(".gprompt__logo--away")
-      );
+      window.FBL.ensureLogo(getHomeTeam(f), r.querySelector(".gprompt__logo--home"));
+      window.FBL.ensureLogo(getAwayTeam(f), r.querySelector(".gprompt__logo--away"));
     });
 
     overlayEl.classList.add("is-open");

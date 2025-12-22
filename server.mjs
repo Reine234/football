@@ -46,13 +46,11 @@ app.use(express.json()); // parse JSON
 app.use(cookieParser()); // read/set cookies
 
 // Serve ALL your frontend files (HTML, CSS, JS, images...) from the project folder
-app.use(express.static(__dirname, { extensions: ['html', 'js', 'css'] }));  // Added extensions for proper handling
+app.use(express.static(__dirname, { extensions: ["html", "js", "css"] })); // Added extensions for proper handling
 // server.mjs
 
 // Prevent accidental access to server-side data
 app.use("/data", (_req, res) => res.sendStatus(404));
-
-
 
 // Default route → REDIRECT to /afcon/ so relative links work
 app.get("/", (_req, res) => {
@@ -63,29 +61,23 @@ app.get("/", (_req, res) => {
 app.get("/predictions.html", (_req, res) =>
   res.redirect(302, "/afcon/predictions.html")
 );
-app.get("/results.html", (_req, res) =>
-  res.redirect(302, "/afcon/results.html")
-);
-app.get("/index.html", (_req, res) =>
-  res.redirect(302, "/afcon/index.html")
-);
+app.get("/results.html", (_req, res) => res.redirect(302, "/afcon/results.html"));
+app.get("/index.html", (_req, res) => res.redirect(302, "/afcon/index.html"));
 app.get("/winners.html", (_req, res) =>
   res.redirect(302, "/afcon/winners.html")
 );
-
-
 
 // Add this route to your server.mjs
 
 // Fetch matchdays for a specific league (simplified for now)
 app.get("/api/getMatchdays", async (req, res) => {
   const league = req.query.league; // Extract league from the query string
-  
+
   // Check if the league is valid
   if (!league || !["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "AFCON"].includes(league)) {
     return res.status(400).json({ error: "Invalid league" });
   }
-  
+
   // Dummy matchdays for each league, in a real-world scenario you'd query a database or an external API.
   const matchdays = {
     PREMIER_LEAGUE: Array.from({ length: 38 }, (_, i) => `Matchday ${i + 1}`),
@@ -110,9 +102,7 @@ const FD_TOKEN = process.env.FOOTBALL_DATA_TOKEN || ""; // <-- set this in .env 
 
 const FD_HEADERS = FD_TOKEN ? { "X-Auth-Token": FD_TOKEN } : {};
 
-console.log(
-  `[FD] token set: ${FD_TOKEN ? "yes" : "NO (set FOOTBALL_DATA_TOKEN)"}`
-);
+console.log(`[FD] token set: ${FD_TOKEN ? "yes" : "NO (set FOOTBALL_DATA_TOKEN)"}`);
 
 // ------------------------
 // Tiny cache so we don't spam the APIs
@@ -178,8 +168,7 @@ function mapLeagueToFDCode(input) {
   // ⛔ AFCON has no FD code → don't map here
 
   // text → FD codes
-  if (["premier", "epl", "premierleague", "england", "pl"].includes(s))
-    return "PL";
+  if (["premier", "epl", "premierleague", "england", "pl"].includes(s)) return "PL";
   if (["bundesliga", "germany", "de", "bl1"].includes(s)) return "BL1";
   if (["laliga", "la liga", "spain", "pd"].includes(s)) return "PD";
 
@@ -214,9 +203,7 @@ function fdMatchToAfNode(m) {
   const dateISO = m.utcDate;
   const ts = Date.parse(dateISO);
   const matchday = m.matchday ?? null;
-  const roundName = matchday
-    ? `Regular Season - ${matchday}`
-    : m.stage || "Regular Season";
+  const roundName = matchday ? `Regular Season - ${matchday}` : m.stage || "Regular Season";
 
   return {
     fixture: {
@@ -237,9 +224,7 @@ function fdMatchToAfNode(m) {
       name: m.competition?.name ?? null,
       country: m.area?.name ?? null,
       logo: m.competition?.emblem ?? null,
-      season: m.season?.startDate
-        ? new Date(m.season.startDate).getFullYear()
-        : null,
+      season: m.season?.startDate ? new Date(m.season.startDate).getFullYear() : null,
       round: roundName,
     },
     teams: {
@@ -280,156 +265,141 @@ function fdMatchToAfNode(m) {
 }
 
 // ------------------------
-// Local persistence (users.xml + predictions)
+// ✅ AFCON FINAL SCORE PROXY (TheSportsDB)
+// Minimal addition: lets your frontend ask for final score by (home, away, date)
 // ------------------------
-const DATA_DIR = join(__dirname, "data");
-const USERS_XML = join(DATA_DIR, "users.xml");
-const PRED_DIR = join(DATA_DIR, "predictions");
+function _normTeam(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
-await fs.mkdir(DATA_DIR, { recursive: true });
-await fs.mkdir(PRED_DIR, { recursive: true });
+function _sameDay(dateEvent, dateQuery) {
+  // both expected like "YYYY-MM-DD"
+  return String(dateEvent || "").slice(0, 10) === String(dateQuery || "").slice(0, 10);
+}
 
-const xmlParser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: "",
-});
-const xmlBuilder = new XMLBuilder({
-  ignoreAttributes: false,
-  attributeNamePrefix: "",
-  format: true,
-});
-
-async function readUsers() {
+// GET /afcon/finalScore?home=Morocco&away=Comoros&date=2025-12-21
+app.get("/afcon/finalScore", async (req, res) => {
   try {
-    const xml = (await fs.readFile(USERS_XML, "utf8")).trim();
-    if (!xml) return [];
-    const json = xmlParser.parse(xml);
-    const arr = json?.users?.user ?? [];
-    return Array.isArray(arr) ? arr : [arr];
-  } catch {
-    return [];
-  }
-}
+    const home = String(req.query.home || "").trim();
+    const away = String(req.query.away || "").trim();
+    const date = String(req.query.date || "").trim(); // YYYY-MM-DD (recommended)
 
-async function writeUsers(users) {
-  const xml = xmlBuilder.build({ users: { user: users } });
-  await fs.writeFile(USERS_XML, xml, "utf8");
-}
+    if (!home || !away) {
+      return res.status(400).json({ error: "Missing ?home= and/or ?away=" });
+    }
 
-function hashPassword(pw, salt = crypto.randomBytes(16).toString("hex")) {
-  const hash = crypto.scryptSync(pw, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
+    // 1) Try searchevents by "Home vs Away"
+    const q1 = `${home} vs ${away}`;
+    const url1 = `${SD_BASE}/${SD_KEY}/searchevents.php?e=${encodeURIComponent(q1)}`;
+    console.log("[GET] /afcon/finalScore (searchevents) ->", url1);
 
-function verifyPassword(pw, stored) {
-  const [salt, hash] = stored.split(":");
-  const test = crypto.scryptSync(pw, salt, 64).toString("hex");
-  return crypto.timingSafeEqual(
-    Buffer.from(hash, "hex"),
-    Buffer.from(test, "hex")
-  );
-}
+    let data1 = await fetchDeduped(url1, {}, CACHE_TTL_MS);
+    let events = Array.isArray(data1?.event) ? data1.event : [];
 
-// Simple in-memory sessions (test phase)
-const sessions = new Map();
+    // If user gave a date, filter hard by dateEvent
+    if (date) {
+      events = events.filter((e) => _sameDay(e?.dateEvent, date));
+    }
 
-function setSession(res, userId) {
-  const sid = uuidv4();
-  sessions.set(sid, { userId, createdAt: Date.now() });
+    // Filter to Soccer only (safety)
+    events = events.filter((e) => String(e?.strSport || "").toLowerCase() === "soccer");
 
-  const prod = process.env.NODE_ENV === "production";
-  res.cookie("sid", sid, {
-    httpOnly: true,
-    sameSite: prod ? "lax" : "lax",
-    secure: prod ? true : false,
-    maxAge: 365 * 24 * 3600 * 1000, // 1 year
-  });
-}
+    // Match by team names (robust)
+    const H = _normTeam(home);
+    const A = _normTeam(away);
 
-function getSession(req) {
-  const sid = req.cookies?.sid;
-  return sid ? sessions.get(sid) : null;
-}
+    let best =
+      events.find((e) => _normTeam(e?.strHomeTeam) === H && _normTeam(e?.strAwayTeam) === A) ||
+      events.find((e) => _normTeam(e?.strHomeTeam).includes(H) && _normTeam(e?.strAwayTeam).includes(A)) ||
+      null;
 
-function requireAuth(req, res, next) {
-  const s = getSession(req);
-  if (!s) return res.status(401).json({ error: "auth_required" });
-  req.userId = s.userId;
-  next();
-}
+    // 2) If not found, try reverse name in searchevents
+    if (!best) {
+      const q2 = `${away} vs ${home}`;
+      const url2 = `${SD_BASE}/${SD_KEY}/searchevents.php?e=${encodeURIComponent(q2)}`;
+      console.log("[GET] /afcon/finalScore (searchevents reverse) ->", url2);
 
-// ------------------------
-// Auth routes
-// ------------------------
-app.post("/api/signup", async (req, res) => {
-  const { name = "", email, password } = req.body || {};
-  if (!email || !password)
-    return res.status(400).json({ error: "missing_fields" });
+      let data2 = await fetchDeduped(url2, {}, CACHE_TTL_MS);
+      let events2 = Array.isArray(data2?.event) ? data2.event : [];
+      if (date) events2 = events2.filter((e) => _sameDay(e?.dateEvent, date));
+      events2 = events2.filter((e) => String(e?.strSport || "").toLowerCase() === "soccer");
 
-  const users = await readUsers();
-  if (users.find((u) => u.email === email))
-    return res.status(409).json({ error: "email_exists" });
+      best =
+        events2.find((e) => _normTeam(e?.strHomeTeam) === A && _normTeam(e?.strAwayTeam) === H) ||
+        events2.find((e) => _normTeam(e?.strHomeTeam).includes(A) && _normTeam(e?.strAwayTeam).includes(H)) ||
+        null;
+    }
 
-  const user = { id: uuidv4(), name, email, password: hashPassword(password) };
-  users.push(user);
-  await writeUsers(users);
+    // 3) If still not found and date was provided, try eventsday.php and filter by teams
+    if (!best && date) {
+      const url3 = `${SD_BASE}/${SD_KEY}/eventsday.php?d=${encodeURIComponent(date)}&s=Soccer`;
+      console.log("[GET] /afcon/finalScore (eventsday) ->", url3);
 
-  setSession(res, user.id);
-  res.json({ id: user.id, name: user.name, email: user.email });
-});
+      const day = await fetchDeduped(url3, {}, CACHE_TTL_MS);
+      const dayEvents = Array.isArray(day?.events) ? day.events : [];
+      const cand = dayEvents.filter((e) => {
+        const eh = _normTeam(e?.strHomeTeam);
+        const ea = _normTeam(e?.strAwayTeam);
+        return (eh === H && ea === A) || (eh === A && ea === H) || (eh.includes(H) && ea.includes(A)) || (eh.includes(A) && ea.includes(H));
+      });
 
-app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body || {};
-  const users = await readUsers();
-  const user = users.find((u) => u.email === email);
+      // Prefer "Match Finished" or any with a score
+      best =
+        cand.find((e) => String(e?.strStatus || "").toLowerCase().includes("finished")) ||
+        cand.find((e) => e?.intHomeScore != null || e?.intAwayScore != null) ||
+        cand[0] ||
+        null;
+    }
 
-  if (!user || !verifyPassword(password, user.password)) {
-    return res.status(401).json({ error: "invalid_credentials" });
-  }
-  setSession(res, user.id);
-  res.json({ id: user.id, name: user.name, email: user.email });
-});
+    if (!best) {
+      return res.json({
+        found: false,
+        home,
+        away,
+        date: date || null,
+        message: "No matching event found from TheSportsDB yet (may be delayed).",
+      });
+    }
 
-app.post("/api/logout", (req, res) => {
-  const sid = req.cookies?.sid;
-  if (sid) sessions.delete(sid);
-  res.clearCookie("sid");
-  res.json({ ok: true });
-});
+    // IMPORTANT:
+    // TheSportsDB returns scores as strings like "1". We keep both raw + parsed.
+    const homeScoreRaw = best?.intHomeScore ?? null;
+    const awayScoreRaw = best?.intAwayScore ?? null;
 
-app.get("/api/me", async (req, res) => {
-  const s = getSession(req);
-  if (!s) return res.json(null);
-  const users = await readUsers();
-  const me = users.find((u) => u.id === s.userId);
-  res.json(me ? { id: me.id, name: me.name, email: me.email } : null);
-});
+    const homeScore =
+      homeScoreRaw === null || homeScoreRaw === undefined || homeScoreRaw === ""
+        ? null
+        : Number(homeScoreRaw);
+    const awayScore =
+      awayScoreRaw === null || awayScoreRaw === undefined || awayScoreRaw === ""
+        ? null
+        : Number(awayScoreRaw);
 
-// ------------------------
-// Predictions (per league, per user)
-// ------------------------
-app.post("/api/predictions/:league", requireAuth, async (req, res) => {
-  const league = String(req.params.league || "").trim();
-  if (!league) return res.status(400).json({ error: "invalid_league" });
-
-  const dir = join(PRED_DIR, league);
-  await fs.mkdir(dir, { recursive: true });
-
-  const file = join(dir, `${req.userId}.json`);
-  await fs.writeFile(file, JSON.stringify(req.body ?? {}, null, 2), "utf8");
-  res.json({ ok: true });
-});
-
-app.get("/api/predictions/:league", requireAuth, async (req, res) => {
-  try {
-    const league = String(req.params.league || "").trim();
-    if (!league) return res.status(400).json({ error: "invalid_league" });
-
-    const file = join(PRED_DIR, league, `${req.userId}.json`);
-    const json = await fs.readFile(file, "utf8");
-    res.type("json").send(json);
-  } catch {
-    res.json(null);
+    res.set("Cache-Control", "public, max-age=120"); // keep short, scores can update
+    return res.json({
+      found: true,
+      eventId: best?.idEvent || null,
+      league: best?.strLeague || null,
+      season: best?.strSeason || null,
+      dateEvent: best?.dateEvent || null,
+      time: best?.strTime || null,
+      status: best?.strStatus || null,
+      homeTeam: best?.strHomeTeam || home,
+      awayTeam: best?.strAwayTeam || away,
+      homeScore,
+      awayScore,
+      homeScoreRaw,
+      awayScoreRaw,
+      raw: best,
+    });
+  } catch (e) {
+    console.error("❌ /afcon/finalScore failed:", e.message);
+    res.status(502).json({ error: e.message });
   }
 });
 
@@ -453,9 +423,7 @@ app.get("/af/fixtures", async (req, res) => {
     if (from) params.set("dateFrom", from);
     if (to) params.set("dateTo", to);
 
-    const url = `${FD_BASE}/competitions/${encodeURIComponent(
-      code
-    )}/matches?${params.toString()}`;
+    const url = `${FD_BASE}/competitions/${encodeURIComponent(code)}/matches?${params.toString()}`;
     console.log("[GET] /af/fixtures ->", url);
 
     const fd = await fetchDeduped(url, { headers: FD_HEADERS });
@@ -479,8 +447,7 @@ app.get("/sportmonks/afcon-fixtures", async (_req, res) => {
     const token =
       process.env.SPORTMONKS_TOKEN ||
       "lDfEJAPMuQJQLqRfxhbvQuDMgMfJDrfxiVGi6uwrDVNq4alQQ1ApO3eKWEzt"; // move to .env in production
-    const seasonId =
-      process.env.SPORTMONKS_AFCON_SEASON_ID || "25138"; // your AFCON season id
+    const seasonId = process.env.SPORTMONKS_AFCON_SEASON_ID || "25138"; // your AFCON season id
 
     const filters = `season_id:${seasonId}`;
 
@@ -515,19 +482,13 @@ app.get("/af/rounds", async (req, res) => {
     const code = mapLeagueToFDCode(league || "PL");
     const seasonSafe = season ? Number(season) : 2025;
 
-    const url = `${FD_BASE}/competitions/${encodeURIComponent(
-      code
-    )}/matches?season=${seasonSafe}&limit=500`;
+    const url = `${FD_BASE}/competitions/${encodeURIComponent(code)}/matches?season=${seasonSafe}&limit=500`;
     console.log("[GET] /af/rounds ->", url);
 
     const fd = await fetchDeduped(url, { headers: FD_HEADERS }, CACHE_TTL_DAY);
     const matches = Array.isArray(fd?.matches) ? fd.matches : [];
 
-    const rounds = Array.from(
-      new Set(
-        matches.map((m) => m.matchday).filter((n) => Number.isInteger(n))
-      )
-    )
+    const rounds = Array.from(new Set(matches.map((m) => m.matchday).filter((n) => Number.isInteger(n))))
       .sort((a, b) => a - b)
       .map((n) => `Regular Season - ${n}`);
 
@@ -556,9 +517,7 @@ app.get("/af/teamLogo", async (req, res) => {
       const fd = await fetchDeduped(url, { headers: FD_HEADERS }, CACHE_TTL_DAY);
       logo = fd?.crest || "";
     } else if (search) {
-      const url = `https://www.thesportsdb.com/api/v1/json/${SD_KEY}/searchteams.php?t=${encodeURIComponent(
-        search
-      )}`;
+      const url = `https://www.thesportsdb.com/api/v1/json/${SD_KEY}/searchteams.php?t=${encodeURIComponent(search)}`;
       console.log("[GET] /af/teamLogo (fallback search) ->", url);
       const td = await fetchDeduped(url, {}, CACHE_TTL_DAY);
       logo = td?.teams?.[0]?.strTeamBadge || "";
@@ -582,9 +541,7 @@ app.get("/fixtures", async (req, res) => {
   const leagueId = req.query.leagueId || "4328"; // PL default
   const season = req.query.season || "2025-2026"; // match your config
 
-  const url = `${SD_BASE}/${SD_KEY}/eventsseason.php?id=${encodeURIComponent(
-    leagueId
-  )}&s=${encodeURIComponent(season)}`;
+  const url = `${SD_BASE}/${SD_KEY}/eventsseason.php?id=${encodeURIComponent(leagueId)}&s=${encodeURIComponent(season)}`;
 
   console.log("[GET] /fixtures ->", url);
 
@@ -602,9 +559,7 @@ app.get("/team", async (req, res) => {
   const t = req.query.t;
   if (!t) return res.status(400).json({ error: "Missing ?t=" });
 
-  const url = `https://www.thesportsdb.com/api/v1/json/${SD_KEY}/searchteams.php?t=${encodeURIComponent(
-    t
-  )}`;
+  const url = `https://www.thesportsdb.com/api/v1/json/${SD_KEY}/searchteams.php?t=${encodeURIComponent(t)}`;
   console.log("[GET] /team ->", url);
 
   try {
@@ -621,9 +576,7 @@ app.get("/teamById", async (req, res) => {
   const id = req.query.id;
   if (!id) return res.status(400).json({ error: "Missing ?id=" });
 
-  const url = `https://www.thesportsdb.com/api/v1/json/${SD_KEY}/lookupteam.php?id=${encodeURIComponent(
-    id
-  )}`;
+  const url = `https://www.thesportsdb.com/api/v1/json/${SD_KEY}/lookupteam.php?id=${encodeURIComponent(id)}`;
   console.log("[GET] /teamById ->", url);
 
   try {
@@ -646,33 +599,23 @@ app.get("/health", (_req, res) => {
 // ------------------------
 // Normalize accidental double segments like /bundesliga/bundesliga/...
 app.use((req, res, next) => {
-  const fixed = req.url.replace(
-    /\/(premier|bundesliga|laliga|afcon)\/\1\//,
-    "/$1/"
-  );
+  const fixed = req.url.replace(/\/(premier|bundesliga|laliga|afcon)\/\1\//, "/$1/");
   if (fixed !== req.url) return res.redirect(302, fixed);
   next();
 });
 
-app.use('/scripts', express.static(join(__dirname, 'scripts')));
+app.use("/scripts", express.static(join(__dirname, "scripts")));
 
 const leagues = ["premier", "bundesliga", "laliga", "afcon"];
 for (const L of leagues) {
-  app.get(`/${L}/`, (_req, res) =>
-    res.sendFile(join(__dirname, L, "index.html"))
-  );
-  app.get(`/${L}/index.html`, (_req, res) =>
-    res.sendFile(join(__dirname, L, "index.html"))
-  );
+  app.get(`/${L}/`, (_req, res) => res.sendFile(join(__dirname, L, "index.html")));
+  app.get(`/${L}/index.html`, (_req, res) => res.sendFile(join(__dirname, L, "index.html")));
   app.get(`/${L}/predictions.html`, (_req, res) =>
     res.sendFile(join(__dirname, L, "predictions.html"))
   );
-  app.get(`/${L}/results.html`, (_req, res) =>
-    res.sendFile(join(__dirname, L, "results.html"))
-  );
-   app.get(`/${L}/predictions.html`, (_req, res) =>
-    res.sendFile(join(__dirname, L, "winners.html"))
- 
+  app.get(`/${L}/results.html`, (_req, res) => res.sendFile(join(__dirname, L, "results.html")));
+  app.get(`/${L}/predictions.html`, (_req, res) => res.sendFile(join(__dirname, L, "winners.html"))
+
   );
 }
 

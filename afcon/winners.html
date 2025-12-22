@@ -1,3 +1,4 @@
+<!-- winners.html (replace full file) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,7 +96,8 @@
     nav.nav .nav-item span {
       display: block;
     }
-/* Matchday tabs container (horizontal scroll) */
+
+    /* Matchday tabs container (horizontal scroll) */
     .matchday-tabs {
       display: flex;
       overflow-x: auto; /* Enable horizontal scrolling */
@@ -122,6 +124,7 @@
       color: #ffffff;
       font-weight: 600;
     }
+
     nav.nav .nav-item.nav-active span {
       color: var(--fbl-accent);
     }
@@ -341,7 +344,8 @@
     .table tbody tr + tr td {
       border-top: 1px solid #f3f4f6;
     }
-        /* Matchday "status" strip (WhatsApp-style) */
+
+    /* Matchday "status" strip (WhatsApp-style) */
     .matchday-strip {
       display: flex;
       gap: 8px;
@@ -376,82 +380,83 @@
       color: #ffffff;
       box-shadow: 0 0 0 2px #dcfce7, 0 4px 10px rgba(16, 185, 129, 0.5);
     }
-
   </style>
 </head>
 
 <body data-league="AFCON">
   <!-- Top Bar -->
   <header class="topbar">
-    <h1 class="logo">FANSBETLIGA</h1>
-    <a href="#" class="about">About</a>
+    <h1 class="logo" data-i18n="app.brand">FANSBETLIGA</h1>
+    <a href="#" class="about" data-i18n="common.about">About</a>
   </header>
 
   <!-- Bottom navigation -->
   <nav class="nav">
-    <div class="nav-item"><img src="/img/home.png" alt="Home"><span>Home</span></div>
-    <div class="nav-item"><img src="/img/results.png" alt="Results"><span>Results</span></div>
-    <div class="nav-item"><img src="/img/winners.png" alt="Winners"><span>Winners</span></div>
-    <div class="nav-item"><img src="/img//rules.png" alt="Rules"><span>Rules</span></div>
+    <div class="nav-item" data-nav="home"><img src="/img/home.png" alt="Home"><span data-i18n="nav.home">Home</span></div>
+    <div class="nav-item" data-nav="results"><img src="/img/results.png" alt="Results"><span data-i18n="nav.results">Results</span></div>
+    <div class="nav-item" data-nav="winners"><img src="/img/winners.png" alt="Winners"><span data-i18n="nav.winners">Winners</span></div>
+    <div class="nav-item" data-nav="rules"><img src="/img//rules.png" alt="Rules"><span data-i18n="nav.rules">Rules</span></div>
   </nav>
 
   <div class="centralized">
     <!-- League tabs (NOTE: link to WINNERS pages, not results) -->
     <div class="league-tabs">
-      <button class="tab" data-href="../laliga/winners.html">La Liga</button>
-      <button class="tab" data-href="../bundesliga/winners.html">Bundesliga</button>
-      <button class="tab" data-href="../premier/winners.html">Premier League</button>
-      <button class="tab " data-href="../afcon/winners.html">Afcon</button>
+      <button class="tab" data-href="../laliga/winners.html" data-i18n="league.laliga">La Liga</button>
+      <button class="tab" data-href="../bundesliga/winners.html" data-i18n="league.bundesliga">Bundesliga</button>
+      <button class="tab" data-href="../premier/winners.html" data-i18n="league.premier">Premier League</button>
+      <button class="tab" data-href="../afcon/winners.html" data-i18n="league.afcon">Afcon</button>
     </div>
 
     <div class="app-wrapper">
       <!-- Top bar inside card -->
       <header class="bar">
         <button class="back-button" onclick="history.back()">‹</button>
-        <h1 class="topbar-title">Preseason 2025 - 2026</h1>
+        <h1 class="topbar-title" data-i18n="winners.preseasonTitle">Preseason 2025 - 2026</h1>
       </header>
 
       <!-- User strip -->
       <div class="user-strip">
         <div class="user-pill">
           <div class="status-dot"></div>
-          <span>Player</span> <!-- will be replaced by winnersPage.js -->
+          <span data-i18n="common.player">Player</span>
         </div>
         <div class="user-pill user-points">
-          <span>Points :</span>
+          <span data-i18n="common.pointsLabel">Points :</span>
           <span class="value">--</span>
         </div>
       </div>
 
       <!-- Classification card -->
       <section class="card">
-        <h2 class="card-title">CLASSIFICATION</h2>
+        <h2 class="card-title" data-i18n="winners.classification">CLASSIFICATION</h2>
 
         <div class="tab-row">
-          <button class="tab active">Daily Rankings</button>
-          <button class="tab">First Round Standings</button>
-          <button class="tab">Overall</button>
+          <button class="tab active" data-i18n="winners.dailyRankings">Daily Rankings</button>
+          <button class="tab" data-i18n="winners.firstRound">First Round Standings</button>
+          <button class="tab" data-i18n="winners.overall">Overall</button>
         </div>
- <div class="centralized">
-    <!-- Matchday tabs -->
-    <div class="matchday-tabs">
-      <!-- Dynamically generated tabs go here -->
-    </div>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Rank</th>
-              <th>Player</th>
-              <th>Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Filled by winnersPage.js -->
-            <tr>
-              <td colspan="3">Loading rankings…</td>
-            </tr>
-          </tbody>
-        </table>
+
+        <div class="centralized">
+          <!-- Matchday tabs -->
+          <div class="matchday-tabs">
+            <!-- Dynamically generated tabs go here -->
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th data-i18n="winners.rank">Rank</th>
+                <th data-i18n="winners.player">Player</th>
+                <th data-i18n="winners.points">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="3" data-i18n="winners.loadingRankings">Loading rankings…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   </div>
@@ -464,10 +469,12 @@
   <script src="../scripts/config.js"></script>
   <script src="../scripts/api.js"></script>
 
+  <!-- i18n -->
+  <script src="../scripts/translations.fr.js"></script>
+  <script src="../scripts/translations.en.js"></script>
+  <script src="../scripts/i18n.js"></script>
 
- 
-
-  <!-- Winners page rankings logic (the script we wrote earlier) -->
+  <!-- Winners page rankings logic -->
   <script src="../scripts/winnersPage.js"></script>
 </body>
 </html>

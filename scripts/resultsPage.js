@@ -13,6 +13,30 @@
       AFCON:          { name: "Afcon",          totalRounds: 6 },
     };
 
+  // ---------- I18N HELPERS ----------
+  function getLangSafe() {
+    try {
+      return (window.FBL_I18N && window.FBL_I18N.getLang && window.FBL_I18N.getLang()) || "en";
+    } catch (_) {
+      return "en";
+    }
+  }
+
+  function tr(key, vars) {
+    try {
+      const i18n = window.FBL_I18N;
+      const lang = getLangSafe();
+      if (i18n && typeof i18n.t === "function") return i18n.t(lang, key, vars);
+    } catch (_) {}
+    // fallback: show the key if missing (so you SEE missing keys)
+    if (vars && typeof vars === "object") {
+      let s = key;
+      Object.keys(vars).forEach((k) => (s = s.replaceAll(`{${k}}`, String(vars[k]))));
+      return s;
+    }
+    return key;
+  }
+
   // ---------- ROOT ----------
   let root =
     document.getElementById("results-list") ||
@@ -28,24 +52,19 @@
 
   // ---------- LEAGUE (from global / URL / stored) ----------
   function resolveLeagueKey() {
-    // 1) explicit override from page (your AFCON results.html sets this)
     const forced = (window.FBL_RESULTS_LEAGUE_KEY || "").toUpperCase();
     if (forced && window.FBL.LEAGUE_MAP[forced]) return forced;
 
-    // 2) detect from URL path
     const path = location.pathname.toLowerCase();
     if (path.includes("bundes")) return "BUNDESLIGA";
     if (path.includes("laliga") || path.includes("la-liga")) return "LALIGA";
     if (path.includes("afcon")) return "AFCON";
     if (path.includes("premier")) return "PREMIER_LEAGUE";
 
-    // 3) fallback to whatever was stored last
     const stored = (sessionStorage.getItem("FBL_leagueKey") || "").toUpperCase();
     if (["PREMIER_LEAGUE", "BUNDESLIGA", "LALIGA", "AFCON"].includes(stored)) {
       return stored;
     }
-
-    // 4) default if nothing else matches
     return "PREMIER_LEAGUE";
   }
 
@@ -55,13 +74,13 @@
     totalRounds: "?",
   };
 
-  // ---------- API BASE (for your PHP endpoints, unchanged) ----------
+  // ---------- API BASE ----------
   const apiBase = (
     window.FBL_API_BASE ||
     (window.FBL_CFG && window.FBL_CFG.API_BASE) ||
     window.location.origin
   ).replace(/\/$/, "");
-  const API_USERS = apiBase + "/api/users.php"; // (kept, even if unused)
+  const API_USERS = apiBase + "/api/users.php"; // kept (even if unused)
 
   // ---------- UTILS ----------
   const esc = (s) =>
@@ -69,31 +88,24 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])
     );
 
-  // We want: "2:00pm, Sat 26th"
   function formatKickoff(iso) {
     if (!iso) return "";
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "";
 
-    let h = d.getHours();
-    const m = String(d.getMinutes()).padStart(2, "0");
-    const ampm = h >= 12 ? "pm" : "am";
-    h = h % 12;
-    if (h === 0) h = 12;
-
-    const wdNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const wd = wdNames[d.getDay()];
-    const day = d.getDate();
-    const suffix =
-      day === 1 || day === 21 || day === 31
-        ? "st"
-        : day === 2 || day === 22
-        ? "nd"
-        : day === 3 || day === 23
-        ? "rd"
-        : "th";
-
-    return `${h}:${m}${ampm}, ${wd} ${day}${suffix}`;
+    const lang = getLangSafe();
+    try {
+      // short + readable, localized
+      return new Intl.DateTimeFormat(lang, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(d);
+    } catch (_) {
+      return d.toLocaleString();
+    }
   }
 
   function computePoints(predH, predA, finH, finA) {
@@ -112,9 +124,7 @@
     return 0;
   }
 
-  // ---------- FIRESTORE: store points with predictions ----------
   async function syncPointsToFirestore(predictionsWithPoints) {
-    // we only touch Firestore, nothing PHP here
     if (!window.firebase || !firebase.auth || !firebase.firestore) return;
 
     const user = firebase.auth().currentUser;
@@ -127,25 +137,15 @@
     predictionsWithPoints.forEach((p) => {
       if (p.points == null || p.fixtureId == null) return;
       const fixtureId = String(p.fixtureId);
-      // doc id pattern: uid_LEAGUEKEY_fixtureId
+      // NOTE: keep your original docId logic, don't change storage scheme here
       const docId = `${uid}_${leagueKey}_${fixtureId}`;
       const ref = db.collection("predictions").doc(docId);
-      batch.set(
-        ref,
-        {
-          points: p.points,
-        },
-        { merge: true }
-      );
+      batch.set(ref, { points: p.points }, { merge: true });
     });
 
     try {
       await batch.commit();
-      console.log(
-        "[resultsPage] synced points for",
-        predictionsWithPoints.length,
-        "predictions"
-      );
+      console.log("[resultsPage] synced points for", predictionsWithPoints.length, "predictions");
     } catch (e) {
       console.warn("[resultsPage] failed to sync points", e);
     }
@@ -159,7 +159,7 @@
       info.className = "user-info";
       info.innerHTML = `
         <span class="user-name"></span>
-        <span class="points">Points: <span id="total-points">0</span></span>
+        <span class="points"><span class="points-label"></span> <span id="total-points">0</span></span>
       `;
       if (root.parentElement) {
         root.parentElement.insertBefore(info, root);
@@ -167,11 +167,16 @@
         document.body.insertBefore(info, root);
       }
     }
+
     const nameSpan =
       info.querySelector(".user-name") ||
       info.querySelector("span") ||
       info.firstElementChild;
-    if (nameSpan) nameSpan.textContent = userName || "Guest";
+
+    if (nameSpan) nameSpan.textContent = userName || tr("results.guest");
+
+    const labelEl = info.querySelector(".points-label");
+    if (labelEl) labelEl.textContent = tr("results.pointsLabel");
 
     let totalSpan = info.querySelector("#total-points");
     if (!totalSpan) {
@@ -188,24 +193,17 @@
     const headerEl = document.querySelector(".matches-header h3");
     const dayNumSpan = document.getElementById("day-number");
 
-    const md =
-      matchdayStr != null && matchdayStr !== ""
-        ? String(matchdayStr)
-        : "?";
+    const md = matchdayStr != null && matchdayStr !== "" ? String(matchdayStr) : "?";
+    const total = String(leagueInfo.totalRounds || "?");
 
     if (headerEl) {
-      headerEl.textContent = `Matches - Matchday ${md} of ${esc(
-        String(leagueInfo.totalRounds || "?")
-      )}`;
+      // "Matches - Matchday {n} of {total}"
+      headerEl.textContent =
+        `${tr("common.matches")} - ` +
+        tr("predictions.matchdayOf", { n: md, total: total });
     }
 
-    if (dayNumSpan) {
-      if (md === "?") {
-        dayNumSpan.textContent = "";
-      } else {
-        dayNumSpan.textContent = md;
-      }
-    }
+    if (dayNumSpan) dayNumSpan.textContent = md === "?" ? "" : md;
   }
 
   // ---------- FIXTURES FOR CURRENT LEAGUE ----------
@@ -218,153 +216,125 @@
       const all = await window.FBL.fetchFixturesForLeague(leagueKey);
       const byId = {};
       (all || []).forEach((f) => {
-        // Support both top-level id and nested fixture.id
         const fid =
           f.id != null
             ? f.id
             : f.fixture && f.fixture.id != null
             ? f.fixture.id
             : null;
-        if (fid != null) {
-          byId[String(fid)] = f;
-        }
+        if (fid != null) byId[String(fid)] = f;
       });
       return { byId, list: all || [] };
     } catch (e) {
       console.warn("resultsPage: fetchFixturesForLeague failed", e);
       return { byId: {}, list: [] };
     }
-  }function buildCardHTML(idx, pred, fixture) {
-  const homeName =
-    (fixture && fixture.home && fixture.home.name) ||
-    (pred.home && pred.home.name) ||
-    "Home";
-  const awayName =
-    (fixture && fixture.away && fixture.away.name) ||
-    (pred.away && pred.away.name) ||
-    "Away";
+  }
 
-  // 👉 use kickoff saved with prediction FIRST, then fixture, then timestamp
-  const kickoffIso =
-    pred.kickoff ||
-    (fixture && fixture.utcDate) ||
-    pred.timestamp ||
-    "";
-  const niceTime = formatKickoff(kickoffIso);
+  function buildCardHTML(idx, pred, fixture) {
+    const homeName =
+      (fixture && fixture.home && fixture.home.name) ||
+      (pred.home && pred.home.name) ||
+      "Home";
+    const awayName =
+      (fixture && fixture.away && fixture.away.name) ||
+      (pred.away && pred.away.name) ||
+      "Away";
 
-  const predHomeVal =
-    pred.home && pred.home.score != null ? pred.home.score : "";
-  const predAwayVal =
-    pred.away && pred.away.score != null ? pred.away.score : "";
+    const kickoffIso =
+      pred.kickoff ||
+      (fixture && fixture.utcDate) ||
+      (fixture && fixture.fixture && fixture.fixture.date) ||
+      pred.timestamp ||
+      "";
 
-  // 🔹 Try to read real final scores from fixtures ONLY (no simulation)
-  let finHome =
-    fixture &&
-    fixture.goals &&
-    fixture.goals.home !== null &&
-    fixture.goals.home !== undefined
-      ? fixture.goals.home
-      : "";
-  let finAway =
-    fixture &&
-    fixture.goals &&
-    fixture.goals.away !== null &&
-    fixture.goals.away !== undefined
-      ? fixture.goals.away
-      : "";
+    const niceTime = formatKickoff(kickoffIso);
 
-  // ✅ If no final scores yet, show placeholders (and points will be blank)
-  const finHomeForCalc = finHome === "" ? NaN : Number(finHome);
-  const finAwayForCalc = finAway === "" ? NaN : Number(finAway);
+    const predHomeVal = pred.home && pred.home.score != null ? pred.home.score : "";
+    const predAwayVal = pred.away && pred.away.score != null ? pred.away.score : "";
 
-  const pts = computePoints(
-    Number(predHomeVal),
-    Number(predAwayVal),
-    finHomeForCalc,
-    finAwayForCalc
-  );
+    let finHome =
+      fixture && fixture.goals && fixture.goals.home !== null && fixture.goals.home !== undefined
+        ? fixture.goals.home
+        : "";
+    let finAway =
+      fixture && fixture.goals && fixture.goals.away !== null && fixture.goals.away !== undefined
+        ? fixture.goals.away
+        : "";
 
-  const html = `
-    <div class="match-card" data-fixture="${esc(String(pred.fixtureId))}">
-      <div class="match-header">MATCH ${idx}</div>
+    const finHomeForCalc = finHome === "" ? NaN : Number(finHome);
+    const finAwayForCalc = finAway === "" ? NaN : Number(finAway);
 
-      <p class="match-time">${esc(niceTime)}</p>
-      <hr class="hr" />
-      <div class="teams">
-        <div class="team home-team">
-          <img class="team-logo home-logo" alt="${esc(homeName)} logo" />
-          <p>${esc(homeName)}</p>
-        </div>
+    const pts = computePoints(
+      Number(predHomeVal),
+      Number(predAwayVal),
+      finHomeForCalc,
+      finAwayForCalc
+    );
 
-        <div class="score-section">
-          <p class="label">Your prediction</p>
-          <div class="score-box">
-            <span><input type="number" value="${esc(
-              predHomeVal
-            )}" min="0" readonly /></span>
-            <span>–</span>
-            <span><input type="number" value="${esc(
-              predAwayVal
-            )}" min="0" readonly /></span>
+    const html = `
+      <h4 class="match-card-kickoff" style="margin:10px 12px 6px; font-size:14px; font-weight:700;">
+        ${esc(niceTime || "")}
+      </h4>
+
+      <div class="match-card" data-fixture="${esc(String(pred.fixtureId))}">
+        <div class="match-header">${esc(tr("results.match"))} ${idx}</div>
+
+        <hr class="hr" />
+        <div class="teams">
+          <div class="team home-team">
+            <img class="team-logo home-logo" alt="${esc(homeName)} logo" />
+            <p>${esc(homeName)}</p>
           </div>
 
-          <p class="label">Final score</p>
-          <div class="score-box">
-            <span><input type="number" value="${esc(
-              finHome === "" ? "" : String(finHome)
-            )}" min="0" readonly /></span>
-            <span>–</span>
-            <span><input type="number" value="${esc(
-              finAway === "" ? "" : String(finAway)
-            )}" min="0" readonly /></span>
+          <div class="score-section">
+            <p class="label">${esc(tr("results.yourPrediction"))}</p>
+            <div class="score-box">
+              <span><input type="number" value="${esc(predHomeVal)}" min="0" readonly /></span>
+              <span>–</span>
+              <span><input type="number" value="${esc(predAwayVal)}" min="0" readonly /></span>
+            </div>
+
+            <p class="label">${esc(tr("results.finalScore"))}</p>
+            <div class="score-box">
+              <span><input type="number" value="${esc(finHome === "" ? "" : String(finHome))}" min="0" readonly /></span>
+              <span>–</span>
+              <span><input type="number" value="${esc(finAway === "" ? "" : String(finAway))}" min="0" readonly /></span>
+            </div>
+          </div>
+
+          <div class="team away-team">
+            <img class="team-logo away-logo" alt="${esc(awayName)} logo" />
+            <p>${esc(awayName)}</p>
           </div>
         </div>
 
-        <div class="team away-team">
-          <img class="team-logo away-logo" alt="${esc(awayName)} logo" />
-          <p>${esc(awayName)}</p>
-        </div>
+        <p class="points-earned">${pts === null ? "" : `${esc(tr("results.pointsLabel"))} ${pts}`}</p>
       </div>
-
-      <p class="points-earned">${pts === null ? "" : `Points: ${pts}`}</p>
-    </div>
-  `;
-  return { html, pts };
-}
-
-
-
+    `;
+    return { html, pts };
+  }
 
   function attachLogos(cardEl, pred, fixture) {
     const homeLogoEl = cardEl.querySelector(".home-logo");
     const awayLogoEl = cardEl.querySelector(".away-logo");
 
-    // AFCON: prefer logos stored with prediction/fixture (from your static groups / TSDB)
+    // AFCON: prefer logos stored with prediction/fixture
     if (leagueKey === "AFCON") {
       const homeLogo =
-        (fixture &&
-          fixture.home &&
-          fixture.home.logo) ||
-        (fixture &&
-          fixture.teams &&
-          fixture.teams.home &&
-          fixture.teams.home.logo) ||
+        (fixture && fixture.home && fixture.home.logo) ||
+        (fixture && fixture.teams && fixture.teams.home && fixture.teams.home.logo) ||
         (pred.home && pred.home.logo);
       const awayLogo =
-        (fixture &&
-          fixture.away &&
-          fixture.away.logo) ||
-        (fixture &&
-          fixture.teams &&
-          fixture.teams.away &&
-          fixture.teams.away.logo) ||
+        (fixture && fixture.away && fixture.away.logo) ||
+        (fixture && fixture.teams && fixture.teams.away && fixture.teams.away.logo) ||
         (pred.away && pred.away.logo);
 
       if (homeLogoEl && homeLogo) homeLogoEl.src = homeLogo;
       if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
     }
 
-    // Fallback / other leagues: use global ensureLogo helper
+    // fallback for other leagues (and also helps if AFCON missing logos)
     if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
 
     const homeTeam =
@@ -378,17 +348,15 @@
     if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
   }
 
-  // Function to normalize the names of teams (to handle variations in name formatting)
   function normalizeName(name) {
     return String(name || "")
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")  // strip accents
-      .replace(/[^a-z0-9]+/g, "")       // remove any non-alphanumeric characters
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "")
       .trim();
   }
 
-  // Function to find the AFCON fixture based on teams
   function findAfconFixture(pred, fixturesList) {
     if (!fixturesList || !fixturesList.length) return null;
 
@@ -396,7 +364,6 @@
     const predAway = normalizeName(pred.away && pred.away.name);
     if (!predHome || !predAway) return null;
 
-    // 1) same home/away
     let candidates = fixturesList.filter((f) => {
       const homeName =
         (f.home && f.home.name) ||
@@ -413,7 +380,6 @@
     if (!candidates.length) return null;
     if (candidates.length === 1) return candidates[0];
 
-    // 2) if more than one, pick closest by date to kickoff
     const target = Date.parse(pred.kickoff || pred.timestamp || 0);
     if (!Number.isFinite(target)) return candidates[0];
 
@@ -421,12 +387,7 @@
     let bestDiff = Infinity;
 
     candidates.forEach((f) => {
-      const t = Date.parse(
-        f.utcDate ||
-          (f.fixture && f.fixture.date) ||
-          f.timestamp ||
-          0
-      );
+      const t = Date.parse(f.utcDate || (f.fixture && f.fixture.date) || f.timestamp || 0);
       if (!Number.isFinite(t)) return;
       const diff = Math.abs(t - target);
       if (diff < bestDiff) {
@@ -438,24 +399,146 @@
     return best;
   }
 
+  // ✅ AFCON final score fetcher
+  async function fetchAfconFinalScore(home, away, dateYMD) {
+    try {
+      if (!home || !away || !dateYMD) return null;
+      const url =
+        `/afcon/finalScore?home=${encodeURIComponent(home)}` +
+        `&away=${encodeURIComponent(away)}` +
+        `&date=${encodeURIComponent(dateYMD)}`;
+
+      const r = await fetch(url, { credentials: "same-origin" });
+      if (!r.ok) return null;
+
+      const data = await r.json();
+      if (!data || !data.found) return null;
+      return data;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  async function hydrateAfconFinalScores(preds, fixturesById, fixturesList) {
+    if (leagueKey !== "AFCON") return;
+
+    const seen = new Set();
+
+    for (const p of preds || []) {
+      let fx = fixturesById[String(p.fixtureId)] || null;
+      if (!fx) fx = findAfconFixture(p, fixturesList);
+      if (!fx) continue;
+
+      const homeName =
+        (fx.home && fx.home.name) ||
+        (fx.teams && fx.teams.home && fx.teams.home.name) ||
+        (p.home && p.home.name) ||
+        "";
+      const awayName =
+        (fx.away && fx.away.name) ||
+        (fx.teams && fx.teams.away && fx.teams.away.name) ||
+        (p.away && p.away.name) ||
+        "";
+
+      const kickoffIso =
+        p.kickoff ||
+        fx.utcDate ||
+        (fx.fixture && fx.fixture.date) ||
+        p.timestamp ||
+        "";
+      const dateYMD = kickoffIso ? String(kickoffIso).slice(0, 10) : "";
+
+      if (!homeName || !awayName || !dateYMD) continue;
+
+      const key = normalizeName(homeName) + "|" + normalizeName(awayName) + "|" + dateYMD;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      if (
+        fx.goals &&
+        fx.goals.home !== null &&
+        fx.goals.home !== undefined &&
+        fx.goals.away !== null &&
+        fx.goals.away !== undefined
+      ) {
+        continue;
+      }
+
+      const score = await fetchAfconFinalScore(homeName, awayName, dateYMD);
+      if (!score) continue;
+
+      fx.goals = { home: Number(score.homeScore), away: Number(score.awayScore) };
+      fx.status = { short: "FT", long: score.status || "Match Finished" };
+    }
+  }
+
+  // keep ONLY the FIRST (earliest) prediction per fixture
+  function dedupeFirstPredictionPerFixture(preds) {
+    const byFixture = new Map(); // fixtureId -> pred
+    (preds || []).forEach((p) => {
+      const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
+      if (!fid) return;
+
+      const ts = Date.parse(p.timestamp || "");
+      const cur = byFixture.get(fid);
+
+      if (!cur) {
+        byFixture.set(fid, p);
+        return;
+      }
+
+      const curTs = Date.parse(cur.timestamp || "");
+      if (Number.isFinite(ts) && Number.isFinite(curTs)) {
+        if (ts < curTs) byFixture.set(fid, p);
+      } else if (Number.isFinite(ts) && !Number.isFinite(curTs)) {
+        byFixture.set(fid, p);
+      }
+    });
+
+    return Array.from(byFixture.values());
+  }
+
+  // ✅ hide predictions made after kickoff
+  function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
+    return (preds || []).filter((p) => {
+      let fixture = fixturesById[String(p.fixtureId)] || null;
+      if (!fixture && leagueKey === "AFCON") {
+        fixture = findAfconFixture(p, fixturesList);
+      }
+
+      const kickoffIso =
+        p.kickoff ||
+        (fixture && fixture.utcDate) ||
+        (fixture && fixture.fixture && fixture.fixture.date) ||
+        p.timestamp ||
+        "";
+
+      const ko = Date.parse(kickoffIso);
+      const predTime = Date.parse(p.timestamp || "");
+
+      // if we can't parse, keep it (avoid deleting legit stuff)
+      if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
+
+      // keep only predictions ON or BEFORE kickoff
+      return predTime <= ko;
+    });
+  }
+
   // ---------- MAIN ----------
   async function renderResultsPage() {
-    // auth is ready here (boot calls after onAuthStateChanged)
     const user = firebase.auth().currentUser;
 
     const displayName =
       (user &&
         (user.displayName ||
           (user.email ? user.email.split("@")[0] : ""))) ||
-      "Guest";
+      tr("results.guest");
 
     const totalSpan = ensureUserHeader(displayName);
 
-    // get fixtures for THIS league (TSDB for AFCON)
     const { byId: fixturesById, list: fixturesList } =
       await fetchFixturesForCurrentLeague();
 
-    // load predictions for THIS league
     let preds = [];
     try {
       if (
@@ -464,7 +547,6 @@
       ) {
         preds = await window.FBL_STORE.loadPredictionsForLeague(leagueKey);
       } else {
-        // fallback (in case store file isn't loaded on results page)
         const uid = user && user.uid;
         if (uid && firebase.firestore) {
           const snap = await firebase
@@ -488,61 +570,41 @@
       return l === leagueKey;
     });
 
-    // ❌ Hide predictions made AFTER kickoff, but keep them in Firestore
-    preds = preds.filter((p) => {
-      let fixture = fixturesById[String(p.fixtureId)] || null;
-      if (!fixture && leagueKey === "AFCON") {
-        fixture = findAfconFixture(p, fixturesList);
-      }
+    // ✅ DO NOT DISPLAY late predictions
+    preds = filterPredictionsAfterKickoff(preds, fixturesById, fixturesList);
 
-      const kickoffIso =
-        p.kickoff ||
-        (fixture && fixture.utcDate) ||
-        (fixture && fixture.fixture && fixture.fixture.date) ||
-        p.timestamp ||
-        "";
-      const ko = Date.parse(kickoffIso);
-      const predTime = Date.parse(p.timestamp || "");
+    // ✅ Deduplicate: only first prediction per match (fixtureId)
+    preds = dedupeFirstPredictionPerFixture(preds);
 
-      // if we can't parse, keep it (don't be too aggressive)
-      if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
-
-      // only display predictions done ON or BEFORE kickoff
-      return predTime <= ko;
-    });
-
-    // ✅ Sort newest predictions first (today's at the top)
+    // ✅ Sort newest → oldest
     preds.sort(
-      (a, b) =>
-        new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+      (a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
     );
 
     if (!preds.length) {
-      container.innerHTML = `<p style="padding:12px;">No predictions for ${esc(
-        leagueInfo.name
-      )} yet.</p>`;
+      container.innerHTML = `<p style="padding:12px;">${esc(
+        tr("results.noPredictions", { league: leagueInfo.name })
+      )}</p>`;
       if (totalSpan) totalSpan.textContent = "0";
       updateMatchdayHeader("?");
       return;
     }
 
-    // one single matchday title (use newest matchday)
+    // AFCON: hydrate final scores before rendering
+    await hydrateAfconFinalScores(preds, fixturesById, fixturesList);
+
     const maxMd = preds.reduce((m, p) => {
       const md = parseInt(p.matchday, 10);
       return Number.isFinite(md) ? Math.max(m, md) : m;
     }, 0);
     updateMatchdayHeader(maxMd || "?");
 
-    // render ONLY matches you predicted
     let totalPts = 0;
     const predictionsWithPoints = [];
 
     const cardsHtml = preds
       .map((pred, i) => {
-        // 1) normal join by fixtureId
         let fixture = fixturesById[String(pred.fixtureId)] || null;
-
-        // 2) AFCON: if no direct match, try fuzzy by team names using TSDB data
         if (!fixture && leagueKey === "AFCON") {
           fixture = findAfconFixture(pred, fixturesList);
         }
@@ -550,23 +612,17 @@
         const { html, pts } = buildCardHTML(i + 1, pred, fixture);
         if (pts != null) {
           totalPts += pts;
-          predictionsWithPoints.push({
-            fixtureId: pred.fixtureId,
-            points: pts,
-          });
+          predictionsWithPoints.push({ fixtureId: pred.fixtureId, points: pts });
         }
         return html;
       })
       .join("");
 
-    container.innerHTML =
-      cardsHtml || `<p style="padding:12px;">No results yet.</p>`;
+    container.innerHTML = cardsHtml || `<p style="padding:12px;">${esc(tr("results.noResultsYet"))}</p>`;
 
-    // attach logos after DOM is filled
+    // attach logos AFTER DOM is filled
     preds.forEach((pred) => {
-      const sel = `.match-card[data-fixture="${CSS.escape(
-        String(pred.fixtureId)
-      )}"]`;
+      const sel = `.match-card[data-fixture="${CSS.escape(String(pred.fixtureId))}"]`;
       const cardEl = container.querySelector(sel);
       if (!cardEl) return;
 
@@ -578,19 +634,15 @@
       attachLogos(cardEl, pred, fixture);
     });
 
-    // total points header
     if (totalSpan) totalSpan.textContent = String(totalPts);
 
-    // 🔁 Store points on each prediction in Firestore for Winners page
     if (predictionsWithPoints.length) {
       syncPointsToFirestore(predictionsWithPoints);
     }
   }
 
-  // expose for other scripts if needed
   window.renderResultsPage = renderResultsPage;
 
-  // --- AUTH GATE BOOT ---
   (function bootResultsWithAuth() {
     if (!window.firebase || !firebase.auth) {
       console.error("[Results] firebase not found. Check script order.");
