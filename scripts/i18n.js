@@ -96,6 +96,9 @@
       "wallet.withdrawBonus": "Retirer le bonus",
       "wallet.wallet": "Portefeuille",
 
+      "predictions.matchStartedMsg": "Match commencé",
+      "predictions.matchPassedMsg": "Match terminé",
+      "predictions.matchLockedSaveMsg": "Sauvegarde verrouillée",
       // AFCON groups
       "afcon.groupA.heading": "CAN 2025 — Groupe A",
       "afcon.groupB.heading": "CAN 2025 — Groupe B",

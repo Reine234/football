@@ -169,6 +169,7 @@
         const docId = `${uid}_${leagueKey}_${roundNum}_${fixtureId}`;
         const ref = db.collection("predictions").doc(docId);
 
+        // ✅ This overwrites/updates the SAME doc (so edits before kickoff persist)
         batch.set(
           ref,
           {
@@ -537,6 +538,136 @@
   }
 
   // ------------------------------------------------------------
+  // ✅ NEW: match time state + lock messaging (STARTED vs PASSED)
+  // ------------------------------------------------------------
+  function kickoffMsFromFixture(f) {
+    const raw = f && (f.utcDate || f.utc_date || f.date || f.kickoff);
+    const ms = Date.parse(raw || "");
+    return Number.isFinite(ms) ? ms : NaN;
+  }
+
+  // Try to detect finished state if provider adds it
+  function isFixtureFinished(f) {
+    const s =
+      (f && f.status && (f.status.short || f.status)) ||
+      (f && f.fixture && f.fixture.status && (f.fixture.status.short || f.fixture.status)) ||
+      "";
+    const short = String(s || "").toUpperCase().trim();
+    return short === "FT" || short === "AET" || short === "PEN" || short.includes("FINISHED");
+  }
+
+  // Returns: "not_started" | "started" | "passed"
+  function getMatchState(f) {
+    const ko = kickoffMsFromFixture(f);
+    if (!Number.isFinite(ko)) return "not_started";
+
+    const now = Date.now();
+    if (now < ko) return "not_started";
+
+    // If we know it's finished -> passed
+    if (isFixtureFinished(f)) return "passed";
+
+    // If kickoff was long ago -> passed (fallback)
+    const FOUR_HOURS = 4 * 60 * 60 * 1000;
+    if (now - ko >= FOUR_HOURS) return "passed";
+
+    // Otherwise it has started but not necessarily finished
+    return "started";
+  }
+
+  function showMatchLockMsg(card, state) {
+    if (!card) return;
+    const msgEl = card.querySelector(".match-locked-msg");
+    if (!msgEl) return;
+
+    const key =
+      state === "passed"
+        ? "predictions.matchPassedMsg"
+        : "predictions.matchStartedMsg";
+
+    // ✅ add i18n key so i18n.js can translate
+    msgEl.setAttribute("data-i18n", key);
+
+    // ✅ fallback text (EN) if i18n missing
+    msgEl.textContent =
+      state === "passed"
+        ? tSafe("predictions.matchPassedMsg", "Match has already passed.")
+        : tSafe("predictions.matchStartedMsg", "Match has already started.");
+
+    msgEl.style.display = "block";
+
+    // ✅ translate immediately if i18n is available
+    reapplyI18n();
+
+    clearTimeout(msgEl.__hideT);
+    msgEl.__hideT = setTimeout(() => {
+      msgEl.style.display = "none";
+    }, 2500);
+  }
+
+
+  function setMatchLockMsgStatic(card, state) {
+  if (!card) return;
+  const msgEl = card.querySelector(".match-locked-msg");
+  if (!msgEl) return;
+
+  const key =
+    state === "passed"
+      ? "predictions.matchPassedMsg"
+      : "predictions.matchStartedMsg";
+
+  msgEl.setAttribute("data-i18n", key);
+
+  msgEl.textContent =
+    state === "passed"
+      ? tSafe("predictions.matchPassedMsg", "Match has already passed.")
+      : tSafe("predictions.matchStartedMsg", "Match has already started.");
+
+  msgEl.style.display = "block";
+  reapplyI18n();
+}
+
+  // ------------------------------------------------------------
+  // ✅ NEW: preload saved predictions for THIS league + matchday
+  // (so edits overwrite the same Firestore doc later)
+  // ------------------------------------------------------------
+  async function preloadSavedPredictionsForThisRound() {
+    try {
+      if (!window.FBL_STORE || typeof window.FBL_STORE.loadPredictionsForLeague !== "function") return;
+
+      const saved = await window.FBL_STORE.loadPredictionsForLeague(leagueKey);
+      if (!saved || !saved.length) return;
+
+      const relevant = saved.filter((p) => {
+        const md = String(p.matchday || "");
+        return md === String(roundNum);
+      });
+
+      relevant.forEach((p) => {
+        const fid = String(p.fixtureId);
+        const fx = pageFixtures.find((f) => String(f.id) === fid);
+        if (fx) ensurePredictionSlot(fx);
+
+        if (!userPred[fid]) {
+          // if fixture isn't found in pageFixtures, still create slot
+          userPred[fid] = {
+            homeScore: null,
+            awayScore: null,
+            homeTeam: (p.home || {}).id ? { id: p.home.id, name: p.home.name, logo: p.home.logo || null } : { id: null, name: "", logo: null },
+            awayTeam: (p.away || {}).id ? { id: p.away.id, name: p.away.name, logo: p.away.logo || null } : { id: null, name: "", logo: null },
+          };
+        }
+
+        // ✅ load previously saved scores so user can edit BEFORE kickoff
+        if (p.home && p.home.score != null) userPred[fid].homeScore = Number(p.home.score);
+        if (p.away && p.away.score != null) userPred[fid].awayScore = Number(p.away.score);
+      });
+    } catch (e) {
+      console.warn("[PredictionsPage] preloadSavedPredictions failed:", e);
+    }
+  }
+
+  // ------------------------------------------------------------
   // Render fixtures (with AFCON grouping & strict A→F ordering)
   // ------------------------------------------------------------
   function renderFixtures() {
@@ -592,8 +723,11 @@
     let lastGroupLabel = null;
 
     const predictionLabelText = tSafe("predictions.enterPredictionScore", "Enter your prediction score");
-    const matchdayWord = tSafe("predictions.matchdayWord", "Matchday");
     const groupHeaderTpl = tSafe("predictions.groupHeader", "{group} - Matchday {n}");
+
+    // ✅ both messages exist via i18n keys (we set the right one dynamically on click)
+    const lockedStartedFallback = tSafe("predictions.matchStartedMsg", "Match has already started.");
+    const lockedPassedFallback  = tSafe("predictions.matchPassedMsg", "Match has already passed.");
 
     const html = fixturesForRender
       .map((f) => {
@@ -613,6 +747,10 @@
             groupHeader = `<h4 class="afcon-group-title">${formatTemplate(groupHeaderTpl, { group: label, n: roundNum })}</h4>`;
           }
         }
+
+        // Default hidden message area (we set key/text when needed)
+        // Keep a default fallback so it never shows "undefined"
+        const defaultLocked = lockedStartedFallback || lockedPassedFallback || "Match has already started.";
 
         return `
           ${groupHeader}
@@ -650,6 +788,8 @@
                 <button class="plus away-plus" type="button">+</button>
               </div>
             </div>
+
+            <p class="match-locked-msg" style="display:none;">${defaultLocked}</p>
           </div>
         `;
       })
@@ -673,8 +813,8 @@
         window.FBL.ensureLogo(awayTeam, row.querySelector(".away-logo"));
       }
 
-      display(row.querySelector(".home-val"), pred.homeScore);
-      display(row.querySelector(".away-val"), pred.awayScore);
+     display(row.querySelector(".home-val"), "");
+     display(row.querySelector(".away-val"), "");
     });
   }
 
@@ -701,6 +841,16 @@
         const fixtureId = String(card.dataset.fixture || "");
         const pred = userPred[fixtureId];
         if (!pred) return;
+
+        // ✅ LOCK editing after match starts/passes
+        const fx = pageFixtures.find((x) => String(x.id) === fixtureId);
+        if (fx) {
+          const state = getMatchState(fx);
+          if (state === "started" || state === "passed") {
+            showMatchLockMsg(card, state);
+            return;
+          }
+        }
 
         const isHome =
           btn.classList.contains("home-plus") ||
@@ -770,9 +920,17 @@
   let pending = [];
 
   async function finalizeAndContinue() {
-    const touched = pageFixtures.filter((f) => isSet(userPred[String(f.id)]));
+    // ✅ Only allow saving edits for matches that have NOT started yet
+    const touched = pageFixtures.filter((f) => {
+      const p = userPred[String(f.id)];
+      if (!isSet(p)) return false;
+      const state = getMatchState(f);
+      return state === "not_started";
+    });
+
     if (!touched.length) {
-      alert(".");
+      // optional: bilingual message
+      alert(tSafe("predictions.matchLockedSaveMsg", "."));
       return;
     }
 
@@ -800,7 +958,7 @@
         away: { id: awayTeam.id, name: awayTeam.name, logo: awayTeam.logo || null, score: p.awayScore },
 
         kickoff:   f.utcDate || f.utc_date || f.date || null,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString(), // ✅ latest modification wins
       };
     });
 
@@ -859,9 +1017,16 @@
       );
     }
 
-    const touched = pageFixtures.filter((f) => isSet(userPred[String(f.id)]));
+    // ✅ Only confirm matches not started yet
+    const touched = pageFixtures.filter((f) => {
+      const p = userPred[String(f.id)];
+      if (!isSet(p)) return false;
+      const state = getMatchState(f);
+      return state === "not_started";
+    });
+
     if (!touched.length) {
-      alert(".");
+      alert(tSafe("predictions.matchLockedSaveMsg", "."));
       return;
     }
 
@@ -921,6 +1086,10 @@
   // ------------------------------------------------------------
   // Initial render + wire clicks
   // ------------------------------------------------------------
-  renderFixtures();
-  wirePlusMinus();
+  // ✅ minimal change: preload saved predictions (so edits overwrite same doc), then render
+  (async function boot() {
+    await preloadSavedPredictionsForThisRound();
+    renderFixtures();
+    wirePlusMinus();
+  })();
 })();
