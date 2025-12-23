@@ -13,73 +13,64 @@
       AFCON:          { name: "Afcon",          totalRounds: 6 },
     };
 
-// --- TEAM I18N HELPERS (AFCON) ---
-// Map displayed names -> i18n keys (use the same keys you used in HTML pages)
-function fblTeamI18nKey(name) {
-  const n = String(name || "").trim().toLowerCase();
+  // --- TEAM I18N HELPERS (AFCON) ---
+  function fblTeamI18nKey(name) {
+    const n = String(name || "").trim().toLowerCase();
+    const norm = n.replace(/’/g, "'").replace(/\s+/g, " ");
 
-  // normalize common accents/apostrophes
-  const norm = n
-    .replace(/’/g, "'")
-    .replace(/\s+/g, " ");
+    const map = {
+      "morocco": "team.afcon.morocco",
+      "comoros": "team.afcon.comoros",
+      "mali": "team.afcon.mali",
+      "zambia": "team.afcon.zambia",
 
-  const map = {
-    "morocco": "team.afcon.morocco",
-    "comoros": "team.afcon.comoros",
-    "mali": "team.afcon.mali",
-    "zambia": "team.afcon.zambia",
+      "egypt": "team.afcon.egypt",
+      "zimbabwe": "team.afcon.zimbabwe",
+      "south africa": "team.afcon.southafrica",
+      "angola": "team.afcon.angola",
 
-    "egypt": "team.afcon.egypt",
-    "zimbabwe": "team.afcon.zimbabwe",
-    "south africa": "team.afcon.southafrica",
-    "angola": "team.afcon.angola",
+      "nigeria": "team.afcon.nigeria",
+      "tanzania": "team.afcon.tanzania",
+      "tunisia": "team.afcon.tunisia",
+      "uganda": "team.afcon.uganda",
 
-    "nigeria": "team.afcon.nigeria",
-    "tanzania": "team.afcon.tanzania",
-    "tunisia": "team.afcon.tunisia",
-    "uganda": "team.afcon.uganda",
+      "senegal": "team.afcon.senegal",
+      "botswana": "team.afcon.botswana",
+      "dr congo": "team.afcon.drcongo",
+      "d.r. congo": "team.afcon.drcongo",
+      "congo dr": "team.afcon.drcongo",
+      "benin": "team.afcon.benin",
 
-    "senegal": "team.afcon.senegal",
-    "botswana": "team.afcon.botswana",
-    "dr congo": "team.afcon.drcongo",
-    "d.r. congo": "team.afcon.drcongo",
-    "congo dr": "team.afcon.drcongo",
-    "benin": "team.afcon.benin",
+      "algeria": "team.afcon.algeria",
+      "sudan": "team.afcon.sudan",
+      "burkina faso": "team.afcon.burkinafaso",
+      "equatorial guinea": "team.afcon.equatorialguinea",
 
-    "algeria": "team.afcon.algeria",
-    "sudan": "team.afcon.sudan",
-    "burkina faso": "team.afcon.burkinafaso",
-    "equatorial guinea": "team.afcon.equatorialguinea",
+      "cameroon": "team.afcon.cameroon",
+      "gabon": "team.afcon.gabon",
+      "mozambique": "team.afcon.mozambique",
+      "côte d’ivoire": "team.afcon.cotedivoire",
+      "côte d'ivoire": "team.afcon.cotedivoire",
+      "cote d'ivoire": "team.afcon.cotedivoire",
+      "cote d’ivoire": "team.afcon.cotedivoire",
+    };
 
-    "cameroon": "team.afcon.cameroon",
-    "gabon": "team.afcon.gabon",
-    "mozambique": "team.afcon.mozambique",
-    "côte d’ivoire": "team.afcon.cotedivoire",
-    "côte d'ivoire": "team.afcon.cotedivoire",
-    "cote d'ivoire": "team.afcon.cotedivoire",
-    "cote d’ivoire": "team.afcon.cotedivoire",
-  };
-
-  return map[norm] || map[norm.replace(/[^\w\s']/g, "")] || null;
-}
-
-// Create a <span> that i18n.js can translate
-function makeTeamNameNode(name) {
-  const span = document.createElement("span");
-  const key = fblTeamI18nKey(name);
-  if (key) span.setAttribute("data-i18n", key);
-  span.textContent = name || "";
-  return span;
-}
-
-// After you inject results HTML, call this once to translate the page
-function reapplyI18n() {
-  if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
-    window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
+    return map[norm] || map[norm.replace(/[^\w\s']/g, "")] || null;
   }
-}
 
+  function makeTeamNameNode(name) {
+    const span = document.createElement("span");
+    const key = fblTeamI18nKey(name);
+    if (key) span.setAttribute("data-i18n", key);
+    span.textContent = name || "";
+    return span;
+  }
 
+  function reapplyI18n() {
+    if (window.FBL_I18N && typeof window.FBL_I18N.applyLang === "function") {
+      window.FBL_I18N.applyLang(window.FBL_I18N.getLang());
+    }
+  }
 
   // ---------- I18N HELPERS ----------
   function getLangSafe() {
@@ -90,19 +81,71 @@ function reapplyI18n() {
     }
   }
 
+  // ✅ ONLY CHANGE: robust fallback for matchdayTitle + header strings
   function tr(key, vars) {
     try {
       const i18n = window.FBL_I18N;
       const lang = getLangSafe();
-      if (i18n && typeof i18n.t === "function") return i18n.t(lang, key, vars);
+      if (i18n && typeof i18n.t === "function") {
+        const out = i18n.t(lang, key, vars);
+        if (out && out !== key) return out;
+      }
     } catch (_) {}
-    // fallback: show the key if missing (so you SEE missing keys)
+
+    const lang = String(getLangSafe() || "en").toLowerCase();
+    const isFr = lang.startsWith("fr");
+
+    const FALLBACK = {
+      "results.matchdayTitle": isFr ? "Journée" : "Matchday",
+
+      "common.matches": isFr ? "Matchs" : "Matches",
+      "predictions.matchdayOf": isFr ? "Journée {n} sur {total}" : "Matchday {n} of {total}",
+      "results.guest": isFr ? "Invité" : "Guest",
+      "results.pointsLabel": "Points",
+      "results.match": isFr ? "Match" : "Match",
+      "results.yourPrediction": isFr ? "Votre pronostic" : "Your prediction",
+      "results.finalScore": isFr ? "Score final" : "Final score",
+      "results.noResultsYet": isFr ? "Aucun résultat pour le moment." : "No results yet.",
+      "results.noPredictions": isFr ? "Aucun pronostic pour {league}." : "No predictions for {league}.",
+    };
+
+    let s = FALLBACK[key] || key;
+
     if (vars && typeof vars === "object") {
-      let s = key;
-      Object.keys(vars).forEach((k) => (s = s.replaceAll(`{${k}}`, String(vars[k]))));
-      return s;
+      Object.keys(vars).forEach((k) => {
+        s = String(s).replaceAll(`{${k}}`, String(vars[k]));
+      });
     }
-    return key;
+
+    return s;
+  }
+
+  function fixMatchdayTitleNode() {
+    const el =
+      document.querySelector('[data-i18n="results.matchdayTitle"]') ||
+      document.getElementById("matchday-title") ||
+      document.querySelector(".matchday-title");
+
+    if (!el) return false;
+
+    const cur = String(el.textContent || "").trim();
+    if (cur === "results.matchdayTitle" || cur === "") {
+      el.textContent = tr("results.matchdayTitle");
+      return true;
+    }
+
+    return false;
+  }
+
+  function retryFixMatchdayTitle() {
+    let tries = 0;
+    const max = 12;
+    const timer = setInterval(() => {
+      tries += 1;
+      try { reapplyI18n(); } catch (_) {}
+      fixMatchdayTitleNode();
+      if (tries >= max) clearInterval(timer);
+    }, 250);
   }
 
   // ---------- ROOT ----------
@@ -148,7 +191,7 @@ function reapplyI18n() {
     (window.FBL_CFG && window.FBL_CFG.API_BASE) ||
     window.location.origin
   ).replace(/\/$/, "");
-  const API_USERS = apiBase + "/api/users.php"; // kept (even if unused)
+  const API_USERS = apiBase + "/api/users.php";
 
   // ---------- UTILS ----------
   const esc = (s) =>
@@ -163,7 +206,6 @@ function reapplyI18n() {
 
     const lang = getLangSafe();
     try {
-      // short + readable, localized
       return new Intl.DateTimeFormat(lang, {
         weekday: "short",
         day: "numeric",
@@ -205,7 +247,6 @@ function reapplyI18n() {
     predictionsWithPoints.forEach((p) => {
       if (p.points == null || p.fixtureId == null) return;
       const fixtureId = String(p.fixtureId);
-      // NOTE: keep your original docId logic, don't change storage scheme here
       const docId = `${uid}_${leagueKey}_${fixtureId}`;
       const ref = db.collection("predictions").doc(docId);
       batch.set(ref, { points: p.points }, { merge: true });
@@ -271,9 +312,9 @@ function reapplyI18n() {
     }
 
     if (dayNumSpan) dayNumSpan.textContent = md === "?" ? "" : md;
+    fixMatchdayTitleNode();
   }
 
-  // ✅ robust extractors (so it works with your TSDB-shaped AFCON payload)
   function getFixtureIdCandidates(f) {
     const ids = [];
     if (f == null) return ids;
@@ -283,7 +324,6 @@ function reapplyI18n() {
     if (f.fixture && f.fixture.id != null) ids.push(String(f.fixture.id));
     if (f.fixture && f.fixture.fixture_id != null) ids.push(String(f.fixture.fixture_id));
 
-    // de-dupe
     return Array.from(new Set(ids.filter(Boolean)));
   }
 
@@ -297,7 +337,7 @@ function reapplyI18n() {
     );
   }
 
-  function getTeamNameFromFixture(f, side /* "home"|"away" */) {
+  function getTeamNameFromFixture(f, side) {
     if (!f) return "";
     return (
       (f[side] && f[side].name) ||
@@ -307,7 +347,7 @@ function reapplyI18n() {
     );
   }
 
-  function getTeamLogoFromFixture(f, side /* "home"|"away" */) {
+  function getTeamLogoFromFixture(f, side) {
     if (!f) return "";
     return (
       (f[side] && f[side].logo) ||
@@ -316,21 +356,54 @@ function reapplyI18n() {
     );
   }
 
+  function isFixtureFinished(f) {
+    const short =
+      (f && f.fixture && f.fixture.status && f.fixture.status.short) ||
+      (f && f.status && f.status.short) ||
+      "";
+
+    const long =
+      (f && f.fixture && f.fixture.status && f.fixture.status.long) ||
+      (f && f.status && f.status.long) ||
+      "";
+
+    const s = String(short || "").toUpperCase().trim();
+    const l = String(long || "").toUpperCase().trim();
+
+    if (s === "FT" || s === "AET" || s === "PEN") return true;
+    if (s === "NS" || s === "TBD" || s === "PST" || s === "CANC" || s === "SUSP" || s === "INT") return false;
+
+    if (l.includes("FINISHED") || l.includes("MATCH FINISHED")) return true;
+
+    return false;
+  }
+
   function getFinalGoalsFromFixture(f) {
     if (!f) return { home: "", away: "" };
 
-    // Your AFCON payload shows goals at root: f.goals.home / f.goals.away
+    if (!isFixtureFinished(f)) {
+      return { home: "", away: "" };
+    }
+
     if (f.goals && f.goals.home != null && f.goals.away != null) {
       return { home: f.goals.home, away: f.goals.away };
     }
 
-    // API-Football style: f.score.fulltime.home/away
-    if (f.score && f.score.fulltime && f.score.fulltime.home != null && f.score.fulltime.away != null) {
+    if (
+      f.score &&
+      f.score.fulltime &&
+      f.score.fulltime.home != null &&
+      f.score.fulltime.away != null
+    ) {
       return { home: f.score.fulltime.home, away: f.score.fulltime.away };
     }
 
-    // Some shapes nest goals under fixture
-    if (f.fixture && f.fixture.goals && f.fixture.goals.home != null && f.fixture.goals.away != null) {
+    if (
+      f.fixture &&
+      f.fixture.goals &&
+      f.fixture.goals.home != null &&
+      f.fixture.goals.away != null
+    ) {
       return { home: f.fixture.goals.home, away: f.fixture.goals.away };
     }
 
@@ -347,7 +420,6 @@ function reapplyI18n() {
       const all = await window.FBL.fetchFixturesForLeague(leagueKey);
       const byId = {};
       (all || []).forEach((f) => {
-        // ✅ index by ALL plausible ids (root id, fixture.id, fixtureId...)
         getFixtureIdCandidates(f).forEach((id) => {
           byId[String(id)] = f;
         });
@@ -441,7 +513,6 @@ function reapplyI18n() {
     const homeLogoEl = cardEl.querySelector(".home-logo");
     const awayLogoEl = cardEl.querySelector(".away-logo");
 
-    // AFCON: prefer logos stored with prediction/fixture
     if (leagueKey === "AFCON") {
       const homeLogo =
         getTeamLogoFromFixture(fixture, "home") ||
@@ -454,7 +525,6 @@ function reapplyI18n() {
       if (awayLogoEl && awayLogo) awayLogoEl.src = awayLogo;
     }
 
-    // fallback for other leagues (and also helps if AFCON missing logos)
     if (!window.FBL || typeof window.FBL.ensureLogo !== "function") return;
 
     const homeTeam =
@@ -514,7 +584,6 @@ function reapplyI18n() {
     return best;
   }
 
-  // ✅ AFCON final score fetcher
   async function fetchAfconFinalScore(home, away, dateYMD) {
     try {
       if (!home || !away || !dateYMD) return null;
@@ -534,6 +603,27 @@ function reapplyI18n() {
     }
   }
 
+  // ✅ MINIMAL FIX: only treat /afcon/finalScore response as FINAL if status says finished
+  function isAfconScoreFinal(score) {
+    if (!score) return false;
+
+    // be conservative: if no status, do NOT inject goals
+    const raw = String(score.status || score.statusText || score.state || "").trim();
+    if (!raw) return false;
+
+    const s = raw.toUpperCase();
+
+    // finished markers
+    if (s === "FT" || s === "AET" || s === "PEN") return true;
+    if (s.includes("FINISHED") || s.includes("MATCH FINISHED") || s.includes("FULL TIME")) return true;
+
+    // clearly not finished markers
+    if (s.includes("NOT STARTED") || s === "NS" || s.includes("SCHEDULED") || s.includes("TIMED") || s.includes("POSTPON")) return false;
+
+    // default conservative
+    return false;
+  }
+
   async function hydrateAfconFinalScores(preds, fixturesById, fixturesList) {
     if (leagueKey !== "AFCON") return;
 
@@ -541,8 +631,6 @@ function reapplyI18n() {
 
     for (const p of preds || []) {
       let fx = fixturesById[String(p.fixtureId)] || null;
-
-      // ✅ also try other stored ids (some predictions store API-football fixture id under a different field)
       if (!fx && p.fixture && p.fixture.id != null) fx = fixturesById[String(p.fixture.id)] || null;
       if (!fx && p.apiFixtureId != null) fx = fixturesById[String(p.apiFixtureId)] || null;
 
@@ -565,21 +653,22 @@ function reapplyI18n() {
       if (seen.has(key)) continue;
       seen.add(key);
 
-      // ✅ if goals already exist (your TSDB payload has them), stop here
       const finalGoals = getFinalGoalsFromFixture(fx);
       if (finalGoals.home !== "" && finalGoals.away !== "") continue;
 
       const score = await fetchAfconFinalScore(homeName, awayName, dateYMD);
       if (!score) continue;
 
+      // ✅ MINIMAL FIX: do NOT inject 0-0 unless it is truly final
+      if (!isAfconScoreFinal(score)) continue;
+
       fx.goals = { home: Number(score.homeScore), away: Number(score.awayScore) };
       fx.status = { short: "FT", long: score.status || "Match Finished" };
     }
   }
 
-  // keep ONLY the FIRST (earliest) prediction per fixture
   function dedupeFirstPredictionPerFixture(preds) {
-    const byFixture = new Map(); // fixtureId -> pred
+    const byFixture = new Map();
     (preds || []).forEach((p) => {
       const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
       if (!fid) return;
@@ -603,7 +692,6 @@ function reapplyI18n() {
     return Array.from(byFixture.values());
   }
 
-  // ✅ hide predictions made after kickoff
   function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
     return (preds || []).filter((p) => {
       let fixture = fixturesById[String(p.fixtureId)] || null;
@@ -620,10 +708,7 @@ function reapplyI18n() {
       const ko = Date.parse(kickoffIso);
       const predTime = Date.parse(p.timestamp || "");
 
-      // if we can't parse, keep it (avoid deleting legit stuff)
       if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
-
-      // keep only predictions ON or BEFORE kickoff
       return predTime <= ko;
     });
   }
@@ -668,19 +753,14 @@ function reapplyI18n() {
       preds = [];
     }
 
-    // safety filter by league
     preds = (preds || []).filter((p) => {
       const l = String(p.league || p.leagueKey || "").toUpperCase();
       return l === leagueKey;
     });
 
-    // ✅ DO NOT DISPLAY late predictions
     preds = filterPredictionsAfterKickoff(preds, fixturesById, fixturesList);
-
-    // ✅ Deduplicate: only first prediction per match (fixtureId)
     preds = dedupeFirstPredictionPerFixture(preds);
 
-    // ✅ Sort newest → oldest
     preds.sort(
       (a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
     );
@@ -691,10 +771,10 @@ function reapplyI18n() {
       )}</p>`;
       if (totalSpan) totalSpan.textContent = "0";
       updateMatchdayHeader("?");
+      retryFixMatchdayTitle();
       return;
     }
 
-    // AFCON: hydrate final scores before rendering
     await hydrateAfconFinalScores(preds, fixturesById, fixturesList);
 
     const maxMd = preds.reduce((m, p) => {
@@ -710,7 +790,6 @@ function reapplyI18n() {
       .map((pred, i) => {
         let fixture = fixturesById[String(pred.fixtureId)] || null;
 
-        // ✅ also try other stored ids
         if (!fixture && pred.fixture && pred.fixture.id != null) {
           fixture = fixturesById[String(pred.fixture.id)] || null;
         }
@@ -734,7 +813,6 @@ function reapplyI18n() {
     container.innerHTML =
       cardsHtml || `<p style="padding:12px;">${esc(tr("results.noResultsYet"))}</p>`;
 
-    // attach logos AFTER DOM is filled
     preds.forEach((pred) => {
       const sel = `.match-card[data-fixture="${CSS.escape(String(pred.fixtureId))}"]`;
       const cardEl = container.querySelector(sel);
@@ -761,6 +839,8 @@ function reapplyI18n() {
     if (predictionsWithPoints.length) {
       syncPointsToFirestore(predictionsWithPoints);
     }
+
+    retryFixMatchdayTitle();
   }
 
   window.renderResultsPage = renderResultsPage;
@@ -782,5 +862,3 @@ function reapplyI18n() {
     });
   })();
 })();
-
-
