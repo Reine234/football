@@ -81,6 +81,7 @@
     }
   }
 
+  // ✅ ONLY CHANGE: robust fallback for matchdayTitle + header strings
   function tr(key, vars) {
     try {
       const i18n = window.FBL_I18N;
@@ -430,23 +431,6 @@
     }
   }
 
-  // ✅ NEW (minimal): detect predictions saved AFTER kickoff -> no points
-  function isPredictionLate(pred, fixture) {
-    const kickoffIso =
-      (pred && pred.kickoff) ||
-      getKickoffIsoFromFixture(fixture) ||
-      "";
-
-    const ko = Date.parse(kickoffIso || "");
-    const pt = Date.parse((pred && pred.timestamp) || "");
-
-    // If we cannot parse either date, be lenient (do not block points).
-    if (!Number.isFinite(ko) || !Number.isFinite(pt)) return false;
-
-    // Late = saved strictly AFTER kickoff
-    return pt > ko;
-  }
-
   function buildCardHTML(idx, pred, fixture) {
     const homeName =
       getTeamNameFromFixture(fixture, "home") ||
@@ -475,17 +459,12 @@
     const finHomeForCalc = finHome === "" ? NaN : Number(finHome);
     const finAwayForCalc = finAway === "" ? NaN : Number(finAway);
 
-    // ✅ NEW (minimal): if prediction is late, force pts = null (no scoring)
-    const late = isPredictionLate(pred, fixture);
-
-    const pts = late
-      ? null
-      : computePoints(
-          Number(predHomeVal),
-          Number(predAwayVal),
-          finHomeForCalc,
-          finAwayForCalc
-        );
+    const pts = computePoints(
+      Number(predHomeVal),
+      Number(predAwayVal),
+      finHomeForCalc,
+      finAwayForCalc
+    );
 
     const html = `
       <h4 class="match-card-kickoff" style="margin:10px 12px 6px; font-size:14px; font-weight:700;">
@@ -624,19 +603,24 @@
     }
   }
 
+  // ✅ MINIMAL FIX: only treat /afcon/finalScore response as FINAL if status says finished
   function isAfconScoreFinal(score) {
     if (!score) return false;
 
+    // be conservative: if no status, do NOT inject goals
     const raw = String(score.status || score.statusText || score.state || "").trim();
     if (!raw) return false;
 
     const s = raw.toUpperCase();
 
+    // finished markers
     if (s === "FT" || s === "AET" || s === "PEN") return true;
     if (s.includes("FINISHED") || s.includes("MATCH FINISHED") || s.includes("FULL TIME")) return true;
 
+    // clearly not finished markers
     if (s.includes("NOT STARTED") || s === "NS" || s.includes("SCHEDULED") || s.includes("TIMED") || s.includes("POSTPON")) return false;
 
+    // default conservative
     return false;
   }
 
@@ -675,11 +659,58 @@
       const score = await fetchAfconFinalScore(homeName, awayName, dateYMD);
       if (!score) continue;
 
+      // ✅ MINIMAL FIX: do NOT inject 0-0 unless it is truly final
       if (!isAfconScoreFinal(score)) continue;
 
       fx.goals = { home: Number(score.homeScore), away: Number(score.awayScore) };
       fx.status = { short: "FT", long: score.status || "Match Finished" };
     }
+  }
+
+  function dedupeFirstPredictionPerFixture(preds) {
+    const byFixture = new Map();
+    (preds || []).forEach((p) => {
+      const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
+      if (!fid) return;
+
+      const ts = Date.parse(p.timestamp || "");
+      const cur = byFixture.get(fid);
+
+      if (!cur) {
+        byFixture.set(fid, p);
+        return;
+      }
+
+      const curTs = Date.parse(cur.timestamp || "");
+      if (Number.isFinite(ts) && Number.isFinite(curTs)) {
+        if (ts < curTs) byFixture.set(fid, p);
+      } else if (Number.isFinite(ts) && !Number.isFinite(curTs)) {
+        byFixture.set(fid, p);
+      }
+    });
+
+    return Array.from(byFixture.values());
+  }
+
+  function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
+    return (preds || []).filter((p) => {
+      let fixture = fixturesById[String(p.fixtureId)] || null;
+      if (!fixture && leagueKey === "AFCON") {
+        fixture = findAfconFixture(p, fixturesList);
+      }
+
+      const kickoffIso =
+        p.kickoff ||
+        getKickoffIsoFromFixture(fixture) ||
+        p.timestamp ||
+        "";
+
+      const ko = Date.parse(kickoffIso);
+      const predTime = Date.parse(p.timestamp || "");
+
+      if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
+      return predTime <= ko;
+    });
   }
 
   // ---------- MAIN ----------
@@ -727,11 +758,8 @@
       return l === leagueKey;
     });
 
-    // ✅ CHANGE (minimal): DO NOT filter out late predictions anymore.
-    // preds = filterPredictionsAfterKickoff(preds, fixturesById, fixturesList);
-
-    // ✅ CHANGE (minimal): DO NOT dedupe here; show everything that exists in DB.
-    // preds = dedupeFirstPredictionPerFixture(preds);
+    preds = filterPredictionsAfterKickoff(preds, fixturesById, fixturesList);
+    preds = dedupeFirstPredictionPerFixture(preds);
 
     preds.sort(
       (a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
@@ -808,7 +836,6 @@
 
     if (totalSpan) totalSpan.textContent = String(totalPts);
 
-    // ✅ Only sync points for predictions that were eligible (not late)
     if (predictionsWithPoints.length) {
       syncPointsToFirestore(predictionsWithPoints);
     }
