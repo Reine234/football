@@ -308,6 +308,35 @@
     }
 
     .spacer{ height: 10px; }
+
+    .fbl-policy-btn{
+  position: fixed;
+  bottom: 16px;
+  z-index: 9999;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.20);
+ 
+   background: #00B894;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+}
+
+.fbl-policy-btn--left{ left: 14px; }
+.fbl-policy-btn--right{ right: 14px; }
+
+@media (max-width: 420px){
+  .fbl-policy-btn{
+    font-size: 12px;
+    padding: 9px 12px;
+  }
+}
+
   </style>
 </head>
 
@@ -372,6 +401,10 @@
       </div>
     </main>
   </div>
+
+  <!-- Floating policy buttons -->
+<a class="fbl-policy-btn fbl-policy-btn--left" href="data-protection.html">Data Protection</a>
+<a class="fbl-policy-btn fbl-policy-btn--right" href="protection-of-minors.html">Protection of Minors</a>
 
   <script>
     // --- Simple i18n for this page + persist language for whole site ---

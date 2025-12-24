@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FansBetLiga — Data Protection</title>
+
+  <!-- Keep your existing CSS + i18n includes like other pages -->
+  <!-- <link rel="stylesheet" href="./styles/main.css"> -->
+  <!-- <script src="./scripts/i18n.js"></script> -->
+
+  <style>
+    .topbar{
+      background: #00B894;
+      color: #fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 12px 14px;
+    }
+
+    .brand{
+      font-weight: 900;
+      letter-spacing: .8px;
+      font-size: 14px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+    .policy-wrap{ max-width: 980px; margin: 0 auto; padding: 18px 16px 40px; }
+    .policy-card{
+      background: rgba(152, 231, 172, 0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 18px 16px;
+    }
+    .policy-title{ font-size: 20px; font-weight: 900; margin: 6px 0 12px; }
+    .policy-section{ margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.10); }
+    .policy-h2{ font-size: 15px; font-weight: 900; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .3px; }
+    .policy-h3{ font-size: 14px; font-weight: 900; margin: 14px 0 6px; }
+    .policy-p{ margin: 6px 0; line-height: 1.55; }
+    .policy-list{ margin: 8px 0 0 18px; padding: 0; line-height: 1.55; }
+    .policy-list li{ margin: 6px 0; }
+    .policy-note{
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-left: 4px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.20);
+      border-radius: 10px;
+    }
+    .policy-table{
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .policy-table th, .policy-table td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      vertical-align: top;
+      text-align: left;
+    }
+    .policy-table th{ font-weight: 900; background: rgba(0,0,0,0.18); }
+
+    #policy-fr, #policy-en{ display:none; }
+  </style>
+</head>
+
+<body class="policy-page">
+
+  <!-- Keep your existing topbar if you want. Here is a safe header with language dropdown -->
+ 
+    <header class="topbar">
+      <div class="brand">FANSBETLIGA</div>
+  </header>
+
+  <main class="policy-wrap">
+    <div class="policy-card">
+
+      <!-- FR -->
+      <section id="policy-fr">
+        <div class="policy-title">POLITIQUE DE PROTECTION DES DONNÉES (DATA PROTECTION)</div>
+
+        <div class="policy-note">
+          <div class="policy-p"><strong>Important :</strong> Ce document explique comment FansBetLiga collecte, utilise et protège vos données. Il s’agit d’un document d’information. Pour une conformité complète (RGPD/lois locales), adaptez-le avec vos coordonnées officielles (éditeur, adresse, e-mail, DPO, etc.).</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">1. Qui sommes-nous ?</div>
+          <div class="policy-p"><strong>Plateforme :</strong> FansBetLiga</div>
+          <div class="policy-p"><strong>Rôle :</strong> Responsable de traitement pour les données traitées via l’application et le site.</div>
+          <div class="policy-p"><strong>Contact :</strong> [à compléter : e-mail privacy / adresse / pays]</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">2. Données que nous collectons</div>
+          <table class="policy-table">
+            <thead>
+              <tr>
+                <th>Catégorie</th>
+                <th>Exemples</th>
+                <th>Pourquoi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Compte</td>
+                <td>Nom / pseudo, e-mail, identifiant utilisateur, méthode de connexion (email, Google, Facebook)</td>
+                <td>Créer un compte, authentifier, sécuriser l’accès</td>
+              </tr>
+              <tr>
+                <td>Jeu</td>
+                <td>Pronostics, ligue, journée, saison, points, historique</td>
+                <td>Calculer scores, afficher résultats, progression et classement</td>
+              </tr>
+              <tr>
+                <td>Paiements (si activés)</td>
+                <td>Statut paiement licence, transactions, identifiants de paiement (pas les numéros complets de carte)</td>
+                <td>Activer licence, gérer dépôts/retraits, prévention fraude</td>
+              </tr>
+              <tr>
+                <td>Support</td>
+                <td>Messages au support, logs d’erreurs</td>
+                <td>Assistance, résolution de bugs</td>
+              </tr>
+              <tr>
+                <td>Données techniques</td>
+                <td>Adresse IP, type appareil/navigateur, journaux de sécurité, cookies/stockage local</td>
+                <td>Sécurité, performance, prévention abus</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">3. Bases légales (RGPD – si applicable)</div>
+          <ul class="policy-list">
+            <li><strong>Contrat</strong> : fournir le service (compte, pronostics, points, résultats).</li>
+            <li><strong>Intérêt légitime</strong> : sécurité, prévention fraude, amélioration produit.</li>
+            <li><strong>Consentement</strong> : certains cookies, communications marketing (si activé).</li>
+            <li><strong>Obligation légale</strong> : conformité comptable/fiscale ou obligations anti-fraude (si applicable).</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">4. Comment nous utilisons vos données</div>
+          <ul class="policy-list">
+            <li>Créer et gérer votre compte.</li>
+            <li>Enregistrer vos pronostics par ligue/journée/saison.</li>
+            <li>Calculer vos points lorsque les résultats officiels existent.</li>
+            <li>Afficher vos résultats et (si licence active) votre classement Winners.</li>
+            <li>Détecter les abus (multi-comptes, robots, manipulation).</li>
+            <li>Améliorer la stabilité (diagnostic bugs, performance).</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">5. Partage des données</div>
+          <div class="policy-p">Nous ne vendons pas vos données. Nous pouvons partager avec :</div>
+          <ul class="policy-list">
+            <li><strong>Prestataires techniques</strong> : hébergement, base de données, analytics (si activé).</li>
+            <li><strong>Authentification</strong> : Google/Facebook si vous utilisez ces connexions.</li>
+            <li><strong>Paiement</strong> : prestataires de paiement (PayPal, carte, mobile money), uniquement ce qui est nécessaire.</li>
+            <li><strong>Obligations légales</strong> : autorités, si requis par la loi.</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">6. Transferts internationaux</div>
+          <div class="policy-p">Vos données peuvent être hébergées/traitées dans d’autres pays. Lorsque le RGPD s’applique, nous mettons en place des garanties (ex : clauses contractuelles types) selon le cas.</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">7. Durées de conservation</div>
+          <ul class="policy-list">
+            <li>Données compte : tant que le compte est actif + période raisonnable après suppression (sécurité/obligations).</li>
+            <li>Données de jeu : pour afficher historique et progression (ou selon votre demande de suppression).</li>
+            <li>Données paiement : selon obligations légales/comptables.</li>
+            <li>Logs sécurité : durée courte à moyenne (ex : 30–180 jours) selon besoin.</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">8. Sécurité</div>
+          <ul class="policy-list">
+            <li>Accès restreint aux données, séparation des rôles.</li>
+            <li>Chiffrement en transit (HTTPS) et protections côté serveur.</li>
+            <li>Journalisation des événements sensibles (connexion, changements importants).</li>
+            <li>Détection comportements anormaux (robots, abus).</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">9. Vos droits</div>
+          <div class="policy-p">Selon la loi applicable, vous pouvez demander :</div>
+          <ul class="policy-list">
+            <li>Accès à vos données</li>
+            <li>Rectification</li>
+            <li>Suppression</li>
+            <li>Opposition / limitation</li>
+            <li>Portabilité</li>
+          </ul>
+          <div class="policy-p">Contact : [à compléter]. Nous pouvons demander une vérification d’identité pour sécuriser la demande.</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">10. Cookies / Stockage local</div>
+          <div class="policy-p">Nous utilisons des cookies et/ou le stockage local pour : langue, session, préférences, sécurité. Vous pouvez gérer cela via votre navigateur. Certaines fonctions peuvent ne pas marcher si vous les désactivez.</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">11. Modifications</div>
+          <div class="policy-p">Nous pouvons mettre à jour cette politique. La date de mise à jour sera affichée en haut de page.</div>
+        </div>
+      </section>
+
+      <!-- EN -->
+      <section id="policy-en">
+        <div class="policy-title">DATA PROTECTION POLICY</div>
+
+        <div class="policy-note">
+          <div class="policy-p"><strong>Important:</strong> This document explains how FansBetLiga collects, uses, and protects data. For full legal compliance (GDPR/local laws), insert your official publisher details (company name, address, privacy email, DPO, etc.).</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">1. Who we are</div>
+          <div class="policy-p"><strong>Platform:</strong> FansBetLiga</div>
+          <div class="policy-p"><strong>Role:</strong> Data controller for data processed through the app and website.</div>
+          <div class="policy-p"><strong>Contact:</strong> [to fill: privacy email / address / country]</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">2. Data we collect</div>
+          <table class="policy-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Examples</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Account</td>
+                <td>Name / username, email, user ID, login method (email, Google, Facebook)</td>
+                <td>Create account, authenticate, secure access</td>
+              </tr>
+              <tr>
+                <td>Gameplay</td>
+                <td>Predictions, league, matchday, season, points, history</td>
+                <td>Score calculation, results display, progress & leaderboard</td>
+              </tr>
+              <tr>
+                <td>Payments (if enabled)</td>
+                <td>License payment status, transactions, payment IDs (not full card numbers)</td>
+                <td>Activate license, deposits/withdrawals, anti-fraud</td>
+              </tr>
+              <tr>
+                <td>Support</td>
+                <td>Support messages, error logs</td>
+                <td>Help users, fix issues</td>
+              </tr>
+              <tr>
+                <td>Technical data</td>
+                <td>IP address, device/browser type, security logs, cookies/local storage</td>
+                <td>Security, performance, abuse prevention</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">3. Legal bases (GDPR – if applicable)</div>
+          <ul class="policy-list">
+            <li><strong>Contract</strong>: to provide the service (account, predictions, points, results).</li>
+            <li><strong>Legitimate interests</strong>: security, fraud prevention, product improvement.</li>
+            <li><strong>Consent</strong>: certain cookies, marketing (if enabled).</li>
+            <li><strong>Legal obligation</strong>: accounting/tax or anti-fraud requirements (if applicable).</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">4. How we use your data</div>
+          <ul class="policy-list">
+            <li>Create and manage your account.</li>
+            <li>Store predictions by league/matchday/season.</li>
+            <li>Calculate points when official results exist.</li>
+            <li>Show Results and (if licensed) Winners leaderboard.</li>
+            <li>Detect abuse (multi-accounts, bots, manipulation).</li>
+            <li>Improve stability (bug diagnostics, performance).</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">5. Sharing of data</div>
+          <div class="policy-p">We do not sell your data. We may share with:</div>
+          <ul class="policy-list">
+            <li><strong>Technical providers</strong>: hosting, database, analytics (if enabled).</li>
+            <li><strong>Authentication</strong>: Google/Facebook if you use social login.</li>
+            <li><strong>Payment providers</strong>: PayPal/card/mobile money providers, only what is necessary.</li>
+            <li><strong>Legal requests</strong>: authorities, when required by law.</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">6. International transfers</div>
+          <div class="policy-p">Data may be hosted/processed in other countries. Where GDPR applies, we use appropriate safeguards (e.g., Standard Contractual Clauses) as relevant.</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">7. Retention</div>
+          <ul class="policy-list">
+            <li>Account data: while your account is active + a reasonable period after deletion (security/legal needs).</li>
+            <li>Gameplay data: to show history and progression (or until deletion request).</li>
+            <li>Payment data: as required by accounting/legal obligations.</li>
+            <li>Security logs: short to mid term (e.g., 30–180 days) depending on necessity.</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">8. Security</div>
+          <ul class="policy-list">
+            <li>Restricted access and role separation.</li>
+            <li>Encryption in transit (HTTPS) and server-side protections.</li>
+            <li>Logging of sensitive events (login, important changes).</li>
+            <li>Detection of abnormal behavior (bots, abuse).</li>
+          </ul>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">9. Your rights</div>
+          <div class="policy-p">Depending on the applicable law, you may request:</div>
+          <ul class="policy-list">
+            <li>Access</li>
+            <li>Rectification</li>
+            <li>Deletion</li>
+            <li>Objection / restriction</li>
+            <li>Portability</li>
+          </ul>
+          <div class="policy-p">Contact: [to fill]. We may request identity verification to protect your account.</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">10. Cookies / local storage</div>
+          <div class="policy-p">We use cookies and/or local storage for language, sessions, preferences, and security. You can manage these in your browser. Some features may not work if disabled.</div>
+        </div>
+
+        <div class="policy-section">
+          <div class="policy-h2">11. Updates</div>
+          <div class="policy-p">We may update this policy. The “last updated” date will be displayed at the top of the page.</div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "FBL_LANG";
+      const DEFAULT_LANG = "en";
+
+      function getLang() {
+        const v = (localStorage.getItem(STORAGE_KEY) || "").toLowerCase();
+        return (v === "fr" || v === "en") ? v : DEFAULT_LANG;
+      }
+
+      function applyPolicyLang(lang) {
+        const fr = document.getElementById("policy-fr");
+        const en = document.getElementById("policy-en");
+        if (!fr || !en) return;
+        fr.style.display = (lang === "fr") ? "block" : "none";
+        en.style.display = (lang === "en") ? "block" : "none";
+        document.documentElement.lang = lang;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        applyPolicyLang(getLang());
+        const dd = document.getElementById("langSelect");
+        if (dd) dd.value = getLang();
+
+        if (window.FBL_I18N && typeof window.FBL_I18N.setLang === "function") {
+          const originalSetLang = window.FBL_I18N.setLang.bind(window.FBL_I18N);
+          window.FBL_I18N.setLang = function (lang) {
+            originalSetLang(lang);
+            applyPolicyLang(getLang());
+          };
+        } else if (dd) {
+          dd.addEventListener("change", function () {
+            const lang = (dd.value === "fr") ? "fr" : "en";
+            localStorage.setItem(STORAGE_KEY, lang);
+            applyPolicyLang(lang);
+          });
+        }
+      });
+
+      window.addEventListener("storage", function (e) {
+        if (e.key === STORAGE_KEY) applyPolicyLang(getLang());
+      });
+    })();
+  </script>
+</body>
+</html>
