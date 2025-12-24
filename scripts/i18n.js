@@ -220,7 +220,7 @@
       "team.afcon.cotedivoire": "Côte d’Ivoire",
       "team.afcon.djibouti": "Djibouti",
       "team.afcon.egypt": "Égypte",
-      "team.afcon.eqguinea": "Guinée équatoriale",
+      "team.afcon.equatorialguinea": "Guinée équatoriale",
       "team.afcon.eritrea": "Érythrée",
       "team.afcon.eswatini": "Eswatini",
       "team.afcon.ethiopia": "Éthiopie",
