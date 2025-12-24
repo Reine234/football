@@ -258,9 +258,252 @@
       "team.afcon.uganda": "Ouganda",
       "team.afcon.zambia": "Zambie",
       "team.afcon.zimbabwe": "Zimbabwe",
-    },
 
+            // --- ABOUT (about.html) ---
+      "about.title": "COMMENT JOUER À FansBetLiga ?",
+
+      "about.section.howToPlay": `1- Choisis une ligue ; Actuellement (Première League, Série A, Liga, Bundesliga, Ligue1) Bientôt ;
+a- International (Coupe du Monde, coupe d´europe, coupe d´Afrique des nations, Copa America, coupe d´asie des nations, championsleague)
+b- Europe (Premiere League, SerieA, Liga, Bundesliga, Ligue1, Hollande, Portugual, Turkie, Belgique, Russie, etc.)
+c- Afrique (Egypte, Maroc, Algerie, Afrique du Sud, Tunisie, Nigeria, RDC, Angola, Tanzanie, soudan, Cote d´ivoire, Cameroun, Senegal, Ghana…)
+d- Amerique : (Bresil, Argentine, Mexique, Colombie, Uruguay, Equateur, Chili, Paraguay, Perou, Bolivie, Venezuela, Costa Rica, USA, Canada)
+e- Asie (Arabie Saoudite, Japon, Coree du sud, Chine, Qatar, Australie, Iran, Emirats arabes unis, …)
+
+N.B. Langues ; Anglais, Espagnol, arabe, chinois, japonais, coréen, turque, français, allemand, portugais, néerlandais etc.
+
+2- Va sur Home, sélectionne-le Matchday (journée) et entre un score pour chaque Match (ex : 2-1)
+3- Tu peux modifier tes scores jusqu´au coup d´envoi de chaque match. Dès que le match démarre, il est verrouillé.
+Après avoir introduit les différents scores, tu appuis sur Pari (done) : tous tes scores de la journée s´affichent, tu vérifies puis tu confirmes.
+Si tu es déjà inscris, les différents matchs (Jour, heure) avec tes scores s´affichent.
+Si tu n´es pas encore inscris le système te demande de t´inscrire (3 possibilités au choix : Email, Google ou Facebook)
+4- Quand les résultats officiels tombent, tes points sont calculés et visibles dans Results (Par Match et Total) — chaque fan de foot peut aller jusqu´à ce point sans payer de licences.
+5- Par contre pour consulter le classement dans Winners : Daily (par Journée), First Round (phase aller), Over all (toute la saison) il faut payer sa licence (elle coutera 20€ en Europe et 20$ dans les autres continents).
+Le fan qui clique sur Winner et qui n´a pas encore payé sa licence est redirigé vers le lien pour le faire.
+Le payement peut se faire par Paypal, carte de crédit, transfert d´argent mobile par téléphone etc.
+Dès que ce processus est validé et terminé, le fan peut voir son classement (49 positions : 24 avant le fan et 24 après lui).`,
+
+      "about.section.howMuchWin": `HOW MUCH CAN THE TOP 10, ……WIN AFTER EACH MATCH DAY or AT THE END OF THE LEAGUE.
+
+Pour les raisons de simplifications la mise par Journée sera de 5€ par fan. Pour une ligue ayant :
+1.000 licenciés -> 5.000€
+10.000 licenciés -> 50.000€
+100.000 licenciés -> 500.000€
+1.000.000 licenciés -> 5.000.000€
+
+Nous devons encore définir si cette manne doit être repartis seulement entre les 3 premiers, ou entre les 10 premiers etc.
+
+On pourrait :
+- ≤ 1000 licenciés : Récompenser entre 3 et 10 personnes
+- 1000 < licenciés ≤ 10.000 : récompenser entre 50 et 100
+- 10.000 < licenciés ≤ 100.000 : récompenser entre 100 et 500
+- 100.000 < licenciés ≤ 1.000.000 : récompenser entre 500 et 1000
+
+Si parmi les fans (parieurs) occupant les 3 premières positions, il y en a qui n´ont pas misés :
+- Ils recevront des attestations de vainqueurs + cadeaux (sponsors / FansBetLiga)
+- Ceux qui ont misés recevront aussi ces cadeaux + leurs récompenses financières
+La répartition exacte est affichée sur la page de la Journée (encart “prizes”) lorsque les récompenses sont actives.`,
+
+      "about.section.getPrize": `HOW DO I GET MY PRIZE.
+
+Si tu es gagnant d´une journée ou de tout le championnat :
+- La récompense est directement créditée sur ton compte Fan sur la plateforme.
+- Tu peux demander un retrait vers PayPal, OM/MOMO ou carte de crédit (compte bancaire).
+- Les cadeaux en nature sont envoyés par la poste après échange par email (tu fournis ton adresse).`,
+
+      "about.section.scoring": `HOW IS FansBetLiga scored ?
+
+Simple et transparent.
+
+Notes :
+- Les points d´un Match ne sont calculés que si (a) tu as fait une prédiction avant le coup d´envoi et (b) un résultat officiel existe.
+- Les points sont enregistrés par ligue, journée et saison.
+- En cas d´égalité au classement, la récompense correspondante est partagée au ex æquo.`,
+
+      "about.section.register": `HOW DO I REGISTER TO PLAY?
+
+- Va sur Sign Up et crée un compte avec Nom, Email, mot de passe
+- Tu peux aussi utiliser Google/Facebook si l´option social login est disponible
+- Après l´inscription, tu es connecté et prêt à jouer.
+
+N.B : on pourrait préciser ici comment créer son portemonnaie (recharge par Mobile Money, Paypal, carte, etc.) pour payer licence/mises et recevoir les récompenses.`,
+
+      "about.section.age": `HOW OLD MUST I BE, TO PLAY?
+
+- Tu dois avoir au moins 18 ans (ou l´âge légal applicable dans ton pays) si tu peux miser et gagner de l´argent.
+- N.B : tu peux jouer comme fan, juste pour le fun, à partir de 15 ans (sans récompense financière).`,
+
+      "about.section.deadlines": `WHEN MUST I ENTER BY?
+
+- Par Match : jusqu´au coup d´envoi officiel (l´entrée se verrouille à l´heure du début)
+- Par Journée : chaque match a son propre verrou. Si la journée commence à 14:00, tu peux encore prédire les matchs de 17:30 tant qu´ils ne sont pas commencés.
+
+Conseil : valider au même moment pour éviter d´oublier certains matchs.`,
+
+      "about.section.edit": `CAN I EDIT MY ENTRY?
+
+Oui, autant de fois que tu veux tant que le Match n´a pas démarré.
+Une fois le Match en statut “Live/started/finished”, le champ est désactivé et ta dernière prédiction sauvegardée fait foi.`,
+
+      "about.section.leaderboard": `HOW DOES THE LEADERBOARD WORK?
+
+- Daily : total des points sur une journée pour une ligue
+- First Round : cumul des points sur la phase aller (si configurée)
+- Overall : cumul des points sur toute la saison
+
+Les classements se mettent à jour après réception et validation des résultats.`,
+
+      "about.section.winners": `WHEN ARE WINNERS NOTIFIED?
+
+Sous 72 heures après la validation officielle des résultats de la journée (délais possibles si report/annulation).
+Les gagnants sont contactés par Email après avoir déjà vu leur résultat sur la plateforme.
+
+WHAT ARE WINNER´S RESPONSABILITIES?
+- Répondre à l´email sous 7 jours
+- Fournir les justificatifs (âge/identité) si demandés
+- Respecter les modalités du lot (délais, adresse, etc.)
+L´absence de réponse peut entraîner la perte du lot.`,
+
+      "about.section.cancellation": `WHAT HAPPENS IF A MATCH IS POSTPONED; ABANDONED OR CANCELLED?
+
+- Postponed/rescheduled : ta prediction reste valide et sera notée dès que le résultat officiel est publié.
+- Abandoned : si la ligue publie un résultat officiel, on l´utilise ; sinon, pas de points jusqu´à décision.
+- Cancelled/not played : pas de résultat = pas de points.
+
+Les décisions suivent les sources officielles de la ligue.`,
+
+      "about.section.whatIs": `C´EST QUOI FANSBETLIGA?
+
+- La plateforme qui unit les fans de foot à travers le monde entier en leur permettant de jouer sur le championnat de leur choix et de gagner un trophée en fin de saison.
+- La plateforme qui organise la mise et la répartition des gains entre fans (parieurs).
+- La plateforme qui inclut et célèbre les fans de football.
+- La plateforme qui permet aux groupes (associations, entreprises, écoles/salles de classe etc.) de créer leur championnat privé.` ,
+
+    },
+   
+
+    
     en: {
+             // --- ABOUT (about.html) ---
+      "about.title": "HOW TO PLAY FansBetLiga?",
+
+      "about.section.howToPlay": `1) Choose a league. Currently: (Premier League, Serie A, La Liga, Bundesliga, Ligue 1). Coming soon:
+a) International (World Cup, Euro, AFCON, Copa America, Asian Cup, Champions League)
+b) Europe (Premier League, Serie A, La Liga, Bundesliga, Ligue 1, Netherlands, Portugal, Turkey, Belgium, Russia, etc.)
+c) Africa (Egypt, Morocco, Algeria, South Africa, Tunisia, Nigeria, DR Congo, Angola, Tanzania, Sudan, Côte d’Ivoire, Cameroon, Senegal, Ghana…)
+d) Americas (Brazil, Argentina, Mexico, Colombia, Uruguay, Ecuador, Chile, Paraguay, Peru, Bolivia, Venezuela, Costa Rica, USA, Canada)
+e) Asia (Saudi Arabia, Japan, South Korea, China, Qatar, Australia, Iran, UAE, …)
+
+Note: Languages: English, Spanish, Arabic, Chinese, Japanese, Korean, Turkish, French, German, Portuguese, Dutch, etc.
+
+2) Go to Home, select the Matchday, and enter a score for each match (e.g., 2–1).
+3) You can edit your scores until each match kicks off. Once the match starts, it is locked.
+After entering all scores, tap “Done”: your matchday scores will appear for review, then you confirm.
+If you are already registered, the matches (day/time) and your scores are shown.
+If you are not registered yet, the system asks you to sign up (Email, Google, or Facebook).
+4) When official results arrive, your points are calculated and visible in Results (per match and total). Up to this point, fans can play without paying for a license.
+5) To view rankings in Winners (Daily, First Round, Overall), you must pay a license (20€ in Europe, 20$ elsewhere).
+If you click Winners without a license, you are redirected to payment.
+Payment can be via PayPal, credit card, or mobile money.
+After payment is validated, you can see your ranking (49 positions: 24 above you and 24 below you).`,
+
+      "about.section.howMuchWin": `HOW MUCH CAN THE TOP 10 WIN PER MATCHDAY OR AT THE END OF THE LEAGUE?
+
+For simplicity, the matchday stake is 5€ per fan. For a league with:
+1,000 licensed fans → 5,000€
+10,000 licensed fans → 50,000€
+100,000 licensed fans → 500,000€
+1,000,000 licensed fans → 5,000,000€
+
+We still need to define whether this pool is shared among the top 3 only, top 10, etc.
+
+Possible approach:
+- ≤ 1,000 licensed: reward 3 to 10 people
+- 1,000 < licensed ≤ 10,000: reward 50 to 100
+- 10,000 < licensed ≤ 100,000: reward 100 to 500
+- 100,000 < licensed ≤ 1,000,000: reward 500 to 1,000
+
+If some fans in the top 3 did not place a stake:
+- They receive winner certificates + sponsor/FansBetLiga gifts
+- Fans who staked receive gifts + cash rewards
+Exact distribution appears on the Matchday page (“prizes”) when rewards are active.`,
+
+      "about.section.getPrize": `HOW DO I GET MY PRIZE?
+
+If you win a matchday or the full league:
+- Your reward is credited directly to your FansBetLiga account balance.
+- You can request a withdrawal to PayPal, Mobile Money, or a bank card/bank account.
+- Physical gifts from sponsors/FansBetLiga are shipped after an email exchange (you provide your postal address).`,
+
+      "about.section.scoring": `HOW IS FansBetLiga SCORED?
+
+Simple and transparent.
+
+Notes:
+- Match points are calculated only if (a) you predicted before kickoff and (b) an official result exists.
+- Points are recorded by league, matchday, and season.
+- If players tie on the leaderboard, the corresponding reward is shared equally.`,
+
+      "about.section.register": `HOW DO I REGISTER TO PLAY?
+
+- Go to Sign Up and create an account (Name, Email, Password)
+- You can also use Google/Facebook if social login is available
+- After signing up, you are logged in and ready to play
+
+Note: later we can add a wallet setup section (top up via Mobile Money/PayPal/card, used to pay license and stakes, and to receive rewards).`,
+
+      "about.section.age": `HOW OLD MUST I BE TO PLAY?
+
+- You must be at least 18 (or the legal age in your country) if you can stake money and win money back.
+- Note: you can still play as a fan “for fun” from age 15 (without financial rewards).`,
+
+      "about.section.deadlines": `WHEN MUST I ENTER MY SCORES?
+
+- Per match: until official kickoff (entry locks at start time)
+- Per matchday: each match has its own lock. If the matchday starts at 14:00, you can still predict matches at 17:30 as long as they haven’t started.
+
+Tip: validate all predictions at the same time to avoid forgetting a match.`,
+
+      "about.section.edit": `CAN I EDIT MY ENTRY?
+
+Yes — as many times as you want until the match starts.
+Once the match status is Live/started/finished, the field is disabled and your last saved prediction counts.`,
+
+      "about.section.leaderboard": `HOW DOES THE LEADERBOARD WORK?
+
+- Daily: total points on one matchday for a league
+- First Round: total points for the first phase (if enabled)
+- Overall: total points for the full season
+
+Leaderboards update after results are received and validated.`,
+
+      "about.section.winners": `WHEN ARE WINNERS NOTIFIED?
+
+Within 72 hours after official validation of matchday results (delays may occur if matches are postponed/cancelled).
+Winners are contacted by email after they can already see their results on the platform.
+
+WINNER RESPONSIBILITIES:
+- Reply to the email within 7 days
+- Provide documents (age/identity) if requested
+- Respect prize conditions (deadlines, delivery address, etc.)
+No reply may result in losing the prize.`,
+
+      "about.section.cancellation": `WHAT IF A MATCH IS POSTPONED, ABANDONED, OR CANCELLED?
+
+- Postponed/rescheduled: your prediction remains valid and will be scored when the official result is published.
+- Abandoned: if the league publishes an official result, we use it; otherwise no points until a decision is made.
+- Cancelled/not played: no result = no points.
+
+Decisions follow official league sources.`,
+
+      "about.section.whatIs": `WHAT IS FANSBETLIGA?
+
+- A platform that unites football fans worldwide, letting them play on their chosen league and win a trophy at the end of the season.
+- A platform that manages stakes and the distribution of winnings among fans.
+- A platform that includes and celebrates football fans.
+- A platform that lets groups (associations, companies, schools/classrooms, etc.) create private prediction leagues.` ,
+
+
+
       // --- COMMON (missing keys you saw on Predictions) ---
       "common.matches": "Matches",
       "common.done": "Done",

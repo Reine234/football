@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FansBetLiga — About</title>
+
+  <!-- ✅ Keep your existing global CSS (same as other pages) -->
+  <!-- Example: <link rel="stylesheet" href="../styles/main.css"> -->
+  <!-- Keep the same CSS includes you already use in other pages -->
+
+  <!-- ✅ Load your existing i18n.js (same as other pages) -->
+  <!-- Example: <script src="../scripts/i18n.js"></script> -->
+
+  <style>
+    /* Light styling ONLY for About content layout (doesn't touch other pages) */
+    .about-wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+     /* top bar */
+    .topbar{
+      background: #00B894;
+      color: #fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 12px 14px;
+    }
+
+    .brand{
+      font-weight: 900;
+      letter-spacing: .8px;
+      font-size: 14px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+
+    .about-link{
+      color:#fff;
+      text-decoration:none;
+      font-weight:700;
+      font-size: 13px;
+      opacity:.95;
+    }
+
+    .lang-wrap{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap: 6px;
+    }
+
+    .lang-select{
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      background: rgba(255,255,255,.18);
+      color:#fff;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 10px;
+      padding: 8px 30px 8px 10px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor:pointer;
+      outline:none;
+      line-height: 1;
+    }
+
+    .lang-caret{
+      position:absolute;
+      right: 10px;
+      pointer-events:none;
+      font-weight:900;
+      opacity:.95;
+      font-size: 12px;
+    }
+
+    .about-card{
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 18px 16px;
+    }
+
+    .about-title{
+      font-size: 20px;
+      font-weight: 800;
+      margin: 6px 0 12px;
+      letter-spacing: .2px;
+    }
+
+    .about-section{
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .about-h2{
+      font-size: 16px;
+      font-weight: 800;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+
+    .about-h3{
+      font-size: 14px;
+      font-weight: 800;
+      margin: 14px 0 6px;
+    }
+
+    .about-p{
+      margin: 6px 0;
+      line-height: 1.55;
+    }
+
+    .about-list{
+      margin: 8px 0 0 18px;
+      padding: 0;
+      line-height: 1.55;
+    }
+
+    .about-list li{ margin: 6px 0; }
+
+    .about-note{
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-left: 4px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.20);
+      border-radius: 10px;
+    }
+
+    .about-table{
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .about-table th,
+    .about-table td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      vertical-align: top;
+      text-align: left;
+    }
+    .about-table th{
+      font-weight: 800;
+      background: rgba(0,0,0,0.18);
+    }
+
+    .about-two-col{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media(min-width: 820px){
+      .about-two-col{ grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Keep blocks hidden/show depending on language */
+    #about-fr, #about-en { display: none; }
+  </style>
+</head>
+
+<body class="about-page">
+
+  <!-- ✅ YOUR TOPBAR (kept exactly as you sent it) -->
+  <header class="topbar">
+    <div class="brand">FANSBETLIGA</div>
+
+    <select id="langSelect" class="lang-select">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+    </select>
+  </header>
+
+  <main class="about-wrap">
+    <div class="about-card">
+
+      <!-- ========================= -->
+      <!-- ✅ FRENCH (original structure kept) -->
+      <!-- ========================= -->
+      <section id="about-fr">
+        <div class="about-title">COMMENT JOUER À FansBetLiga ?</div>
+
+        <div class="about-section">
+          <div class="about-h2">HOW TO PLAY FansBetLiga?</div>
+
+          <div class="about-p"><strong>1-</strong> Choisis une ligue ; Actuellement (Première League, Série A, Liga, Bundesliga, Ligue1) Bientôt ;</div>
+          <ol class="about-list" type="a">
+            <li><strong>International</strong> (Coupe du Monde, coupe d´europe, coupe d´Afrique des nations, Copa America, coupe d´asie des nations, championsleague)</li>
+            <li><strong>Europe</strong> (Premiere League, SerieA, Liga, Bundesliga, Ligue1, Hollande, Portugual, Turkie, Belgique, Russie, etc.)</li>
+            <li><strong>Afrique</strong> (Egypte, Maroc, Algerie, Afrique du Sud, Tunisie, Nigeria, RDC, Angola, Tanzanie, soudan, Cote d´ivoire, Cameroun, Senegal, Ghana…)</li>
+            <li><strong>Amerique</strong> : (Bresil, Argentine, Mexique, Colombie, Uruguay, Equateur, Chili, Paraguay, Perou, Bolivie, Venezuela, Costa Rica, USA, Canada)</li>
+            <li><strong>Asie</strong> (Arabie Saoudite, Japon, Coree du sud, Chine, Qatar, Australie, Iran, Emirats arabes unis, …)</li>
+          </ol>
+
+          <div class="about-note">
+            <div class="about-p"><strong>N.B.</strong> Langues ; Anglais, Espagnol, arabe, chinois, japonais, coréen, turque, français, allemand, portugais, néerlandais etc.</div>
+          </div>
+
+          <div class="about-p"><strong>2-</strong> Va sur Home, sélectionne-le Matchday (journée) et entre un score pour chaque Match (ex :2-1)</div>
+
+          <div class="about-p"><strong>3-</strong> Tu peux modifier tes scores jusqu´au coup d´envoi de chaque match. Dès que le match démarre, il est verrouillé. Après avoir introduit les différents scores, tu appuis sur Pari (done) tous tes scores de la journée s´affichent, tu vérifies puis tu confirmes. Si tu es déjà inscris, les différents matchs (Jour, heure) avec tes scores s´affichent. Si tu n´es pas encore inscris le système te demande de t´inscrire (3 possibilités au choix, Email, google ou Facebook)</div>
+
+          <div class="about-p"><strong>4-</strong> Quand les résultats officiels tombent, tes points sont calculés et visibles dans Results (Par Match et Total) chaque fan de foot peut aller jusqu´à ce point sans payer de licences.</div>
+
+          <div class="about-p"><strong>5-</strong> Par contre pour consulter le classement dans Winners : Daily (par Journée), First Round (phase aller), over all (toute la saison) il faut payer sa licence (elle coutera 20€ en Europe et 20$ dans les autres continents). Le fan qui clique sur winner et qui n´a pas encore payé sa licence est redirigé vers le lien pour le faire. Le payement peut se faire par Paypal, carte de crédit, transfert d´argent mobile par téléphone etc. Dès que ce processus est validé et terminé, le fan peut voir son classement (étant donné qu´on pourrait avoir même un Million de fans participants à une ligue, le classement s´affiche avec 49 positions 24 avant le fan et 24 après lui)</div>
+
+          <div class="about-p"><strong>6-</strong> De même après avoir parié et confirmé ses scores de la journée, le système devrait demander au fan s´il veut miser (essayer de gagner de l´argent) ? Il y aura deux possibilités de miser ;</div>
+          <ol class="about-list" type="a">
+            <li>Soit seulement pour une journée 5€ /5$ ou</li>
+            <li>Miser sur tout le championnat… soit 10€/$ multiplier par le nombre de Match du championnat).</li>
+          </ol>
+
+          <div class="about-note">
+            <div class="about-p"><strong>N.B :</strong> tes prédictions et points sont scoopés par ligue, journée et saison. Tu peux jouer plusieurs ligues, mais chaque ligue à sa progression propre.</div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-h2">HOW MUCH CAN THE TOP 10, ……WIN AFTER EACH MATCH DAY or AT THE END OF THE LEAGUE.</div>
+
+          <div class="about-p">Pour les raisons de simplifications la mise par Journée sera de 5€ par fan. Pour une ligue ayant</div>
+          <ul class="about-list">
+            <li>1.000 licenciés… 5.000€</li>
+            <li>10.000 licenciés… 50.000€</li>
+            <li>100.000 licenciés… 500.000€</li>
+            <li>1.000.000 licenciés… 5.000.000€</li>
+          </ul>
+
+          <div class="about-p">Nous devons encore définir si cette manne doit être repartis seulement entre les 3 premiers, ou entre les 10 premiers etc.</div>
+
+          <ul class="about-list">
+            <li>≤ 1000 licenciés : Récompenser entre 3 et 10 personnes.</li>
+            <li>> 1000 et ≤ 10.000 : récompenser entre 50 et 100.</li>
+            <li>> 10.000 et ≤ 100.000 : récompenser entre 100 et 500 personnes.</li>
+            <li>> 100.000 et ≤ 1.000.000 : récompenser entre 500 et 1000 personnes.</li>
+          </ul>
+
+          <div class="about-p">…(cadeaux sponsors + FansBetLiga, répartition affichée sur la page de la Journée, encart “prizes”).</div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-h2">COMMENT LES POINTS SONT REPARTIS ?</div>
+
+          <table class="about-table">
+            <thead>
+              <tr>
+                <th>DESIGNATION</th>
+                <th>NOMBRE DE POINTS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Score exact</td><td>3 points</td></tr>
+              <tr><td>Bonne tendance + bon écart des buts</td><td>2 points</td></tr>
+              <tr><td>Bonne tendance seulement</td><td>1 point</td></tr>
+              <tr><td>Score inexacte</td><td>0 point</td></tr>
+            </tbody>
+          </table>
+
+          <div class="about-two-col">
+            <div>
+              <div class="about-h3">Exple : score finale Barcelona 3 - Getafe 1</div>
+              <table class="about-table">
+                <thead>
+                  <tr><th>Score du parieur</th><th>Points</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Pari A — Barca 3 – Getafe 1</td><td>3 points</td></tr>
+                  <tr><td>Pari B — Barca 2 – Getafe 0</td><td>2 points</td></tr>
+                  <tr><td>Pari C — Barca 4 – Getafe 0</td><td>1 point</td></tr>
+                  <tr><td>Pari D — Barca 1 – Getafe 2</td><td>0 point</td></tr>
+                  <tr><td>Pari E — Barca 1 – Getafe 1</td><td>0 point</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <div class="about-h3">Exple : score finale Real M 1 - Betis 1</div>
+              <table class="about-table">
+                <thead>
+                  <tr><th>Score du parieur</th><th>Points</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Pari A — Real M 1 – Betis 1</td><td>3 points</td></tr>
+                  <tr><td>Pari B — Real M 3 – Betis 3</td><td>2 points</td></tr>
+                  <tr><td>Pari C — Real M 2 – Betis 0</td><td>0 point</td></tr>
+                  <tr><td>Pari D — Real M 0 – Betis 1</td><td>0 point</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-h2">C`EST QUOI FANSBETLIGA?</div>
+          <ul class="about-list">
+            <li>La plateforme qui unit les fans de foot à travers le monde entier…</li>
+            <li>La plateforme qui organise la mise et la répartition des gains…</li>
+            <li>La plateforme qui inclut et célèbre les fans de football.</li>
+            <li>La plateforme qui permet aux groupes… de créer leur championnat privé.</li>
+            <li>…………………</li>
+          </ul>
+        </div>
+
+      </section>
+
+      <!-- ========================= -->
+      <!-- ✅ ENGLISH (same structure, translated) -->
+      <!-- ========================= -->
+      <section id="about-en">
+        <div class="about-title">HOW TO PLAY FansBetLiga?</div>
+
+        <div class="about-section">
+          <div class="about-h2">How to play</div>
+
+          <div class="about-p"><strong>1-</strong> Choose a league. Currently (Premier League, Serie A, La Liga, Bundesliga, Ligue 1). Coming soon:</div>
+          <ol class="about-list" type="a">
+            <li><strong>International</strong> (World Cup, European Championship, Africa Cup of Nations, Copa America, Asian Cup, Champions League)</li>
+            <li><strong>Europe</strong> (Premier League, Serie A, La Liga, Bundesliga, Ligue 1, Netherlands, Portugal, Turkey, Belgium, Russia, etc.)</li>
+            <li><strong>Africa</strong> (Egypt, Morocco, Algeria, South Africa, Tunisia, Nigeria, DR Congo, Angola, Tanzania, Sudan, Côte d’Ivoire, Cameroon, Senegal, Ghana…)</li>
+            <li><strong>Americas</strong> (Brazil, Argentina, Mexico, Colombia, Uruguay, Ecuador, Chile, Paraguay, Peru, Bolivia, Venezuela, Costa Rica, USA, Canada)</li>
+            <li><strong>Asia</strong> (Saudi Arabia, Japan, South Korea, China, Qatar, Australia, Iran, UAE, …)</li>
+          </ol>
+
+          <div class="about-note">
+            <div class="about-p"><strong>Note:</strong> Languages: English, Spanish, Arabic, Chinese, Japanese, Korean, Turkish, French, German, Portuguese, Dutch, etc.</div>
+          </div>
+
+          <div class="about-p"><strong>2-</strong> Go to Home, select the Matchday, and enter a score for each match (e.g., 2–1).</div>
+
+          <div class="about-p"><strong>3-</strong> You can edit your scores until kickoff for each match. Once the match starts, it becomes locked. After entering all scores, tap “Done” — your matchday predictions appear, you review them, then confirm. If you’re already registered, your selected matches (day/time) and predictions will be shown. If you’re not registered yet, the system will ask you to sign up (three options: Email, Google, or Facebook).</div>
+
+          <div class="about-p"><strong>4-</strong> When official results are published, your points are calculated and visible in Results (per match and total). Every football fan can play up to this point without paying for a license.</div>
+
+          <div class="about-p"><strong>5-</strong> To view rankings in Winners — Daily (per matchday), First Round (first half of the season), and Overall (entire season) — you must pay for a license (20€ in Europe and 20$ in other continents). If a fan clicks Winners without having paid, they are redirected to the payment link. Payment can be made via PayPal, credit card, mobile money transfer, etc. Once validated, the fan can see their ranking (even with up to 1,000,000 participants, the ranking shows 49 positions: 24 above and 24 below the fan).</div>
+
+          <div class="about-p"><strong>6-</strong> After confirming matchday predictions, the system can ask the fan if they want to stake (try to win money). Two options:</div>
+          <ol class="about-list" type="a">
+            <li>Stake for one matchday only: 5€ / 5$</li>
+            <li>Stake for the whole league season (matchdays + first round + end-of-season rankings): 10€/$ multiplied by the number of matches in the league.</li>
+          </ol>
+
+          <div class="about-note">
+            <div class="about-p"><strong>Note:</strong> Your predictions and points are tracked by league, matchday, and season. You can play multiple leagues, but each league progresses independently.</div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-h2">How much can the top players win?</div>
+
+          <div class="about-p">For simplicity, the matchday stake is 5€ per licensed fan. For a league with:</div>
+          <ul class="about-list">
+            <li>1,000 licensed fans → 1,000 × 5 = 5,000€ to share</li>
+            <li>10,000 licensed fans → 50,000€</li>
+            <li>100,000 licensed fans → 500,000€</li>
+            <li>1,000,000 licensed fans → 5,000,000€</li>
+          </ul>
+
+          <div class="about-p">We still need to define whether this pool is shared among the top 3 only, top 10, etc.</div>
+
+          <ul class="about-list">
+            <li>≤ 1,000 licensed: reward between 3 and 10 people</li>
+            <li>> 1,000 and ≤ 10,000: reward between 50 and 100</li>
+            <li>> 10,000 and ≤ 100,000: reward between 100 and 500</li>
+            <li>> 100,000 and ≤ 1,000,000: reward between 500 and 1,000</li>
+          </ul>
+
+          <div class="about-p">If the top 3 include fans who did not stake, they receive winner certificates and sponsor gifts (shirts, watches, trips, etc.) or FansBetLiga gifts (stadium tickets, etc.). Fans who staked receive gifts plus financial rewards. The exact distribution is shown on the matchday page (“prizes” banner/box) when rewards are active.</div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-h2">How points are awarded</div>
+
+          <table class="about-table">
+            <thead>
+              <tr>
+                <th>DESCRIPTION</th>
+                <th>POINTS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Exact score</td><td>3 points</td></tr>
+              <tr><td>Correct outcome + correct goal difference</td><td>2 points</td></tr>
+              <tr><td>Correct outcome only</td><td>1 point</td></tr>
+              <tr><td>Incorrect score</td><td>0 points</td></tr>
+            </tbody>
+          </table>
+
+          <div class="about-two-col">
+            <div>
+              <div class="about-h3">Example: final score Barcelona 3 - Getafe 1</div>
+              <table class="about-table">
+                <thead><tr><th>Fan prediction</th><th>Points</th></tr></thead>
+                <tbody>
+                  <tr><td>Bet A — Barca 3 – Getafe 1</td><td>3 points</td></tr>
+                  <tr><td>Bet B — Barca 2 – Getafe 0</td><td>2 points</td></tr>
+                  <tr><td>Bet C — Barca 4 – Getafe 0</td><td>1 point</td></tr>
+                  <tr><td>Bet D — Barca 1 – Getafe 2</td><td>0 points</td></tr>
+                  <tr><td>Bet E — Barca 1 – Getafe 1</td><td>0 points</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <div class="about-h3">Example: final score Real M 1 - Betis 1</div>
+              <table class="about-table">
+                <thead><tr><th>Fan prediction</th><th>Points</th></tr></thead>
+                <tbody>
+                  <tr><td>Bet A — Real M 1 – Betis 1</td><td>3 points</td></tr>
+                  <tr><td>Bet B — Real M 3 – Betis 3</td><td>2 points</td></tr>
+                  <tr><td>Bet C — Real M 2 – Betis 0</td><td>0 points</td></tr>
+                  <tr><td>Bet D — Real M 0 – Betis 1</td><td>0 points</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-h2">What is FansBetLiga?</div>
+          <ul class="about-list">
+            <li>A platform that unites football fans worldwide by letting them play (predict) their chosen league and win a trophy at the end of the season…</li>
+            <li>A platform that organizes staking and the distribution of winnings among football fans who choose to participate.</li>
+            <li>A platform that includes and celebrates football fans.</li>
+            <li>A platform that lets groups (associations, companies, schools/classrooms, etc.) create their own private prediction league.</li>
+            <li>…</li>
+          </ul>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ✅ Keep your normal bottom nav / buttons if your other pages have it -->
+  <!-- Copy/paste that block here exactly from your other HTML pages -->
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "FBL_LANG";
+      const DEFAULT_LANG = "en";
+
+      function getLang() {
+        const v = (localStorage.getItem(STORAGE_KEY) || "").toLowerCase();
+        return (v === "fr" || v === "en") ? v : DEFAULT_LANG;
+      }
+
+      function applyAboutLang(lang) {
+        const fr = document.getElementById("about-fr");
+        const en = document.getElementById("about-en");
+        if (!fr || !en) return;
+        fr.style.display = (lang === "fr") ? "block" : "none";
+        en.style.display = (lang === "en") ? "block" : "none";
+        document.documentElement.lang = lang;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        // initial show/hide
+        applyAboutLang(getLang());
+
+        // sync dropdown
+        const dd = document.getElementById("langSelect");
+        if (dd) dd.value = getLang();
+
+        // If your i18n.js exists, patch setLang so switching language also toggles blocks
+        if (window.FBL_I18N && typeof window.FBL_I18N.setLang === "function") {
+          const originalSetLang = window.FBL_I18N.setLang.bind(window.FBL_I18N);
+          window.FBL_I18N.setLang = function (lang) {
+            originalSetLang(lang);
+            applyAboutLang(getLang());
+          };
+        } else {
+          // fallback: make dropdown work even if i18n.js wasn't loaded
+          if (dd) {
+            dd.addEventListener("change", function () {
+              const lang = (dd.value === "fr") ? "fr" : "en";
+              localStorage.setItem(STORAGE_KEY, lang);
+              applyAboutLang(lang);
+            });
+          }
+        }
+      });
+
+      // If language changes in another tab/page
+      window.addEventListener("storage", function (e) {
+        if (e.key === STORAGE_KEY) applyAboutLang(getLang());
+      });
+    })();
+  </script>
+</body>
+</html>
