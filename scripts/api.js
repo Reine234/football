@@ -52,6 +52,40 @@
     return datePart + "T" + hhmm + ":00Z";
   }
 
+// /scripts/api.js
+
+// ✅ normalize kickoff input so "2025-12-22T14:30:00" is treated as UTC
+function normalizeIsoToUTC(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+
+  // If it already has timezone info (Z or +02:00), keep it
+  if (/[zZ]$/.test(s) || /[+\-]\d{2}:\d{2}$/.test(s)) return s;
+
+  // If it looks like an ISO datetime without timezone, force UTC by appending Z
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s + "Z";
+
+  return s;
+}
+
+window.FBL = window.FBL || {};
+
+window.FBL.formatKickoffLocal = function (iso) {
+  const normalized = normalizeIsoToUTC(iso);
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch (_) {
+    return d.toLocaleTimeString();
+  }
+};
+
+
   function formatKickoffLocal(isoStr) {
     const d = new Date(isoStr);
     if (isNaN(d.getTime())) {

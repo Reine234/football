@@ -525,17 +525,38 @@
     }
   }
 
-  function formatMatchDate(f) {
-    const raw = f.utcDate || f.utc_date || f.date;
-    if (!raw) return "";
-    const d = new Date(raw);
-    if (isNaN(d.getTime())) return "";
-    try {
-      return d.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
-    } catch (_) {
-      return d.toLocaleDateString();
-    }
+ function normalizeIsoToUTC(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (/[zZ]$/.test(s) || /[+\-]\d{2}:\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s + "Z";
+  return s;
+}
+
+function formatMatchDate(f) {
+  const raw = f.utcDate || f.utc_date || f.date;
+  if (!raw) return "";
+
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return "";
+
+  // ✅ force UTC so the calendar day never shifts by user timezone
+  try {
+    return d.toLocaleDateString(undefined, {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  } catch (_) {
+    // fallback if browser doesn't support timeZone option
+    return d.toUTCString().slice(0, 16);
   }
+}
+
+
+
 
   // ------------------------------------------------------------
   // ✅ NEW: match time state + lock messaging (STARTED vs PASSED)

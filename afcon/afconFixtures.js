@@ -299,7 +299,7 @@
          {
           id: "AFGE-1",
            group: "E",
-          utcDate: "2025-12-24T19:00:00Z",
+          utcDate: "2025-12-24T15:00:00Z",
           roundNum: 1,
           roundText: "Matchday 1",
           leagueId: "AFCON",
@@ -311,7 +311,7 @@
         {
           id: "AFGE-2",
             group: "E",
-          utcDate: "2025-12-24T14:30:00Z",
+          utcDate: "2025-12-24T12:30:00Z",
           roundNum: 1,
           roundText: "Matchday 1",
           leagueId: "AFCON",
@@ -371,7 +371,7 @@
         {
           id: "AFGF-1",
             group: "F",
-          utcDate: "2025-12-24T19:00:00Z",
+          utcDate: "2025-12-24T17:30:00Z",
           roundNum: 1,
           roundText: "Matchday 1",
           leagueId: "AFCON",
@@ -383,7 +383,7 @@
         {
           id: "AFGF-2",
              group: "F",
-          utcDate: "2025-12-24T14:30:00Z",
+          utcDate: "2025-12-24T20:00:00Z",
           roundNum: 1,
           roundText: "Matchday 1",
           leagueId: "AFCON",
