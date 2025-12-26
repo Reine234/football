@@ -55,7 +55,7 @@
     {
       id: "AFGA-5",
       group: "A",
-      utcDate: "2025-12-29T17:30:00Z",
+      utcDate: "2025-12-29T19:00:00Z",
       roundNum: 3,
       roundText: "Matchday 3",
       leagueId: null,
@@ -67,7 +67,7 @@
     {
       id: "AFGA-6",
       group: "A",
-      utcDate: "2025-12-29T17:30:00Z",
+      utcDate: "2025-12-29T19:00:00Z",
       roundNum: 3,
       roundText: "Matchday 3",
       leagueId: null,
@@ -128,7 +128,7 @@
         {
           id: "AFGB-5",
           group: "B",
-          utcDate: "2025-12-29T17:30:00Z",
+          utcDate: "2025-12-29T16:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -140,7 +140,7 @@
         {
           id: "AFGB-6",
           group: "B",
-          utcDate: "2025-12-29T17:30:00Z",
+          utcDate: "2025-12-29T16:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -201,7 +201,7 @@
 {
   id: "AFGC-5",
   group: "C",
-  utcDate: "2025-12-30T17:30:00Z",
+  utcDate: "2025-12-30T16:00:00Z",
   roundNum: 3,
   roundText: "Matchday 3",
   leagueId: null,
@@ -213,7 +213,7 @@
 {
   id: "AFGC-6",
   group: "C",
-  utcDate: "2025-12-30T17:30:00Z",
+  utcDate: "2025-12-30T16:00:00Z",
   roundNum: 3,
   roundText: "Matchday 3",
   leagueId: null,
@@ -274,7 +274,7 @@
         {
           id: "AFGD-5",
            group: "D",
-          utcDate: "2025-12-30T17:30:00Z",
+          utcDate: "2025-12-30T19:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -286,7 +286,7 @@
         {
           id: "AFGD-6",
            group: "D",
-          utcDate: "2025-12-30T17:30:00Z",
+          utcDate: "2025-12-30T19:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -347,7 +347,7 @@
         {
           id: "AFGE-5",
             group: "E",
-          utcDate: "2025-12-31T17:30:00Z",
+          utcDate: "2025-12-31T16:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -359,7 +359,7 @@
         {
           id: "AFGE-6",
             group: "E",
-          utcDate: "2025-12-31T17:30:00Z",
+          utcDate: "2025-12-31T16:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -419,7 +419,7 @@
         {
           id: "AFGF-5",
              group: "F",
-          utcDate: "2025-12-31T17:30:00Z",
+          utcDate: "2025-12-31T19:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
@@ -431,7 +431,7 @@
         {
           id: "AFGF-6",
              group: "F",
-          utcDate: "2025-12-31T17:30:00Z",
+          utcDate: "2025-12-31T19:00:00Z",
           roundNum: 3,
           roundText: "Matchday 3",
           leagueId: "AFCON",
