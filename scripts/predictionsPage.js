@@ -437,18 +437,21 @@
 
   const mode         = sessionStorage.getItem("FBL_mode") || "all";
   const selFixtureId = sessionStorage.getItem("FBL_selectedFixture");
+let pageFixtures;
 
-  let pageFixtures;
+if (leagueKey === "AFCON") {
+  const md = Number(roundNum);
 
-  if (leagueKey === "AFCON") {
-    pageFixtures = effectiveAllFixtures.slice();
-  } else if (mode === "single" && selFixtureId) {
-    pageFixtures = allFixtures.filter((f) => String(f.id) === String(selFixtureId));
-    if (!pageFixtures.length) {
-      console.warn("[PredictionsPage] single-mode id not found, falling back to all fixtures");
-      pageFixtures = allFixtures.slice();
-    }
-  } else {
+  // Always use the master AFCON_FIXTURES (the one that contains the real matchday 1)
+  const master = Array.isArray(window.AFCON_FIXTURES) ? window.AFCON_FIXTURES : effectiveAllFixtures;
+
+  // Filter by matchday number
+  const filtered = master.filter(f => Number(getFixtureMatchday(f)) === md);
+
+  // If filter fails for any reason, fallback to master
+  pageFixtures = (filtered && filtered.length) ? filtered.slice() : master.slice();
+
+} else if (mode === "single" && selFixtureId) {
     pageFixtures = allFixtures.slice();
   }
 
@@ -556,16 +559,68 @@ function formatMatchDate(f) {
 }
 
 
+// ---------- AFCON kickoff fixes (ONLY affects Predictions page times) ----------
+function _normTeamLite(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/’/g, "'")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+// For AFCON, some fixtures have wrong utcDate values in your stored list.
+// We override ONLY for display/locking here.
+function kickoffISOForDisplay(f) {
+  const raw0 = f && (f.utcDate || f.utc_date || f.date || f.kickoff);
+  const raw = normalizeIsoToUTC(raw0);
+
+  if (leagueKey !== "AFCON") return raw;
+
+  const home = _normTeamLite(getHomeTeam(f)?.name);
+  const away = _normTeamLite(getAwayTeam(f)?.name);
+  const date = String(raw || "").slice(0, 10); // YYYY-MM-DD
+
+  // ✅ FIX DAY-2 matches (your reported wrong ones)
+  // Cameroon is UTC+1 → local = UTC + 1
+  const FIX = {
+    // 24 Dec 2025
+    "burkina faso__equatorial guinea__2025-12-24": "2025-12-24T12:30:00Z", // => 13:30 local
+    "equatorial guinea__burkina faso__2025-12-24": "2025-12-24T12:30:00Z",
+
+    "algeria__sudan__2025-12-24": "2025-12-24T15:00:00Z", // => 16:00 local
+    "sudan__algeria__2025-12-24": "2025-12-24T15:00:00Z",
+
+    "cote d ivoire__mozambique__2025-12-24": "2025-12-24T17:30:00Z", // => 18:30 local
+    "mozambique__cote d ivoire__2025-12-24": "2025-12-24T17:30:00Z",
+
+    "cameroon__gabon__2025-12-24": "2025-12-24T20:00:00Z", // => 21:00 local
+    "gabon__cameroon__2025-12-24": "2025-12-24T20:00:00Z",
+  };
+
+  const key = `${home}__${away}__${date}`;
+  return FIX[key] || raw;
+}
+
+function formatMatchTimeLocal(f) {
+  const iso = kickoffISOForDisplay(f);
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+}
 
 
   // ------------------------------------------------------------
   // ✅ NEW: match time state + lock messaging (STARTED vs PASSED)
   // ------------------------------------------------------------
   function kickoffMsFromFixture(f) {
-    const raw = f && (f.utcDate || f.utc_date || f.date || f.kickoff);
-    const ms = Date.parse(raw || "");
-    return Number.isFinite(ms) ? ms : NaN;
-  }
+  const raw = kickoffISOForDisplay(f);
+  const ms = Date.parse(raw || "");
+  return Number.isFinite(ms) ? ms : NaN;
+}
+
 
   // Try to detect finished state if provider adds it
   function isFixtureFinished(f) {
@@ -752,7 +807,8 @@ function formatMatchDate(f) {
 
     const html = fixturesForRender
       .map((f) => {
-        const ko = window.FBL.formatKickoffLocal
+        const ko = formatMatchTimeLocal(f)
+
           ? window.FBL.formatKickoffLocal(f.utcDate || f.utc_date || f.date)
           : "";
 

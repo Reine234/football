@@ -431,7 +431,273 @@
     }
   }
 
-  function buildCardHTML(idx, pred, fixture) {
+  function normalizeName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "")
+      .trim();
+  }
+
+  // ✅ NEW helper: always compute YYYY-MM-DD in UTC safely
+  function toYMD_UTC(input) {
+    if (input == null || input === "") return "";
+    const s = String(input);
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+
+    const n = Number(input);
+    if (Number.isFinite(n)) {
+      const ms = n < 1e12 ? n * 1000 : n;
+      const d = new Date(ms);
+      if (!isNaN(d.getTime())) {
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(d.getUTCDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+    }
+
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return "";
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function findAfconFixture(pred, fixturesList) {
+    if (!fixturesList || !fixturesList.length) return null;
+
+    const predHome = normalizeName(pred.home && pred.home.name);
+    const predAway = normalizeName(pred.away && pred.away.name);
+    if (!predHome || !predAway) return null;
+
+    let candidates = fixturesList.filter((f) => {
+      const homeName = getTeamNameFromFixture(f, "home");
+      const awayName = getTeamNameFromFixture(f, "away");
+      const fh = normalizeName(homeName);
+      const fa = normalizeName(awayName);
+      return fh === predHome && fa === predAway;
+    });
+
+    if (!candidates.length) return null;
+    if (candidates.length === 1) return candidates[0];
+
+    const target = Date.parse(pred.kickoff || pred.timestamp || 0);
+    if (!Number.isFinite(target)) return candidates[0];
+
+    let best = candidates[0];
+    let bestDiff = Infinity;
+
+    candidates.forEach((f) => {
+      const t = Date.parse(getKickoffIsoFromFixture(f) || 0);
+      if (!Number.isFinite(t)) return;
+      const diff = Math.abs(t - target);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        best = f;
+      }
+    });
+
+    return best;
+  }
+async function fetchAfconFinalScore(home, away, dateYMD) {
+  try {
+    if (!home || !away || !dateYMD) return null;
+
+    // ✅ AFCON name aliases (minimal fix for Côte d’Ivoire / Ivory Coast variants)
+    const alias = (name) => {
+      const raw = String(name || "").trim();
+
+      // normalize apostrophes for matching
+      const n = raw.replace(/’/g, "'");
+
+      // Côte d’Ivoire variants
+      if (/^c(ô|o)te d'?ivoire$/i.test(n.replace(/\s+/g, " "))) return "Cote d'Ivoire";
+      if (/^ivory coast$/i.test(n)) return "Cote d'Ivoire";
+
+      return raw;
+    };
+
+    const H = alias(home);
+    const A = alias(away);
+
+    // try primary
+    const makeUrl = (h, a) =>
+      `/afcon/finalScore?home=${encodeURIComponent(h)}&away=${encodeURIComponent(a)}&date=${encodeURIComponent(dateYMD)}`;
+
+    let r = await fetch(makeUrl(H, A), { credentials: "same-origin" });
+    if (r.ok) {
+      const data = await r.json();
+      if (data && data.found) return data;
+    }
+
+    // ✅ fallback: try swapping home/away (some APIs store reversed)
+    r = await fetch(makeUrl(A, H), { credentials: "same-origin" });
+    if (!r.ok) return null;
+
+    const data2 = await r.json();
+    if (!data2 || !data2.found) return null;
+    return data2;
+  } catch (_e) {
+    return null;
+  }
+}
+
+async function getFirestoreFixtureById(fixtureId) {
+  try {
+    if (!window.firebase || !firebase.firestore) return null;
+    const doc = await firebase.firestore().collection("fixtures").doc(String(fixtureId)).get();
+    return doc.exists ? doc.data() : null;
+  } catch (e) {
+    console.warn("[resultsPage] Firestore fixture lookup failed:", e);
+    return null;
+  }
+}
+
+
+
+
+  function isAfconScoreFinal(score) {
+    if (!score) return false;
+    const raw = String(score.status || score.statusText || score.state || "").trim();
+    if (!raw) return false;
+
+    const s = raw.toUpperCase();
+    if (s === "FT" || s === "AET" || s === "PEN") return true;
+    if (s.includes("FINISHED") || s.includes("MATCH FINISHED") || s.includes("FULL TIME")) return true;
+    if (s.includes("NOT STARTED") || s === "NS" || s.includes("SCHEDULED") || s.includes("TIMED") || s.includes("POSTPON")) return false;
+    return false;
+  }
+
+  // ✅ CHANGE: return a cache so rendering can use it even if fixture match fails
+  async function hydrateAfconFinalScores(preds, fixturesById, fixturesList) {
+    const finalScoreCache = {};
+    // ✅ Firestore hard-override for AFCON final scores (authoritative)
+if (leagueKey === "AFCON") {
+  for (const p of preds) {
+    const fid = String(p.fixtureId || "");
+    if (!fid) continue;
+
+    const fsFx = await getFirestoreFixtureById(fid);
+    if (!fsFx) continue;
+
+    // Merge Firestore fixture as authoritative
+    fixturesById[fid] = { ...(fixturesById[fid] || {}), ...fsFx };
+
+    // Also keep fixturesList consistent (optional but helps findAfconFixture)
+    const idx = (fixturesList || []).findIndex(x => String(x?.id) === fid);
+    if (idx >= 0) fixturesList[idx] = { ...(fixturesList[idx] || {}), ...fsFx };
+    else (fixturesList || []).push(fsFx);
+  }
+}
+    const seen = new Set();
+    for (const p of preds) {
+      const homeFromPred = p.home && p.home.name ? p.home.name : "";
+      const awayFromPred = p.away && p.away.name ? p.away.name : "";
+
+      let fx = fixturesById[String(p.fixtureId)] || null;
+      if (!fx && p.fixture && p.fixture.id != null) fx = fixturesById[String(p.fixture.id)] || null;
+      if (!fx && p.apiFixtureId != null) fx = fixturesById[String(p.apiFixtureId)] || null;
+      if (!fx) fx = findAfconFixture(p, fixturesList);
+
+      const homeName = getTeamNameFromFixture(fx, "home") || homeFromPred;
+      const awayName = getTeamNameFromFixture(fx, "away") || awayFromPred;
+
+      const kickoffIso =
+        p.kickoff ||
+        getKickoffIsoFromFixture(fx) ||
+        p.timestamp ||
+        "";
+
+      const dateYMD = toYMD_UTC(kickoffIso);
+
+      if (!homeName || !awayName || !dateYMD) continue;
+
+      const key = normalizeName(homeName) + "|" + normalizeName(awayName) + "|" + dateYMD;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // If fixture already has final goals, also store them in cache
+      if (fx) {
+        const g = getFinalGoalsFromFixture(fx);
+        if (g.home !== "" && g.away !== "") {
+          finalScoreCache[key] = { home: Number(g.home), away: Number(g.away) };
+          continue;
+        }
+      }
+
+      const score = await fetchAfconFinalScore(homeName, awayName, dateYMD);
+      if (!score) continue;
+      if (!isAfconScoreFinal(score)) continue;
+
+      // store cache (always)
+      finalScoreCache[key] = { home: Number(score.homeScore), away: Number(score.awayScore) };
+
+      // inject into fixture if we have one
+      if (fx) {
+        fx.goals = { home: Number(score.homeScore), away: Number(score.awayScore) };
+        fx.status = { short: "FT", long: score.status || "Match Finished" };
+      }
+    }
+
+    return finalScoreCache;
+  }
+
+
+
+
+  
+  function dedupeFirstPredictionPerFixture(preds) {
+    const byFixture = new Map();
+    (preds || []).forEach((p) => {
+      const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
+      if (!fid) return;
+
+      const ts = Date.parse(p.timestamp || "");
+      const cur = byFixture.get(fid);
+
+      if (!cur) {
+        byFixture.set(fid, p);
+        return;
+      }
+
+      const curTs = Date.parse(cur.timestamp || "");
+      if (Number.isFinite(ts) && Number.isFinite(curTs)) {
+        if (ts < curTs) byFixture.set(fid, p);
+      } else if (Number.isFinite(ts) && !Number.isFinite(curTs)) {
+        byFixture.set(fid, p);
+      }
+    });
+
+    return Array.from(byFixture.values());
+  }
+
+  function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
+    return (preds || []).filter((p) => {
+      let fixture = fixturesById[String(p.fixtureId)] || null;
+      if (!fixture && leagueKey === "AFCON") {
+        fixture = findAfconFixture(p, fixturesList);
+      }
+
+      const kickoffIso =
+        p.kickoff ||
+        getKickoffIsoFromFixture(fixture) ||
+        p.timestamp ||
+        "";
+
+      const ko = Date.parse(kickoffIso);
+      const predTime = Date.parse(p.timestamp || "");
+
+      if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
+      return predTime <= ko;
+    });
+  }
+
+  // ✅ CHANGE: buildCardHTML now can use finalScoreCache when fixture missing/not finished
+  function buildCardHTML(idx, pred, fixture, finalScoreCache) {
     const homeName =
       getTeamNameFromFixture(fixture, "home") ||
       (pred.home && pred.home.name) ||
@@ -455,6 +721,17 @@
     const finalGoals = getFinalGoalsFromFixture(fixture);
     let finHome = finalGoals.home !== "" && finalGoals.home != null ? finalGoals.home : "";
     let finAway = finalGoals.away !== "" && finalGoals.away != null ? finalGoals.away : "";
+
+    // ✅ fallback: use cache for AFCON if fixture did not yield goals
+    if (leagueKey === "AFCON" && (finHome === "" || finAway === "")) {
+      const dateYMD = toYMD_UTC(kickoffIso);
+      const cacheKey = normalizeName(homeName) + "|" + normalizeName(awayName) + "|" + dateYMD;
+      const cached = finalScoreCache && finalScoreCache[cacheKey];
+      if (cached && Number.isFinite(cached.home) && Number.isFinite(cached.away)) {
+        finHome = cached.home;
+        finAway = cached.away;
+      }
+    }
 
     const finHomeForCalc = finHome === "" ? NaN : Number(finHome);
     const finAwayForCalc = finAway === "" ? NaN : Number(finAway);
@@ -538,181 +815,6 @@
     if (awayLogoEl) window.FBL.ensureLogo(awayTeam, awayLogoEl);
   }
 
-  function normalizeName(name) {
-    return String(name || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "")
-      .trim();
-  }
-
-  function findAfconFixture(pred, fixturesList) {
-    if (!fixturesList || !fixturesList.length) return null;
-
-    const predHome = normalizeName(pred.home && pred.home.name);
-    const predAway = normalizeName(pred.away && pred.away.name);
-    if (!predHome || !predAway) return null;
-
-    let candidates = fixturesList.filter((f) => {
-      const homeName = getTeamNameFromFixture(f, "home");
-      const awayName = getTeamNameFromFixture(f, "away");
-      const fh = normalizeName(homeName);
-      const fa = normalizeName(awayName);
-      return fh === predHome && fa === predAway;
-    });
-
-    if (!candidates.length) return null;
-    if (candidates.length === 1) return candidates[0];
-
-    const target = Date.parse(pred.kickoff || pred.timestamp || 0);
-    if (!Number.isFinite(target)) return candidates[0];
-
-    let best = candidates[0];
-    let bestDiff = Infinity;
-
-    candidates.forEach((f) => {
-      const t = Date.parse(getKickoffIsoFromFixture(f) || 0);
-      if (!Number.isFinite(t)) return;
-      const diff = Math.abs(t - target);
-      if (diff < bestDiff) {
-        bestDiff = diff;
-        best = f;
-      }
-    });
-
-    return best;
-  }
-
-  async function fetchAfconFinalScore(home, away, dateYMD) {
-    try {
-      if (!home || !away || !dateYMD) return null;
-      const url =
-        `/afcon/finalScore?home=${encodeURIComponent(home)}` +
-        `&away=${encodeURIComponent(away)}` +
-        `&date=${encodeURIComponent(dateYMD)}`;
-
-      const r = await fetch(url, { credentials: "same-origin" });
-      if (!r.ok) return null;
-
-      const data = await r.json();
-      if (!data || !data.found) return null;
-      return data;
-    } catch (_e) {
-      return null;
-    }
-  }
-
-  // ✅ MINIMAL FIX: only treat /afcon/finalScore response as FINAL if status says finished
-  function isAfconScoreFinal(score) {
-    if (!score) return false;
-
-    // be conservative: if no status, do NOT inject goals
-    const raw = String(score.status || score.statusText || score.state || "").trim();
-    if (!raw) return false;
-
-    const s = raw.toUpperCase();
-
-    // finished markers
-    if (s === "FT" || s === "AET" || s === "PEN") return true;
-    if (s.includes("FINISHED") || s.includes("MATCH FINISHED") || s.includes("FULL TIME")) return true;
-
-    // clearly not finished markers
-    if (s.includes("NOT STARTED") || s === "NS" || s.includes("SCHEDULED") || s.includes("TIMED") || s.includes("POSTPON")) return false;
-
-    // default conservative
-    return false;
-  }
-
-  async function hydrateAfconFinalScores(preds, fixturesById, fixturesList) {
-    if (leagueKey !== "AFCON") return;
-
-    const seen = new Set();
-
-    for (const p of preds || []) {
-      let fx = fixturesById[String(p.fixtureId)] || null;
-      if (!fx && p.fixture && p.fixture.id != null) fx = fixturesById[String(p.fixture.id)] || null;
-      if (!fx && p.apiFixtureId != null) fx = fixturesById[String(p.apiFixtureId)] || null;
-
-      if (!fx) fx = findAfconFixture(p, fixturesList);
-      if (!fx) continue;
-
-      const homeName = getTeamNameFromFixture(fx, "home") || (p.home && p.home.name) || "";
-      const awayName = getTeamNameFromFixture(fx, "away") || (p.away && p.away.name) || "";
-
-      const kickoffIso =
-        p.kickoff ||
-        getKickoffIsoFromFixture(fx) ||
-        p.timestamp ||
-        "";
-      const dateYMD = kickoffIso ? String(kickoffIso).slice(0, 10) : "";
-
-      if (!homeName || !awayName || !dateYMD) continue;
-
-      const key = normalizeName(homeName) + "|" + normalizeName(awayName) + "|" + dateYMD;
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      const finalGoals = getFinalGoalsFromFixture(fx);
-      if (finalGoals.home !== "" && finalGoals.away !== "") continue;
-
-      const score = await fetchAfconFinalScore(homeName, awayName, dateYMD);
-      if (!score) continue;
-
-      // ✅ MINIMAL FIX: do NOT inject 0-0 unless it is truly final
-      if (!isAfconScoreFinal(score)) continue;
-
-      fx.goals = { home: Number(score.homeScore), away: Number(score.awayScore) };
-      fx.status = { short: "FT", long: score.status || "Match Finished" };
-    }
-  }
-
-  function dedupeFirstPredictionPerFixture(preds) {
-    const byFixture = new Map();
-    (preds || []).forEach((p) => {
-      const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
-      if (!fid) return;
-
-      const ts = Date.parse(p.timestamp || "");
-      const cur = byFixture.get(fid);
-
-      if (!cur) {
-        byFixture.set(fid, p);
-        return;
-      }
-
-      const curTs = Date.parse(cur.timestamp || "");
-      if (Number.isFinite(ts) && Number.isFinite(curTs)) {
-        if (ts < curTs) byFixture.set(fid, p);
-      } else if (Number.isFinite(ts) && !Number.isFinite(curTs)) {
-        byFixture.set(fid, p);
-      }
-    });
-
-    return Array.from(byFixture.values());
-  }
-
-  function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
-    return (preds || []).filter((p) => {
-      let fixture = fixturesById[String(p.fixtureId)] || null;
-      if (!fixture && leagueKey === "AFCON") {
-        fixture = findAfconFixture(p, fixturesList);
-      }
-
-      const kickoffIso =
-        p.kickoff ||
-        getKickoffIsoFromFixture(fixture) ||
-        p.timestamp ||
-        "";
-
-      const ko = Date.parse(kickoffIso);
-      const predTime = Date.parse(p.timestamp || "");
-
-      if (!Number.isFinite(ko) || !Number.isFinite(predTime)) return true;
-      return predTime <= ko;
-    });
-  }
-
   // ---------- MAIN ----------
   async function renderResultsPage() {
     const user = firebase.auth().currentUser;
@@ -775,7 +877,8 @@
       return;
     }
 
-    await hydrateAfconFinalScores(preds, fixturesById, fixturesList);
+    // ✅ get final score cache here
+    const finalScoreCache = await hydrateAfconFinalScores(preds, fixturesById, fixturesList);
 
     const maxMd = preds.reduce((m, p) => {
       const md = parseInt(p.matchday, 10);
@@ -801,7 +904,7 @@
           fixture = findAfconFixture(pred, fixturesList);
         }
 
-        const { html, pts } = buildCardHTML(i + 1, pred, fixture);
+        const { html, pts } = buildCardHTML(i + 1, pred, fixture, finalScoreCache);
         if (pts != null) {
           totalPts += pts;
           predictionsWithPoints.push({ fixtureId: pred.fixtureId, points: pts });

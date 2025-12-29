@@ -283,6 +283,7 @@ function _sameDay(dateEvent, dateQuery) {
 }
 
 // GET /afcon/finalScore?home=Morocco&away=Comoros&date=2025-12-21
+// GET /afcon/finalScore?home=Morocco&away=Comoros&date=2025-12-21
 app.get("/afcon/finalScore", async (req, res) => {
   try {
     const home = String(req.query.home || "").trim();
@@ -293,67 +294,272 @@ app.get("/afcon/finalScore", async (req, res) => {
       return res.status(400).json({ error: "Missing ?home= and/or ?away=" });
     }
 
-    // 1) Try searchevents by "Home vs Away"
+    const H = _normTeam(home);
+    const A = _normTeam(away);
+
+    function hasScore(e) {
+      const hs = e?.intHomeScore;
+      const as = e?.intAwayScore;
+      return hs !== null && hs !== undefined && hs !== "" && as !== null && as !== undefined && as !== "";
+    }
+
+    function dayMs(yyyy_mm_dd) {
+      const ms = Date.parse(String(yyyy_mm_dd || "") + "T00:00:00Z");
+      return Number.isFinite(ms) ? ms : NaN;
+    }
+
+    function eventDayMs(e) {
+      const d = String(e?.dateEvent || "").slice(0, 10);
+      return dayMs(d);
+    }
+
+    function pickBest(cands) {
+      if (!Array.isArray(cands) || !cands.length) return null;
+
+      // soccer only
+      let list = cands.filter((e) => String(e?.strSport || "").toLowerCase() === "soccer");
+      if (!list.length) list = cands.slice();
+
+      // prefer same day if date provided
+      const qDay = date ? dayMs(date) : NaN;
+
+      // Team match (strict first, then fuzzy)
+      const strict = list.filter(
+        (e) => _normTeam(e?.strHomeTeam) === H && _normTeam(e?.strAwayTeam) === A
+      );
+      const fuzzy = list.filter(
+        (e) =>
+          _normTeam(e?.strHomeTeam).includes(H) &&
+          _normTeam(e?.strAwayTeam).includes(A)
+      );
+
+      const pool = strict.length ? strict : fuzzy.length ? fuzzy : list;
+
+      // If date is provided: prefer same-day results, else closest day
+      if (date && Number.isFinite(qDay)) {
+        const sameDay = pool.filter((e) => _sameDay(e?.dateEvent, date));
+        if (sameDay.length) {
+          // among same day, prefer those with scores
+          const withScore = sameDay.filter(hasScore);
+          return withScore[0] || sameDay[0];
+        }
+
+        // otherwise pick closest date, preferring events with score
+        const scored = pool.filter(hasScore);
+        const base = scored.length ? scored : pool;
+
+        base.sort((x, y) => {
+          const dx = Math.abs(eventDayMs(x) - qDay);
+          const dy = Math.abs(eventDayMs(y) - qDay);
+          return dx - dy;
+        });
+
+        return base[0] || null;
+      }
+
+      // No date: just prefer score first
+      const withScore = pool.filter(hasScore);
+      return withScore[0] || pool[0] || null;
+    }
+
+    // 1) searchevents "Home vs Away"
     const q1 = `${home} vs ${away}`;
     const url1 = `${SD_BASE}/${SD_KEY}/searchevents.php?e=${encodeURIComponent(q1)}`;
     console.log("[GET] /afcon/finalScore (searchevents) ->", url1);
 
     let data1 = await fetchDeduped(url1, {}, CACHE_TTL_MS);
-    let events = Array.isArray(data1?.event) ? data1.event : [];
+    let events1 = Array.isArray(data1?.event) ? data1.event : [];
+    let best = pickBest(events1);
 
-    // If user gave a date, filter hard by dateEvent
-    if (date) {
-      events = events.filter((e) => _sameDay(e?.dateEvent, date));
-    }
+    if (!best) {
+  // -----------------------------------------
+  // ✅ FALLBACK: SportMonks (AFCON) if TSDB missing
+  // -----------------------------------------
+  try {
+    const token =
+      process.env.SPORTMONKS_TOKEN ||
+      "lDfEJAPMuQJQLqRfxhbvQuDMgMfJDrfxiVGi6uwrDVNq4alQQ1ApO3eKWEzt";
+    const seasonId = process.env.SPORTMONKS_AFCON_SEASON_ID || "25138";
 
-    // Filter to Soccer only (safety)
-    events = events.filter((e) => String(e?.strSport || "").toLowerCase() === "soccer");
+    // fetch cached season fixtures (same endpoint you already have)
+    const filters = `season_id:${seasonId}`;
+    const smUrl =
+      "https://api.sportmonks.com/v3/football/fixtures" +
+      "?filters=" +
+      encodeURIComponent(filters) +
+      "&include=localTeam,visitorTeam,scores,round" +
+      "&api_token=" +
+      encodeURIComponent(token);
 
-    // Match by team names (robust)
+    const sm = await fetchDeduped(smUrl, {}, CACHE_TTL_MS);
+    const list = Array.isArray(sm?.data) ? sm.data : [];
+
     const H = _normTeam(home);
     const A = _normTeam(away);
 
-    let best =
-      events.find((e) => _normTeam(e?.strHomeTeam) === H && _normTeam(e?.strAwayTeam) === A) ||
-      events.find((e) => _normTeam(e?.strHomeTeam).includes(H) && _normTeam(e?.strAwayTeam).includes(A)) ||
+    // Match by teams + (optional) date tolerance
+    const dateQuery = date ? String(date).slice(0, 10) : "";
+    const isSameOrNearDay = (fixtureDate) => {
+      if (!dateQuery) return true;
+      const d0 = new Date(dateQuery + "T00:00:00Z").getTime();
+      const d1 = new Date(String(fixtureDate).slice(0, 10) + "T00:00:00Z").getTime();
+      if (!Number.isFinite(d0) || !Number.isFinite(d1)) return false;
+      const diffDays = Math.round(Math.abs(d1 - d0) / (24 * 60 * 60 * 1000));
+      return diffDays <= 1; // tolerate +/- 1 day
+    };
+
+    const hit = list.find((fx) => {
+      const homeName = fx?.localTeam?.data?.name || fx?.localTeam?.name || "";
+      const awayName = fx?.visitorTeam?.data?.name || fx?.visitorTeam?.name || "";
+      const fh = _normTeam(homeName);
+      const fa = _normTeam(awayName);
+
+      const teamsMatch =
+        (fh === H && fa === A) ||
+        (fh === A && fa === H) ||
+        (fh.includes(H) && fa.includes(A)) ||
+        (fh.includes(A) && fa.includes(H));
+
+      const fxDate = fx?.starting_at || fx?.starting_at_timestamp || fx?.time?.starting_at || "";
+      const dateOk = fxDate ? isSameOrNearDay(fxDate) : true;
+
+      return teamsMatch && dateOk;
+    });
+
+    if (hit) {
+      // Try to extract full-time goals from SportMonks scores array (structure can vary)
+      const scores = Array.isArray(hit?.scores?.data) ? hit.scores.data : (Array.isArray(hit?.scores) ? hit.scores : []);
+      let homeGoals = null;
+      let awayGoals = null;
+      let statusText = String(hit?.result_info || hit?.state || "").trim();
+
+      // Scan for anything that looks like FT goals
+      for (const s of scores) {
+        const desc = String(s?.description || s?.type?.name || "").toLowerCase();
+        const isFT =
+          desc.includes("full") ||
+          desc.includes("ft") ||
+          desc.includes("final") ||
+          (s?.type_id === 2); // common FT type_id in some SportMonks setups (safe extra hint)
+
+        // Common patterns:
+        // 1) s.score.goals + s.score.participant ("home"/"away")
+        // 2) s.home / s.away
+        // 3) s.score.home / s.score.away
+        if (s?.score && typeof s.score === "object") {
+          if (s.score.participant && s.score.goals != null) {
+            const part = String(s.score.participant).toLowerCase();
+            if (part.includes("home") || part.includes("local")) homeGoals = Number(s.score.goals);
+            if (part.includes("away") || part.includes("visitor")) awayGoals = Number(s.score.goals);
+          }
+          if (s.score.home != null && s.score.away != null) {
+            homeGoals = Number(s.score.home);
+            awayGoals = Number(s.score.away);
+          }
+        }
+        if (s?.home != null && s?.away != null) {
+          homeGoals = Number(s.home);
+          awayGoals = Number(s.away);
+        }
+
+        // Prefer FT-like rows, but if we already got both goals, we can stop
+        if (homeGoals != null && awayGoals != null && (isFT || !statusText)) break;
+      }
+
+      if (Number.isFinite(homeGoals) && Number.isFinite(awayGoals)) {
+        res.set("Cache-Control", "public, max-age=120");
+        return res.json({
+          found: true,
+          source: "sportmonks",
+          eventId: hit?.id || null,
+          league: "AFCON",
+          season: String(seasonId),
+          dateEvent: String(hit?.starting_at || "").slice(0, 10) || dateQuery || null,
+          time: hit?.starting_at ? String(hit.starting_at).slice(11, 19) : null,
+          status: statusText || "Match Finished",
+          homeTeam: home,
+          awayTeam: away,
+          homeScore: Number(homeGoals),
+          awayScore: Number(awayGoals),
+          homeScoreRaw: String(homeGoals),
+          awayScoreRaw: String(awayGoals),
+          raw: hit,
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("[AFCON] SportMonks fallback failed:", e.message);
+  }
+
+  // If still not found after fallback
+  return res.json({
+    found: false,
+    home,
+    away,
+    date: date || null,
+    message: "No matching event found (TheSportsDB + SportMonks fallback).",
+  });
+}
+
+
+    // 3) eve// 3) If still not found and date was provided, try eventsday.php on date, date-1, date+1
+if (!best && date) {
+  const base = new Date(date + "T00:00:00Z");
+  const datesToTry = [
+    date, // exact
+    new Date(base.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // -1 day
+    new Date(base.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10), // +1 day
+  ];
+
+  for (const dTry of datesToTry) {
+    const url3 = `${SD_BASE}/${SD_KEY}/eventsday.php?d=${encodeURIComponent(dTry)}&s=Soccer`;
+    console.log("[GET] /afcon/finalScore (eventsday) ->", url3);
+
+    const day = await fetchDeduped(url3, {}, CACHE_TTL_MS);
+    const dayEvents = Array.isArray(day?.events) ? day.events : [];
+
+    const cand = dayEvents.filter((e) => {
+      const eh = _normTeam(e?.strHomeTeam);
+      const ea = _normTeam(e?.strAwayTeam);
+      return (
+        (eh === H && ea === A) ||
+        (eh === A && ea === H) ||
+        (eh.includes(H) && ea.includes(A)) ||
+        (eh.includes(A) && ea.includes(H))
+      );
+    });
+
+    best =
+      cand.find((e) => String(e?.strStatus || "").toLowerCase().includes("finished")) ||
+      cand.find((e) => e?.intHomeScore != null || e?.intAwayScore != null) ||
+      cand[0] ||
       null;
 
-    // 2) If not found, try reverse name in searchevents
-    if (!best) {
-      const q2 = `${away} vs ${home}`;
-      const url2 = `${SD_BASE}/${SD_KEY}/searchevents.php?e=${encodeURIComponent(q2)}`;
-      console.log("[GET] /afcon/finalScore (searchevents reverse) ->", url2);
+    if (best) break;
+  }
 
-      let data2 = await fetchDeduped(url2, {}, CACHE_TTL_MS);
-      let events2 = Array.isArray(data2?.event) ? data2.event : [];
-      if (date) events2 = events2.filter((e) => _sameDay(e?.dateEvent, date));
-      events2 = events2.filter((e) => String(e?.strSport || "").toLowerCase() === "soccer");
 
-      best =
-        events2.find((e) => _normTeam(e?.strHomeTeam) === A && _normTeam(e?.strAwayTeam) === H) ||
-        events2.find((e) => _normTeam(e?.strHomeTeam).includes(A) && _normTeam(e?.strAwayTeam).includes(H)) ||
-        null;
-    }
+      for (const dTry of datesToTry) {
+        const url3 = `${SD_BASE}/${SD_KEY}/eventsday.php?d=${encodeURIComponent(dTry)}&s=Soccer`;
+        console.log("[GET] /afcon/finalScore (eventsday) ->", url3);
 
-    // 3) If still not found and date was provided, try eventsday.php and filter by teams
-    if (!best && date) {
-      const url3 = `${SD_BASE}/${SD_KEY}/eventsday.php?d=${encodeURIComponent(date)}&s=Soccer`;
-      console.log("[GET] /afcon/finalScore (eventsday) ->", url3);
+        const day = await fetchDeduped(url3, {}, CACHE_TTL_MS);
+        const dayEvents = Array.isArray(day?.events) ? day.events : [];
 
-      const day = await fetchDeduped(url3, {}, CACHE_TTL_MS);
-      const dayEvents = Array.isArray(day?.events) ? day.events : [];
-      const cand = dayEvents.filter((e) => {
-        const eh = _normTeam(e?.strHomeTeam);
-        const ea = _normTeam(e?.strAwayTeam);
-        return (eh === H && ea === A) || (eh === A && ea === H) || (eh.includes(H) && ea.includes(A)) || (eh.includes(A) && ea.includes(H));
-      });
+        const cand = dayEvents.filter((e) => {
+          const eh = _normTeam(e?.strHomeTeam);
+          const ea = _normTeam(e?.strAwayTeam);
+          return (
+            (eh === H && ea === A) ||
+            (eh.includes(H) && ea.includes(A)) ||
+            (eh === A && ea === H) ||
+            (eh.includes(A) && ea.includes(H))
+          );
+        });
 
-      // Prefer "Match Finished" or any with a score
-      best =
-        cand.find((e) => String(e?.strStatus || "").toLowerCase().includes("finished")) ||
-        cand.find((e) => e?.intHomeScore != null || e?.intAwayScore != null) ||
-        cand[0] ||
-        null;
+        best = pickBest(cand);
+        if (best) break;
+      }
     }
 
     if (!best) {
@@ -366,8 +572,6 @@ app.get("/afcon/finalScore", async (req, res) => {
       });
     }
 
-    // IMPORTANT:
-    // TheSportsDB returns scores as strings like "1". We keep both raw + parsed.
     const homeScoreRaw = best?.intHomeScore ?? null;
     const awayScoreRaw = best?.intAwayScore ?? null;
 
@@ -380,7 +584,7 @@ app.get("/afcon/finalScore", async (req, res) => {
         ? null
         : Number(awayScoreRaw);
 
-    res.set("Cache-Control", "public, max-age=120"); // keep short, scores can update
+    res.set("Cache-Control", "public, max-age=120");
     return res.json({
       found: true,
       eventId: best?.idEvent || null,
