@@ -557,9 +557,6 @@ async function getFirestoreFixtureById(fixtureId) {
   }
 }
 
-
-
-
   function isAfconScoreFinal(score) {
     if (!score) return false;
     const raw = String(score.status || score.statusText || score.state || "").trim();
@@ -646,10 +643,6 @@ if (leagueKey === "AFCON") {
     return finalScoreCache;
   }
 
-
-
-
-  
   function dedupeFirstPredictionPerFixture(preds) {
     const byFixture = new Map();
     (preds || []).forEach((p) => {
@@ -943,10 +936,55 @@ if (leagueKey === "AFCON") {
       syncPointsToFirestore(predictionsWithPoints);
     }
 
+    fixDailyRankingTabs();
+
     retryFixMatchdayTitle();
   }
 
   window.renderResultsPage = renderResultsPage;
+
+  // ✅ DAILY RANKING TABS FIX (AFCON): force exactly 3 tabs for Matchdays 1-3
+  function fixDailyRankingTabs() {
+    const lang = String(getLangSafe() || "en").toLowerCase();
+    const isFr = lang.startsWith("fr");
+    const label = (n) => (isFr ? `Journée ${n}` : `Matchday ${n}`);
+
+    // try to find the tabs container (keep selectors broad & safe)
+    const tabRoots = [
+      document.querySelector("#daily-ranking"),
+      document.querySelector(".daily-ranking"),
+      document.querySelector(".daily-ranking-tabs"),
+      document.querySelector(".ranking-tabs"),
+      document.querySelector(".dailyRanking"),
+    ].filter(Boolean);
+
+    const scope = tabRoots[0] || document;
+
+    // collect likely tab elements
+    let tabs = Array.from(
+      scope.querySelectorAll('[role="tab"], .tab, .tabs button, .tabs li, .tabs a, button')
+    );
+
+    // keep only elements that look like the ranking tabs (avoid page buttons etc.)
+    tabs = tabs.filter((el) => {
+      if (!el || !el.textContent) return false;
+      const t = String(el.textContent).toLowerCase();
+      return t.includes("group") || t.includes("matchday") || t.includes("journee") || t.includes("journée") || t.includes("?") || el.getAttribute("role") === "tab";
+    });
+
+    if (!tabs.length) return;
+
+    // Keep first 3, hide the rest
+    const first3 = tabs.slice(0, 3);
+    first3.forEach((el, i) => {
+      el.textContent = label(i + 1);
+      el.style.display = "";
+    });
+    tabs.slice(3).forEach((el) => {
+      el.style.display = "none";
+    });
+  }
+
 
   (function bootResultsWithAuth() {
     if (!window.firebase || !firebase.auth) {

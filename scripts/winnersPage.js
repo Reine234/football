@@ -230,7 +230,7 @@
   }
 
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
-  // Now supports AFCON group + matchday, e.g. "Group A|1".
+  // ✅ CHANGE (AFCON): show ONLY 3 tabs (Matchday 1,2,3) and rank across ALL groups per matchday.
   function ensureMatchdayStrip(matchdays, currentKey, leagueKey, onSelectMatchday) {
     if (!matchdays || !matchdays.length) return;
 
@@ -264,17 +264,10 @@
         const isActive = key === currentKey;
         let labelText = "";
 
-        // ✅ NEW: AFCON "All"
-        if (leagueKey === "AFCON" && key === "ALL") {
-          labelText = "All";
-        } else if (leagueKey === "AFCON" && key.includes("|")) {
-          // key example: "Group A|1"
-          const [groupLabel, mdStr] = key.split("|");
-          const md = parseInt(mdStr, 10);
-          labelText = tr("winners.groupMatchdayLabel", {
-            group: groupLabel,
-            n: Number.isFinite(md) ? md : mdStr
-          });
+        // ✅ AFCON: key is just "1","2","3"
+        if (leagueKey === "AFCON") {
+          const md = parseInt(key, 10);
+          labelText = tr("winners.matchdayLabel", { n: Number.isFinite(md) ? md : key });
         } else {
           // other leagues: key is just "1", "2", ...
           const md = parseInt(key, 10);
@@ -301,7 +294,7 @@
     });
   }
 
-  // ---------- Daily Rankings from Firestore (now per matchday AND group for AFCON) ----------
+  // ---------- Daily Rankings from Firestore ----------
   async function loadDailyRankings(
     db,
     leagueKey,
@@ -326,9 +319,6 @@
       const scoresByKey = {};
       const keySet = new Set();
 
-      // ✅ NEW: AFCON "ALL" bucket across any matchday/group
-      const allByUid = {};
-
       snap.forEach((doc) => {
         const data = doc.data() || {};
         const uid = data.uid;
@@ -346,6 +336,9 @@
         const mdRaw = data.matchday;
         const mdNum = parseInt(mdRaw, 10);
         if (!Number.isFinite(mdNum)) return; // ignore docs without matchday
+
+        // ✅ AFCON: only show matchdays 1..3 in the UI (still compute points normally)
+        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 3)) return;
 
         const fixture = fixturesById[fixtureId];
 
@@ -379,12 +372,10 @@
         }
 
         // 🔹 Build the "key" for this ranking bucket
+        // ✅ CHANGE (AFCON): bucket is ONLY by matchday number (no group)
         let key;
         if (leagueKey === "AFCON") {
-          const groupLabel =
-            data.groupLabel ||
-            (data.group ? `Group ${data.group}` : "Group ?");
-          key = `${groupLabel}|${mdNum}`; // "Group A|1"
+          key = String(mdNum); // "1","2","3"
         } else {
           key = String(mdNum); // "1", "2", ...
         }
@@ -402,46 +393,17 @@
           };
         }
 
-        // ✅ Change: include users even if match not finished (pts === null => add 0)
+        // include users even if match not finished (pts === null => add 0)
         if (pts != null) {
           scoresByKey[key][uid].points += pts;
-        }
-
-        // ✅ NEW: AFCON "ALL" leaderboard accumulator
-        if (leagueKey === "AFCON") {
-          if (!allByUid[uid]) {
-            allByUid[uid] = {
-              uid,
-              username: computeDisplayNameFromData(data, uid),
-              points: 0,
-            };
-          }
-          if (pts != null) {
-            allByUid[uid].points += pts;
-          }
         }
       });
 
       let matchdays = Array.from(keySet);
 
-      // Sort keys nicely
+      // ✅ CHANGE (AFCON): force exactly 3 tabs: 1,2,3
       if (leagueKey === "AFCON") {
-        // sort by matchday number, then group label
-        matchdays.sort((a, b) => {
-          const [gA, mA] = a.split("|");
-          const [gB, mB] = b.split("|");
-          const nA = parseInt(mA, 10);
-          const nB = parseInt(mB, 10);
-          if (Number.isFinite(nA) && Number.isFinite(nB) && nA !== nB) {
-            return nA - nB;
-          }
-          return String(gA).localeCompare(String(gB));
-        });
-
-        // ✅ NEW: Add "ALL" at the front if there is any AFCON data
-        if (Object.keys(allByUid).length) {
-          matchdays.unshift("ALL");
-        }
+        matchdays = ["1", "2", "3"];
       } else {
         matchdays.sort((a, b) => {
           const nA = parseInt(a, 10);
@@ -453,17 +415,28 @@
         });
       }
 
-      // If no matchdays at all
+      // If no matchdays at all (non-AFCON)
       if (!matchdays.length) {
         tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.noRankingsYet"))}</td></tr>`;
         if (userPointsEl) userPointsEl.textContent = "0";
         return;
       }
 
-      // ✅ NEW: AFCON default selection = ALL (if present)
+      // Default selection
       if (!selectedMatchdayKey) {
-        if (leagueKey === "AFCON" && matchdays.includes("ALL")) {
-          selectedMatchdayKey = "ALL";
+        if (leagueKey === "AFCON") {
+          // pick the latest available among 1..3 (falls back to 1)
+          const available = Array.from(keySet).filter((k) => matchdays.includes(k));
+          if (available.length) {
+            const best = available
+              .map((k) => parseInt(k, 10))
+              .filter(Number.isFinite)
+              .sort((a, b) => a - b)
+              .pop();
+            selectedMatchdayKey = best ? String(best) : "1";
+          } else {
+            selectedMatchdayKey = "1";
+          }
         } else {
           selectedMatchdayKey = matchdays[matchdays.length - 1];
         }
@@ -474,11 +447,7 @@
         loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, newKey);
       });
 
-      // ✅ NEW: use ALL bucket for AFCON when selected
-      const scoresByUid =
-        leagueKey === "AFCON" && selectedMatchdayKey === "ALL"
-          ? allByUid
-          : (scoresByKey[selectedMatchdayKey] || {});
+      const scoresByUid = scoresByKey[selectedMatchdayKey] || {};
 
       // Replace generic names with best from users collection
       await enrichUsernamesFromUsersCollection(db, scoresByUid);
