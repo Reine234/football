@@ -229,6 +229,40 @@
     }
   }
 
+  // ✅ helper: fetch predictions without scanning everything (AFCON uses matchday queries)
+  async function fetchPredictionsForLeagueMatchdays(db, leagueKey) {
+    const wantedLeagues = leagueSynonyms(leagueKey);
+    const wantedMatchdays = leagueKey === "AFCON" ? ["1", "2", "3"] : null;
+
+    // Keep previous behavior for non-AFCON leagues
+    if (leagueKey !== "AFCON") {
+      const snap = await db.collection("predictions").get();
+      const out = [];
+      snap.forEach((doc) => out.push(doc.data() || {}));
+      return out;
+    }
+
+    // AFCON: query by matchday only (small read set) then filter by league synonyms.
+    const out = [];
+    for (const md of wantedMatchdays) {
+      try {
+        const snap = await db.collection("predictions").where("matchday", "==", md).get();
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          const rawLeague =
+            data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+          const normLeague = normalizeLeagueString(rawLeague);
+          if (wantedLeagues.includes(normLeague)) out.push(data);
+        });
+      } catch (e) {
+        console.warn("[Winners] predictions query failed for matchday", md, e);
+      }
+    }
+    return out;
+  }
+
+
+
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
   // ✅ CHANGE (AFCON): show ONLY 3 tabs (Matchday 1,2,3) and rank across ALL groups per matchday.
   function ensureMatchdayStrip(matchdays, currentKey, leagueKey, onSelectMatchday) {
@@ -486,6 +520,141 @@
     }
   }
 
+
+  // ---------- First Round Winners (AFCON): winner of Matchdays 1-3 ----------
+  async function loadFirstRoundWinners(db, leagueKey, tbody, userPointsEl) {
+    if (!tbody) return;
+
+    // Only AFCON requested for now to avoid heavy reads on other leagues
+    if (leagueKey !== "AFCON") {
+      tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.firstRoundSoon"))}</td></tr>`;
+      const strip = document.querySelector(".matchday-strip");
+      if (strip) strip.innerHTML = "";
+      if (userPointsEl) userPointsEl.textContent = "--";
+      return;
+    }
+
+    tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.loadingRankings"))}</td></tr>`;
+    const strip = document.querySelector(".matchday-strip");
+    if (strip) strip.innerHTML = "";
+
+    try {
+      const { byId: fixturesById } = await fetchFixturesForCurrentLeague(leagueKey);
+
+      // AFCON: already optimized to query matchdays 1..3
+      const allPreds = await fetchPredictionsForLeagueMatchdays(db, leagueKey);
+
+      const wantedLeagues = leagueSynonyms(leagueKey);
+
+      const scoresByKey = { "1": {}, "2": {}, "3": {} };
+
+      (allPreds || []).forEach((data) => {
+        const uid = data.uid;
+        if (!uid) return;
+
+        const rawLeague =
+          data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+        const normLeague = normalizeLeagueString(rawLeague);
+        if (!wantedLeagues.includes(normLeague)) return;
+
+        const mdNum = parseInt(data.matchday, 10);
+        if (!Number.isFinite(mdNum) || mdNum < 1 || mdNum > 3) return;
+
+        const fixtureId = String(data.fixtureId || "");
+        if (!fixtureId) return;
+
+        const fixture = fixturesById[fixtureId];
+
+        const predHome = Number(
+          data.home && data.home.score != null ? data.home.score : NaN
+        );
+        const predAway = Number(
+          data.away && data.away.score != null ? data.away.score : NaN
+        );
+
+        let finHome = NaN;
+        let finAway = NaN;
+        if (fixture && fixture.goals) {
+          if (fixture.goals.home !== null && fixture.goals.home !== undefined) {
+            finHome = Number(fixture.goals.home);
+          }
+          if (fixture.goals.away !== null && fixture.goals.away !== undefined) {
+            finAway = Number(fixture.goals.away);
+          }
+        }
+
+        let pts = null;
+        if (typeof data.points === "number" && Number.isFinite(data.points)) {
+          pts = data.points;
+        } else {
+          pts = computePoints(predHome, predAway, finHome, finAway);
+        }
+
+        const key = String(mdNum);
+        if (!scoresByKey[key][uid]) {
+          scoresByKey[key][uid] = {
+            uid,
+            username: computeDisplayNameFromData(data, uid),
+            points: 0,
+          };
+        }
+        if (pts != null) {
+          scoresByKey[key][uid].points += pts;
+        }
+      });
+
+      // pick winner per matchday (top points)
+      const winners = ["1", "2", "3"].map((k) => {
+        const rows = Object.values(scoresByKey[k] || {});
+        rows.sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return String(a.username).localeCompare(String(b.username));
+        });
+        return rows[0] || null;
+      });
+
+      const winnerMap = {};
+      winners.forEach((w) => {
+        if (w && w.uid) winnerMap[w.uid] = w;
+      });
+
+      // improve names (capped)
+      await enrichUsernamesFromUsersCollection(db, winnerMap, 25);
+
+      // render
+      tbody.innerHTML = winners
+        .map((w, i) => {
+          const mdKey = String(i + 1);
+          const labelText = tr("winners.matchdayLabel", { n: i + 1 });
+          if (!w) {
+            return `
+              <tr>
+                <td>${esc(labelText)}</td>
+                <td>—</td>
+                <td>0</td>
+              </tr>
+            `;
+          }
+          const name = (winnerMap[w.uid] && winnerMap[w.uid].username) ? winnerMap[w.uid].username : w.username;
+          const pts = (winnerMap[w.uid] && typeof winnerMap[w.uid].points === "number") ? winnerMap[w.uid].points : w.points;
+          return `
+            <tr>
+              <td>${esc(labelText)}</td>
+              <td>${esc(name)}</td>
+              <td>${pts}</td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      if (userPointsEl) userPointsEl.textContent = "--";
+    } catch (err) {
+      console.error("[Winners] Failed to load first round winners", err);
+      tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.unableToLoadRankings"))}</td></tr>`;
+      if (userPointsEl) userPointsEl.textContent = "--";
+    }
+  }
+
   // ---------- Classification tabs ----------
   function initClassificationTabs(db, leagueKey, currentUser) {
     const tabs = document.querySelectorAll(".tab-row .tab");
@@ -517,10 +686,7 @@
         if (label === "daily") {
           loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, null);
         } else if (label === "first") {
-          tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.firstRoundSoon"))}</td></tr>`;
-          const strip = document.querySelector(".matchday-strip");
-          if (strip) strip.innerHTML = "";
-          if (userPointsEl) userPointsEl.textContent = "--";
+          loadFirstRoundWinners(db, leagueKey, tbody, userPointsEl);
         } else if (label === "overall") {
           tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.overallSoon"))}</td></tr>`;
           const strip = document.querySelector(".matchday-strip");

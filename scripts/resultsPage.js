@@ -161,6 +161,9 @@
   }
   const container = root;
 
+  // ✅ matchday navigation state (kept in this script only)
+  let __FBL_SELECTED_MATCHDAY__ = null;
+
   // ---------- LEAGUE (from global / URL / stored) ----------
   function resolveLeagueKey() {
     const forced = (window.FBL_RESULTS_LEAGUE_KEY || "").toUpperCase();
@@ -219,19 +222,34 @@
   }
 
   function computePoints(predH, predA, finH, finA) {
+    // Points rules:
+    // 3 = exact score
+    // 2 = correct winner AND exact goal difference
+    // 1 = correct winner only
+    // 0 = everything else
     if (!Number.isFinite(finH) || !Number.isFinite(finA)) return null;
     if (!Number.isFinite(predH) || !Number.isFinite(predA)) return 0;
 
+    // exact score
     if (predH === finH && predA === finA) return 3;
 
-    const po = predH === predA ? 0 : predH > predA ? 1 : -1;
-    const ro = finH === finA ? 0 : finH > finA ? 1 : -1;
-    const pd = predH - predA;
-    const rd = finH - finA;
+    const finDiff = finH - finA;
+    const predDiff = predH - predA;
 
-    if (po === ro && pd === rd) return 2;
-    if (po === ro) return 1;
-    return 0;
+    // if the real match is a draw, only exact score earns points
+    if (finDiff === 0) return 0;
+
+    // predicted draw but match had a winner
+    if (predDiff === 0) return 0;
+
+    // correct winner?
+    const sameWinner = (finDiff > 0 && predDiff > 0) || (finDiff < 0 && predDiff < 0);
+    if (!sameWinner) return 0;
+
+    // exact goal difference?
+    if (predDiff === finDiff) return 2;
+
+    return 1;
   }
 
   async function syncPointsToFirestore(predictionsWithPoints) {
@@ -313,6 +331,197 @@
 
     if (dayNumSpan) dayNumSpan.textContent = md === "?" ? "" : md;
     fixMatchdayTitleNode();
+  }
+
+
+  // ✅ Matchday navigation (< >) + current label
+
+// ✅ Matchday navigation: DO NOT create new buttons.
+// We only "activate" the arrows/buttons that already exist in your HTML (the green ones).
+function ensureMatchdayNav(matchdays, currentKey, onChange) {
+  if (!matchdays || !matchdays.length) return;
+
+  const idx = matchdays.indexOf(String(currentKey));
+  const prevKey = idx > 0 ? matchdays[idx - 1] : null;
+  const nextKey = idx >= 0 && idx < matchdays.length - 1 ? matchdays[idx + 1] : null;
+
+  // Try explicit selectors first (if you already gave them ids/classes)
+  function pickFirst(selectors) {
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  // Fallback: look near the day number for arrow elements like "<" ">" "‹" "›"
+  // ✅ Updated: walk up the DOM a few levels so we can find your existing green arrows
+  // even if they are not direct siblings of #day-number.
+  function findArrowNearDayNumber(dir) {
+    const dayNum = document.getElementById("day-number");
+    if (!dayNum) return null;
+
+    const ARROWS_PREV = new Set(["<", "‹", "❮", "«"]);
+    const ARROWS_NEXT = new Set([">", "›", "❯", "»"]);
+
+    function looksLikePrev(el) {
+      const t = String(el.textContent || "").trim();
+      if (ARROWS_PREV.has(t)) return true;
+
+      const cls = String(el.className || "").toLowerCase();
+      const aria = String(el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title")) || "").toLowerCase();
+      const data = String(el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "") || "").toLowerCase();
+
+      if (data === "prev" || data === "previous" || data === "back") return true;
+      if (cls.includes("prev") || cls.includes("previous") || cls.includes("back") || cls.includes("left")) return true;
+      if (aria.includes("prev") || aria.includes("previous") || aria.includes("back") || aria.includes("left")) return true;
+
+      return false;
+    }
+
+    function looksLikeNext(el) {
+      const t = String(el.textContent || "").trim();
+      if (ARROWS_NEXT.has(t)) return true;
+
+      const cls = String(el.className || "").toLowerCase();
+      const aria = String(el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title")) || "").toLowerCase();
+      const data = String(el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "") || "").toLowerCase();
+
+      if (data === "next" || data === "forward") return true;
+      if (cls.includes("next") || cls.includes("forward") || cls.includes("right")) return true;
+      if (aria.includes("next") || aria.includes("forward") || aria.includes("right")) return true;
+
+      return false;
+    }
+
+    function findInHost(host) {
+      if (!host) return null;
+
+      // Prefer actual buttons/links (often contain SVG icons)
+      const btns = Array.from(host.querySelectorAll("button,a,[role='button']"));
+
+      if (dir === "prev") {
+        // first: explicit arrows
+        for (const el of btns) if (looksLikePrev(el)) return el;
+        // then: any element that contains an svg and looks left-ish by class/aria
+        for (const el of btns) {
+          if (el.querySelector && el.querySelector("svg") && looksLikePrev(el)) return el;
+        }
+      } else {
+        for (const el of btns) if (looksLikeNext(el)) return el;
+        for (const el of btns) {
+          if (el.querySelector && el.querySelector("svg") && looksLikeNext(el)) return el;
+        }
+      }
+
+      // Then: fallback to any element with arrow glyph text
+      const all = Array.from(host.querySelectorAll("*"));
+      if (dir === "prev") {
+        for (const el of all) if (looksLikePrev(el)) return el;
+      } else {
+        for (const el of all) if (looksLikeNext(el)) return el;
+      }
+
+      return null;
+    }
+
+    // Walk up a few ancestors until we find the arrow controls.
+    let host = dayNum;
+    for (let i = 0; i < 6 && host; i++) {
+      const found = findInHost(host.parentElement || host);
+      if (found) return found;
+      host = host.parentElement;
+    }
+    return null;
+  }
+
+  const prevBtn =
+    pickFirst([
+      "#matchday-prev",
+      "#md-prev",
+      ".matchday-prev",
+      ".md-prev",
+      '[data-md-nav="prev"]',
+      '[data-action="prev"]',
+    ]) || findArrowNearDayNumber("prev");
+
+  const nextBtn =
+    pickFirst([
+      "#matchday-next",
+      "#md-next",
+      ".matchday-next",
+      ".md-next",
+      '[data-md-nav="next"]',
+      '[data-action="next"]',
+    ]) || findArrowNearDayNumber("next");
+
+  function setDisabled(el, disabled) {
+    if (!el) return;
+    if ("disabled" in el) el.disabled = !!disabled;
+    el.style.opacity = disabled ? "0.35" : "";
+    el.style.pointerEvents = disabled ? "none" : "";
+    if (disabled) el.setAttribute("aria-disabled", "true");
+    else el.removeAttribute("aria-disabled");
+  }
+
+  function bind(el, key) {
+    if (!el) return;
+    // prevent double-binding
+    if (el.dataset && el.dataset.fblBound === "1") return;
+    if (el.dataset) el.dataset.fblBound = "1";
+
+    el.addEventListener("click", (e) => {
+      // don't break links if you used <a>
+      e.preventDefault();
+      if (!key || key === currentKey) return;
+      if (typeof onChange === "function") onChange(key);
+    });
+  }
+
+  setDisabled(prevBtn, !prevKey);
+  setDisabled(nextBtn, !nextKey);
+
+  // Re-bind each time because currentKey changes
+  // (we overwrite by disabling pointer-events + using currentKey check)
+  bind(prevBtn, prevKey);
+  bind(nextBtn, nextKey);
+}
+
+
+  function kickoffMsForPred(pred, fixturesById, fixturesList) {
+    let fixture = fixturesById[String(pred.fixtureId)] || null;
+    if (!fixture && pred.fixture && pred.fixture.id != null) {
+      fixture = fixturesById[String(pred.fixture.id)] || null;
+    }
+    if (!fixture && pred.apiFixtureId != null) {
+      fixture = fixturesById[String(pred.apiFixtureId)] || null;
+    }
+    if (!fixture && leagueKey === "AFCON") {
+      fixture = findAfconFixture(pred, fixturesList);
+    }
+    const kickoffIso =
+      pred.kickoff ||
+      getKickoffIsoFromFixture(fixture) ||
+      pred.timestamp ||
+      "";
+    const ms = Date.parse(kickoffIso || "");
+    return Number.isFinite(ms) ? ms : 0;
+  }
+
+  function formatKickoffDateOnly(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const lang = getLangSafe();
+    try {
+      return new Intl.DateTimeFormat(lang, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }).format(d);
+    } catch (_) {
+      return d.toDateString();
+    }
   }
 
   function getFixtureIdCandidates(f) {
@@ -708,6 +917,13 @@ if (leagueKey === "AFCON") {
 
     const niceTime = formatKickoff(kickoffIso);
 
+    // ✅ Late prediction (submitted after kickoff) => always 0 points (but still displayed)
+    const isLatePrediction = (() => {
+      const ko = Date.parse(kickoffIso || "");
+      const pt = Date.parse(pred.timestamp || "");
+      return Number.isFinite(ko) && Number.isFinite(pt) && pt > ko;
+    })();
+
     const predHomeVal = pred.home && pred.home.score != null ? pred.home.score : "";
     const predAwayVal = pred.away && pred.away.score != null ? pred.away.score : "";
 
@@ -729,12 +945,15 @@ if (leagueKey === "AFCON") {
     const finHomeForCalc = finHome === "" ? NaN : Number(finHome);
     const finAwayForCalc = finAway === "" ? NaN : Number(finAway);
 
-    const pts = computePoints(
+    const ptsRaw = computePoints(
       Number(predHomeVal),
       Number(predAwayVal),
       finHomeForCalc,
       finAwayForCalc
     );
+
+    // ✅ enforce 0 points for late predictions (only when a final score exists)
+    const pts = isLatePrediction && ptsRaw !== null ? 0 : ptsRaw;
 
     const html = `
       <h4 class="match-card-kickoff" style="margin:10px 12px 6px; font-size:14px; font-weight:700;">
@@ -776,7 +995,7 @@ if (leagueKey === "AFCON") {
         <p class="points-earned">${pts === null ? "" : `${esc(tr("results.pointsLabel"))} ${pts}`}</p>
       </div>
     `;
-    return { html, pts };
+    return { html, pts, isLatePrediction };
   }
 
   function attachLogos(cardEl, pred, fixture) {
@@ -853,7 +1072,8 @@ if (leagueKey === "AFCON") {
       return l === leagueKey;
     });
 
-    preds = filterPredictionsAfterKickoff(preds, fixturesById, fixturesList);
+    // ✅ CHANGE: do NOT remove late predictions; we keep them but award 0 points.
+    // preds = filterPredictionsAfterKickoff(preds, fixturesById, fixturesList);
     preds = dedupeFirstPredictionPerFixture(preds);
 
     preds.sort(
@@ -873,16 +1093,59 @@ if (leagueKey === "AFCON") {
     // ✅ get final score cache here
     const finalScoreCache = await hydrateAfconFinalScores(preds, fixturesById, fixturesList);
 
-    const maxMd = preds.reduce((m, p) => {
-      const md = parseInt(p.matchday, 10);
-      return Number.isFinite(md) ? Math.max(m, md) : m;
-    }, 0);
-    updateMatchdayHeader(maxMd || "?");
+
+    // ✅ Matchday navigation: show one matchday at a time (with < >)
+    const matchdays = Array.from(
+      new Set(
+        preds
+          .map((p) => String(p.matchday || "").trim())
+          .filter((x) => x && x !== "undefined" && x !== "null")
+      )
+    ).sort((a, b) => {
+      const nA = parseInt(a, 10);
+      const nB = parseInt(b, 10);
+      if (Number.isFinite(nA) && Number.isFinite(nB)) return nA - nB;
+      return String(a).localeCompare(String(b));
+    });
+
+    const maxMd = matchdays.length ? matchdays[matchdays.length - 1] : "?";
+    if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATCHDAY__))) {
+      __FBL_SELECTED_MATCHDAY__ = maxMd || "?";
+    }
+
+    ensureMatchdayNav(matchdays, String(__FBL_SELECTED_MATCHDAY__), (newKey) => {
+      __FBL_SELECTED_MATCHDAY__ = String(newKey);
+      renderResultsPage();
+    });
+
+    updateMatchdayHeader(__FBL_SELECTED_MATCHDAY__ || "?");
+
+    // ✅ Render only the selected matchday (still displaying late predictions)
+    let predsForMd = preds.filter(
+      (p) => String(p.matchday || "").trim() === String(__FBL_SELECTED_MATCHDAY__ || "").trim()
+    );
+
+    // order by kickoff time so the date order is clear
+    predsForMd.sort(
+      (a, b) => kickoffMsForPred(a, fixturesById, fixturesList) - kickoffMsForPred(b, fixturesById, fixturesList)
+    );
 
     let totalPts = 0;
     const predictionsWithPoints = [];
 
-    const cardsHtml = preds
+
+    // ✅ If the selected matchday has no predictions, show a simple message
+    if (!predsForMd.length) {
+      container.innerHTML = `<p style="padding:12px;">${esc(
+        tr("results.noPredictions", { league: leagueInfo.name })
+      )}</p>`;
+      if (totalSpan) totalSpan.textContent = "0";
+      retryFixMatchdayTitle();
+      return;
+    }
+
+    let lastDateLabel = "";
+    const cardsHtml = predsForMd
       .map((pred, i) => {
         let fixture = fixturesById[String(pred.fixtureId)] || null;
 
@@ -897,19 +1160,35 @@ if (leagueKey === "AFCON") {
           fixture = findAfconFixture(pred, fixturesList);
         }
 
+        const kickoffIso =
+          pred.kickoff ||
+          getKickoffIsoFromFixture(fixture) ||
+          pred.timestamp ||
+          "";
+
+        const dateLabel = formatKickoffDateOnly(kickoffIso);
+        const dateHeader =
+          dateLabel && dateLabel !== lastDateLabel
+            ? (() => {
+                lastDateLabel = dateLabel;
+                return `<h3 class="match-date" style="margin:14px 12px 6px; font-size:15px; opacity:0.9;">${esc(dateLabel)}</h3>`;
+              })()
+            : "";
+
         const { html, pts } = buildCardHTML(i + 1, pred, fixture, finalScoreCache);
         if (pts != null) {
           totalPts += pts;
           predictionsWithPoints.push({ fixtureId: pred.fixtureId, points: pts });
         }
-        return html;
+        return dateHeader + html;
       })
       .join("");
+
 
     container.innerHTML =
       cardsHtml || `<p style="padding:12px;">${esc(tr("results.noResultsYet"))}</p>`;
 
-    preds.forEach((pred) => {
+    predsForMd.forEach((pred) => {
       const sel = `.match-card[data-fixture="${CSS.escape(String(pred.fixtureId))}"]`;
       const cardEl = container.querySelector(sel);
       if (!cardEl) return;
