@@ -221,6 +221,7 @@
     }
   }
 
+
   function computePoints(predH, predA, finH, finA) {
     // Points rules:
     // 3 = exact score
@@ -249,9 +250,15 @@
     // exact goal difference?
     if (predDiff === finDiff) return 2;
 
-    return 1;
-  }
+    // Check if it's a predicted draw and the final score is also a draw
+    if ((predH === predA && finH === finA) || (predH !== predA && finH !== finA)) {
+        return 2;
+    }
 
+    return 1;
+}
+
+  
   async function syncPointsToFirestore(predictionsWithPoints) {
     if (!window.firebase || !firebase.auth || !firebase.firestore) return;
 
