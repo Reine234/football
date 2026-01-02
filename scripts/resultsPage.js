@@ -221,41 +221,38 @@
     }
   }
 
+function computePoints(predH, predA, finH, finA) {
+  // Points rules:
+  // 3 = exact score
+  // 2 = correct winner AND exact goal difference (including draw predictions)
+  // 1 = correct winner only
+  // 0 = everything else
+  if (!Number.isFinite(finH) || !Number.isFinite(finA)) return null;
+  if (!Number.isFinite(predH) || !Number.isFinite(predA)) return 0;
 
-  function computePoints(predH, predA, finH, finA) {
-    // Points rules:
-    // 3 = exact score
-    // 2 = correct winner AND exact goal difference
-    // 1 = correct winner only
-    // 0 = everything else
-    if (!Number.isFinite(finH) || !Number.isFinite(finA)) return null;
-    if (!Number.isFinite(predH) || !Number.isFinite(predA)) return 0;
+  // exact score
+  if (predH === finH && predA === finA) return 3;
 
-    // exact score
-    if (predH === finH && predA === finA) return 3;
+  const finDiff = finH - finA;
+  const predDiff = predH - predA;
 
-    const finDiff = finH - finA;
-    const predDiff = predH - predA;
+  // NEW: if both predicted result and final result are draws, award 2 points
+  if (predH === predA && finH === finA) return 2;
 
-    // if the real match is a draw, only exact score earns points
-    if (finDiff === 0) return 0;
+  // if the real match is a draw, only exact score earns points
+  if (finDiff === 0) return 0;
 
-    // predicted draw but match had a winner
-    if (predDiff === 0) return 0;
+  // predicted draw but match had a winner
+  if (predDiff === 0) return 0;
 
-    // correct winner?
-    const sameWinner = (finDiff > 0 && predDiff > 0) || (finDiff < 0 && predDiff < 0);
-    if (!sameWinner) return 0;
+  // correct winner?
+  const sameWinner = (finDiff > 0 && predDiff > 0) || (finDiff < 0 && predDiff < 0);
+  if (!sameWinner) return 0;
 
-    // exact goal difference?
-    if (predDiff === finDiff) return 2;
+  // exact goal difference?
+  if (predDiff === finDiff) return 2;
 
-    // Check if it's a predicted draw and the final score is also a draw
-    if ((predH === predA && finH === finA) || (predH !== predA && finH !== finA)) {
-        return 2;
-    }
-
-    return 1;
+  return 1;
 }
 
   
