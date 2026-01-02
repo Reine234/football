@@ -232,7 +232,8 @@
   // ✅ helper: fetch predictions without scanning everything (AFCON uses matchday queries)
   async function fetchPredictionsForLeagueMatchdays(db, leagueKey) {
     const wantedLeagues = leagueSynonyms(leagueKey);
-    const wantedMatchdays = leagueKey === "AFCON" ? ["1", "2", "3"] : null;
+    // ✅ AFCON: include Round of 16 (stored as matchday "4") + group matchdays 1..3
+    const wantedMatchdays = leagueKey === "AFCON" ? ["4", "1", "2", "3"] : null;
 
     // Keep previous behavior for non-AFCON leagues
     if (leagueKey !== "AFCON") {
@@ -264,7 +265,7 @@
 
 
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
-  // ✅ CHANGE (AFCON): show ONLY 3 tabs (Matchday 1,2,3) and rank across ALL groups per matchday.
+  // ✅ AFCON: show Round of 16 + Matchday 1,2,3 and rank across ALL groups per tab.
   function ensureMatchdayStrip(matchdays, currentKey, leagueKey, onSelectMatchday) {
     if (!matchdays || !matchdays.length) return;
 
@@ -298,10 +299,14 @@
         const isActive = key === currentKey;
         let labelText = "";
 
-        // ✅ AFCON: key is just "1","2","3"
+        // ✅ AFCON: key is "4" (Round of 16) or "1","2","3"
         if (leagueKey === "AFCON") {
-          const md = parseInt(key, 10);
-          labelText = tr("winners.matchdayLabel", { n: Number.isFinite(md) ? md : key });
+          if (String(key) === "4") {
+            labelText = tr("afcon.round16.tab") || "Round of 16";
+          } else {
+            const md = parseInt(key, 10);
+            labelText = tr("winners.matchdayLabel", { n: Number.isFinite(md) ? md : key });
+          }
         } else {
           // other leagues: key is just "1", "2", ...
           const md = parseInt(key, 10);
@@ -371,8 +376,8 @@
         const mdNum = parseInt(mdRaw, 10);
         if (!Number.isFinite(mdNum)) return; // ignore docs without matchday
 
-        // ✅ AFCON: only show matchdays 1..3 in the UI (still compute points normally)
-        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 3)) return;
+        // ✅ AFCON: allow Round of 16 (4) + matchdays 1..3
+        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 4)) return;
 
         const fixture = fixturesById[fixtureId];
 
@@ -435,9 +440,9 @@
 
       let matchdays = Array.from(keySet);
 
-      // ✅ CHANGE (AFCON): force exactly 3 tabs: 1,2,3
+      // ✅ AFCON: force tabs: Round of 16 + 1,2,3 (in that order)
       if (leagueKey === "AFCON") {
-        matchdays = ["1", "2", "3"];
+        matchdays = ["4", "1", "2", "3"];
       } else {
         matchdays.sort((a, b) => {
           const nA = parseInt(a, 10);
@@ -459,12 +464,14 @@
       // Default selection
       if (!selectedMatchdayKey) {
         if (leagueKey === "AFCON") {
-          // pick the latest available among 1..3 (falls back to 1)
+          // default: Round of 16 if available; else latest among 1..3; else 1
           const available = Array.from(keySet).filter((k) => matchdays.includes(k));
-          if (available.length) {
+          if (available.includes("4")) {
+            selectedMatchdayKey = "4";
+          } else if (available.length) {
             const best = available
               .map((k) => parseInt(k, 10))
-              .filter(Number.isFinite)
+              .filter((n) => Number.isFinite(n) && n >= 1 && n <= 3)
               .sort((a, b) => a - b)
               .pop();
             selectedMatchdayKey = best ? String(best) : "1";
