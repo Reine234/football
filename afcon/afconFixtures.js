@@ -205,8 +205,8 @@
   roundNum: 3,
   roundText: "Matchday 3",
   leagueId: null,
-  away: { id: "NGA", name: "Nigeria",  logo: "../img/nigeria.png" },
- home: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
+  home: { id: "NGA", name: "Nigeria",  logo: "../img/nigeria.png" },
+  away: { id: "UGA", name: "Uganda",   logo: "../img/uganda.png" },
   goals: { home: null, away: null },
   status: { short: "NS", long: "Not Started" },
 },
@@ -439,7 +439,7 @@
           away: { id: "GAB", name: "Gabon", logo: "../img/gabon.png" },
           goals: { home: null, away: null },
           status: { short: "NS", long: "Not Started" }
-        }
+        },
 
     // ===== GROUP B =====
     // ❗TODO: copy fixtures from your groupB.html:
@@ -460,6 +460,106 @@
     // - id: "AFGC-1", "AFGD-2", etc.
     // - group: "C", "D", "E", "F"
     // - roundNum: 1/2/3
+
+    // -----------------------------
+    // Round of 16 (8es de finale) — RoundNum 4
+    // -----------------------------
+    {
+      id: "AFKO-1",
+      group: "KO",
+      utcDate: "2026-01-03T16:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
+      away: { id: "SUD", name: "Sudan", logo: "../img/sudan.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-2",
+      group: "KO",
+      utcDate: "2026-01-03T19:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
+      away: { id: "TUN", name: "Tunisia", logo: "../img/tunisia.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-3",
+      group: "KO",
+      utcDate: "2026-01-04T16:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "MAR", name: "Morocco", logo: "../img/morocco.png" },
+      away: { id: "TAN", name: "Tanzania", logo: "../img/tanzania.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-4",
+      group: "KO",
+      utcDate: "2026-01-04T19:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "RSA", name: "South Africa", logo: "../img/southafrica.png" },
+      away: { id: "CMR", name: "Cameroon", logo: "../img/cameroon.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-5",
+      group: "KO",
+      utcDate: "2026-01-05T16:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "EGY", name: "Egypt", logo: "../img/egypt.png" },
+      away: { id: "BEN", name: "Benin", logo: "../img/benin.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-6",
+      group: "KO",
+      utcDate: "2026-01-05T19:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "NGA", name: "Nigeria", logo: "../img/nigeria.png" },
+      away: { id: "MOZ", name: "Mozambique", logo: "../img/mozambique.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-7",
+      group: "KO",
+      utcDate: "2026-01-06T16:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "ALG", name: "Algeria", logo: "../img/algeria.png" },
+      away: { id: "COD", name: "DR Congo", logo: "../img/drcongo.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
+    {
+      id: "AFKO-8",
+      group: "KO",
+      utcDate: "2026-01-06T19:00:00Z",
+      roundNum: 4,
+      roundText: "Round of 16",
+      leagueId: "AFCON",
+      home: { id: "BFA", name: "Burkina Faso", logo: "../img/burkinafaso.png" },
+      away: { id: "CIV", name: "Côte d’Ivoire", logo: "../img/cotedivoire.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" }
+    },
   ];
 
   // Helper: get all fixtures for a matchday (any group)

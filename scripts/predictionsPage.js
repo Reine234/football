@@ -340,6 +340,10 @@
   const totalRounds = leagueInfo.totalRounds || "?";
   const allFixtures = selected.fixtures || [];
 
+  // AFCON KO rounds (Round of 16 and beyond) use the same engine internally,
+  // but should NOT show "Matchday 4" UI labels.
+  const isAfconKORound = (leagueKey === "AFCON" && Number(roundNum) >= 4);
+
   // ------------------------------------------------------------
   // AFCON helpers: matchday + group
   // ------------------------------------------------------------
@@ -752,15 +756,28 @@ function formatMatchTimeLocal(f) {
     // Subtitle (bilingual)
     if (subtitleEl) {
       const leagueMatches = tSafe("predictions.leagueMatches", "{league} Matches");
-      const matchdayOf = tSafe("predictions.matchdayOf", "Matchday {n} of {total}");
       const left = `<span class="bold">${formatTemplate(leagueMatches, { league: leagueInfo.name })}</span>`;
-      const right = formatTemplate(matchdayOf, { n: roundNum, total: totalRounds });
-      subtitleEl.innerHTML = `${left} - ${right}`;
+
+      // ✅ AFCON KO rounds: never show "Matchday 4" (or n/of total) in the UI
+      if (isAfconKORound) {
+        subtitleEl.innerHTML = `${left} - Round of 16`;
+      } else {
+        const matchdayOf = tSafe("predictions.matchdayOf", "Matchday {n} of {total}");
+        const right = formatTemplate(matchdayOf, { n: roundNum, total: totalRounds });
+        subtitleEl.innerHTML = `${left} - ${right}`;
+      }
     }
 
-    if (dayNumWrapEl) dayNumWrapEl.textContent = roundNum;
-    if (prevDayBtn) prevDayBtn.disabled = true;
-    if (nextDayBtn) nextDayBtn.disabled = true;
+    // Day navigation: hide completely for AFCON KO rounds
+    if (isAfconKORound) {
+      if (dayNumWrapEl) dayNumWrapEl.style.display = "none";
+      if (prevDayBtn) prevDayBtn.style.display = "none";
+      if (nextDayBtn) nextDayBtn.style.display = "none";
+    } else {
+      if (dayNumWrapEl) dayNumWrapEl.textContent = roundNum;
+      if (prevDayBtn) prevDayBtn.disabled = true;
+      if (nextDayBtn) nextDayBtn.disabled = true;
+    }
 
     // Make modal title bilingual even if HTML wasn't translated
     if (promptTitleEl) {
@@ -799,7 +816,9 @@ function formatMatchTimeLocal(f) {
     let lastGroupLabel = null;
 
     const predictionLabelText = tSafe("predictions.enterPredictionScore", "Enter your prediction score");
-    const groupHeaderTpl = tSafe("predictions.groupHeader", "{group} - Matchday {n}");
+    const groupHeaderTpl = isAfconKORound
+      ? "{group}"
+      : tSafe("predictions.groupHeader", "{group} - Matchday {n}");
 
     // ✅ both messages exist via i18n keys (we set the right one dynamically on click)
     const lockedStartedFallback = tSafe("predictions.matchStartedMsg", "Match has already started.");
@@ -1087,11 +1106,16 @@ function formatMatchTimeLocal(f) {
     }
 
     // Matchday "n of total" bilingual
+    // AFCON KO rounds: never show "4 of 3" (or any matchday label)
     if (matchdayTextEl) {
-      matchdayTextEl.textContent = formatTemplate(
-        tSafe("predictions.ofTotalShort", "{n} of {total}"),
-        { n: roundNum, total: totalRounds }
-      );
+      if (isAfconKORound) {
+        matchdayTextEl.textContent = "Round of 16";
+      } else {
+        matchdayTextEl.textContent = formatTemplate(
+          tSafe("predictions.ofTotalShort", "{n} of {total}"),
+          { n: roundNum, total: totalRounds }
+        );
+      }
     }
 
     // ✅ Only confirm matches not started yet

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="afcon.round16.title">FansBetLiga — AFCON Round of 16</title>
+
+  <link rel="stylesheet" href="../afcon/styleindex.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap">
+  <style>
+    body { font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+  </style>
+</head>
+
+<body data-league="AFCON">
+  <header class="topbar">
+    <h1 class="logo" data-i18n="app.brand">FANSBETLIGA</h1>
+
+    <button class="bell-btn has-unread" id="bellBtn"
+      aria-label=""
+      data-i18n-attr="aria-label"
+      data-i18n-key="nav.notificationsAria"
+      aria-expanded="false">
+      <img src="/img/Doorbell.png" alt="" class="bell-icon"
+        data-i18n-attr="alt"
+        data-i18n-key="nav.notificationsAlt" />
+    </button>
+  </header>
+
+  <!-- Full page notifications / wallet panel -->
+  <section class="bell-page" id="bellPage" aria-hidden="true">
+    <div class="bell-page__inner">
+      <div class="bell-page__top">
+        <h2 class="bell-page__title" data-i18n="nav.notifications">Notifications</h2>
+        <button class="bell-close" id="bellClose" aria-label="Close">✕</button>
+      </div>
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label" data-i18n="wallet.withdrawBonus">Withdraw Bonus</span>
+          <span class="tab-arrow">›</span>
+        </a>
+      </div>
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label" data-i18n="wallet.wallet">Wallet</span>
+          <span class="tab-arrow">›</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const bellBtn = document.getElementById("bellBtn");
+    const bellPage = document.getElementById("bellPage");
+    const bellClose = document.getElementById("bellClose");
+
+    function openBellPage() {
+      bellPage.classList.add("open");
+      bellPage.setAttribute("aria-hidden", "false");
+      bellBtn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeBellPage() {
+      bellPage.classList.remove("open");
+      bellPage.setAttribute("aria-hidden", "true");
+      bellBtn.setAttribute("aria-expanded", "false");
+    }
+
+    bellBtn.addEventListener("click", () => {
+      const isOpen = bellPage.classList.contains("open");
+      if (isOpen) closeBellPage();
+      else openBellPage();
+    });
+
+    bellClose.addEventListener("click", closeBellPage);
+
+    // optional: ESC closes
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeBellPage();
+    });
+  </script>
+
+  <nav class="nav">
+    <div class="nav-item"><img src="../img/home.png" alt="Home" data-i18n="nav.homeAlt" data-i18n-attr="alt"><span data-i18n="nav.home">Home</span></div>
+    <div class="nav-item"><img src="../img/results.png" alt="Results" data-i18n="nav.resultsAlt" data-i18n-attr="alt"><span data-i18n="nav.results">Results</span></div>
+    <div class="nav-item"><img src="../img/winners.png" alt="Winners" data-i18n="nav.winnersAlt" data-i18n-attr="alt"><span data-i18n="nav.winners">Winners</span></div>
+    <div class="nav-item"><img src="../img/rules.png" alt="Rules" data-i18n="nav.rulesAlt" data-i18n-attr="alt"><span data-i18n="nav.rules">Rules</span></div>
+  </nav>
+
+  <div class="season-title">
+    <span class="back-arrow"></span>
+    <h2 data-i18n="afcon.round16.heading">AFCON 2025 — 8es de finale</h2>
+  </div>
+
+  <div class="league-tabs">
+    <button class="tab" onclick="window.location.href='index.html'" data-i18n="afcon.groupA.tab">Group A</button>
+    <button class="tab" onclick="window.location.href='groupB.html'" data-i18n="afcon.groupB.tab">Group B</button>
+    <button class="tab" onclick="window.location.href='groupC.html'" data-i18n="afcon.groupC.tab">Group C</button>
+    <button class="tab" onclick="window.location.href='groupD.html'" data-i18n="afcon.groupD.tab">Group D</button>
+    <button class="tab" onclick="window.location.href='groupE.html'" data-i18n="afcon.groupE.tab">Group E</button>
+    <button class="tab" onclick="window.location.href='groupF.html'" data-i18n="afcon.groupF.tab">Group F</button>
+    <button class="tab active" onclick="window.location.href='round16.html'" data-i18n="afcon.round16.tab">8es de finale</button>
+  </div>
+
+  <section class="matches">
+    <div class="matches-header">
+      <h3 data-i18n="afcon.round16.header">AFCON — 8es de finale</h3>
+    </div>
+
+    <!-- 03 Jan -->
+    <div class="day">
+      <h4>Friday, 3 Jan 2026</h4>
+
+      <div class="match-card cyan" data-fixture-id="AFKO-1">
+        <div class="match-info">
+          <p class="time">17:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/senegal.png" alt="Senegal" data-i18n="team.afcon.senegal">
+              <p data-i18n="team.afcon.senegal">Senegal</p>
+            </div>
+            <div class="team">
+              <img src="../img/sudan.png" alt="Sudan" data-i18n="team.afcon.sudan">
+              <p data-i18n="team.afcon.sudan">Sudan</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-card blue" data-fixture-id="AFKO-2">
+        <div class="match-info">
+          <p class="time">20:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/mali.png" alt="Mali" data-i18n="team.afcon.mali">
+              <p data-i18n="team.afcon.mali">Mali</p>
+            </div>
+            <div class="team">
+              <img src="../img/tunisia.png" alt="Tunisia" data-i18n="team.afcon.tunisia">
+              <p data-i18n="team.afcon.tunisia">Tunisia</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 Jan -->
+    <div class="day">
+      <h4>Saturday, 4 Jan 2026</h4>
+
+      <div class="match-card cyan" data-fixture-id="AFKO-3">
+        <div class="match-info">
+          <p class="time">17:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/morocco.png" alt="Morocco" data-i18n="team.afcon.morocco">
+              <p data-i18n="team.afcon.morocco">Morocco</p>
+            </div>
+            <div class="team">
+              <img src="../img/tanzania.png" alt="Tanzania" data-i18n="team.afcon.tanzania">
+              <p data-i18n="team.afcon.tanzania">Tanzania</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-card blue" data-fixture-id="AFKO-4">
+        <div class="match-info">
+          <p class="time">20:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/southafrica.png" alt="South Africa" data-i18n="team.afcon.southafrica">
+              <p data-i18n="team.afcon.southafrica">South Africa</p>
+            </div>
+            <div class="team">
+              <img src="../img/cameroon.png" alt="Cameroon" data-i18n="team.afcon.cameroon">
+              <p data-i18n="team.afcon.cameroon">Cameroon</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Jan -->
+    <div class="day">
+      <h4>Sunday, 5 Jan 2026</h4>
+
+      <div class="match-card cyan" data-fixture-id="AFKO-5">
+        <div class="match-info">
+          <p class="time">17:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/egypt.png" alt="Egypt" data-i18n="team.afcon.egypt">
+              <p data-i18n="team.afcon.egypt">Egypt</p>
+            </div>
+            <div class="team">
+              <img src="../img/benin.png" alt="Benin" data-i18n="team.afcon.benin">
+              <p data-i18n="team.afcon.benin">Benin</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-card blue" data-fixture-id="AFKO-6">
+        <div class="match-info">
+          <p class="time">20:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/nigeria.png" alt="Nigeria" data-i18n="team.afcon.nigeria">
+              <p data-i18n="team.afcon.nigeria">Nigeria</p>
+            </div>
+            <div class="team">
+              <img src="../img/mozambique.png" alt="Mozambique" data-i18n="team.afcon.mozambique">
+              <p data-i18n="team.afcon.mozambique">Mozambique</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 Jan -->
+    <div class="day">
+      <h4>Monday, 6 Jan 2026</h4>
+
+      <div class="match-card cyan" data-fixture-id="AFKO-7">
+        <div class="match-info">
+          <p class="time">17:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/algeria.png" alt="Algeria" data-i18n="team.afcon.algeria">
+              <p data-i18n="team.afcon.algeria">Algeria</p>
+            </div>
+            <div class="team">
+              <img src="../img/drcongo.png" alt="DR Congo" data-i18n="team.afcon.drcongo">
+              <p data-i18n="team.afcon.drcongo">DR Congo</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-card blue" data-fixture-id="AFKO-8">
+        <div class="match-info">
+          <p class="time">20:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="../img/burkinafaso.png" alt="Burkina Faso" data-i18n="team.afcon.burkinafaso">
+              <p data-i18n="team.afcon.burkinafaso">Burkina Faso</p>
+            </div>
+            <div class="team">
+              <img src="../img/cotedivoire.png" alt="Côte d’Ivoire" data-i18n="team.afcon.cotedivoire">
+              <p data-i18n="team.afcon.cotedivoire">Côte d’Ivoire</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a id="bet-button-main" class="fixed-button" href="predictions.html" data-i18n="common.betPlus">Bet +</a>
+  </section>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+
+  <script src="../scripts/firebase-init.js"></script>
+  <script src="../scripts/config.js"></script>
+  <script src="../scripts/api.js"></script>
+  <script src="afconFixtures.js"></script>
+  <script src="../scripts/winnersPage.js"></script>
+
+  <!-- ✅ i18n (LOAD ONCE) -->
+  <script src="../scripts/translations.fr.js"></script>
+  <script src="../scripts/translations.en.js"></script>
+  <script src="../scripts/i18n.js"></script>
+  <script>
+    // Apply saved language across all pages
+    if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
+      window.FBL_I18N.apply();
+    }
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Round of 16 uses roundNum=4 internally (NO UI mention)
+      const ROUND_NUM = 4;
+
+      function goToAfconPredictionsRound16() {
+        const fixturesForRound = window.getAfconFixturesForMatchday(ROUND_NUM);
+
+        const payload = {
+          leagueKey: "AFCON",
+          roundNum: ROUND_NUM,
+          fixtures: fixturesForRound,
+        };
+
+        sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+        sessionStorage.setItem("FBL_leagueKey", "AFCON");
+        sessionStorage.setItem("FBL_mode", "all");
+
+        window.location.href = "predictions.html";
+      }
+
+      document.querySelectorAll(".match-card").forEach(card => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", goToAfconPredictionsRound16);
+      });
+
+      const betBtn = document.getElementById("bet-button-main");
+      if (betBtn) {
+        betBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          goToAfconPredictionsRound16();
+        });
+      }
+    });
+  </script>
+</body>
+</html>
