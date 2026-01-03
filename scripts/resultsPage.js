@@ -336,145 +336,156 @@
   // ✅ Matchday navigation: DO NOT create new buttons.
   // We only "activate" the arrows/buttons that already exist in your HTML (the green ones).
   function ensureMatchdayNav(matchdays, currentKey, onChange) {
-    if (!matchdays || !matchdays.length) return;
+  if (!matchdays || !matchdays.length) return;
 
-    const idx = matchdays.indexOf(String(currentKey));
-    let prevKey = idx > 0 ? matchdays[idx - 1] : null;
-    let nextKey = idx >= 0 && idx < matchdays.length - 1 ? matchdays[idx + 1] : null;
+  const idx = matchdays.indexOf(String(currentKey));
+  const prevKey = idx > 0 ? matchdays[idx - 1] : null;
+  const nextKey = idx >= 0 && idx < matchdays.length - 1 ? matchdays[idx + 1] : null;
 
-    // ✅ IMPORTANT: NO WRAP for AFCON Round of 16.
-    // - When on Round of 16 (matchday "4"): ">" does nothing (nextKey stays null)
-    // - "<" goes back to matchday 3,2,1
-    // So we DO NOT modify prevKey/nextKey here.
-
-    function pickFirst(selectors) {
-      for (const sel of selectors) {
-        const el = document.querySelector(sel);
-        if (el) return el;
-      }
-      return null;
+  function pickFirst(selectors) {
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) return el;
     }
-
-    function findArrowNearDayNumber(dir) {
-      const dayNum = document.getElementById("day-number");
-      if (!dayNum) return null;
-
-      const ARROWS_PREV = new Set(["<", "‹", "❮", "«"]);
-      const ARROWS_NEXT = new Set([">", "›", "❯", "»"]);
-
-      function looksLikePrev(el) {
-        const t = String(el.textContent || "").trim();
-        if (ARROWS_PREV.has(t)) return true;
-
-        const cls = String(el.className || "").toLowerCase();
-        const aria = String(el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title")) || "").toLowerCase();
-        const data = String(el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "") || "").toLowerCase();
-
-        if (data === "prev" || data === "previous" || data === "back") return true;
-        if (cls.includes("prev") || cls.includes("previous") || cls.includes("back") || cls.includes("left")) return true;
-        if (aria.includes("prev") || aria.includes("previous") || aria.includes("back") || aria.includes("left")) return true;
-
-        return false;
-      }
-
-      function looksLikeNext(el) {
-        const t = String(el.textContent || "").trim();
-        if (ARROWS_NEXT.has(t)) return true;
-
-        const cls = String(el.className || "").toLowerCase();
-        const aria = String(el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title")) || "").toLowerCase();
-        const data = String(el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "") || "").toLowerCase();
-
-        if (data === "next" || data === "forward") return true;
-        if (cls.includes("next") || cls.includes("forward") || cls.includes("right")) return true;
-        if (aria.includes("next") || aria.includes("forward") || aria.includes("right")) return true;
-
-        return false;
-      }
-
-      function findInHost(host) {
-        if (!host) return null;
-
-        const btns = Array.from(host.querySelectorAll("button,a,[role='button']"));
-
-        if (dir === "prev") {
-          for (const el of btns) if (looksLikePrev(el)) return el;
-          for (const el of btns) {
-            if (el.querySelector && el.querySelector("svg") && looksLikePrev(el)) return el;
-          }
-        } else {
-          for (const el of btns) if (looksLikeNext(el)) return el;
-          for (const el of btns) {
-            if (el.querySelector && el.querySelector("svg") && looksLikeNext(el)) return el;
-          }
-        }
-
-        const all = Array.from(host.querySelectorAll("*"));
-        if (dir === "prev") {
-          for (const el of all) if (looksLikePrev(el)) return el;
-        } else {
-          for (const el of all) if (looksLikeNext(el)) return el;
-        }
-
-        return null;
-      }
-
-      let host = dayNum;
-      for (let i = 0; i < 6 && host; i++) {
-        const found = findInHost(host.parentElement || host);
-        if (found) return found;
-        host = host.parentElement;
-      }
-      return null;
-    }
-
-    const prevBtn =
-      pickFirst([
-        "#matchday-prev",
-        "#md-prev",
-        ".matchday-prev",
-        ".md-prev",
-        '[data-md-nav="prev"]',
-        '[data-action="prev"]',
-      ]) || findArrowNearDayNumber("prev");
-
-    const nextBtn =
-      pickFirst([
-        "#matchday-next",
-        "#md-next",
-        ".matchday-next",
-        ".md-next",
-        '[data-md-nav="next"]',
-        '[data-action="next"]',
-      ]) || findArrowNearDayNumber("next");
-
-    function setDisabled(el, disabled) {
-      if (!el) return;
-      if ("disabled" in el) el.disabled = !!disabled;
-      el.style.opacity = disabled ? "0.35" : "";
-      el.style.pointerEvents = disabled ? "none" : "";
-      if (disabled) el.setAttribute("aria-disabled", "true");
-      else el.removeAttribute("aria-disabled");
-    }
-
-    function bind(el, key) {
-      if (!el) return;
-      if (el.dataset && el.dataset.fblBound === "1") return;
-      if (el.dataset) el.dataset.fblBound = "1";
-
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (!key || key === currentKey) return;
-        if (typeof onChange === "function") onChange(key);
-      });
-    }
-
-    setDisabled(prevBtn, !prevKey);
-    setDisabled(nextBtn, !nextKey);
-
-    bind(prevBtn, prevKey);
-    bind(nextBtn, nextKey);
+    return null;
   }
+
+  function findArrowNearDayNumber(dir) {
+    const dayNum = document.getElementById("day-number");
+    if (!dayNum) return null;
+
+    const ARROWS_PREV = new Set(["<", "‹", "❮", "«"]);
+    const ARROWS_NEXT = new Set([">", "›", "❯", "»"]);
+
+    function looksLikePrev(el) {
+      const t = String(el.textContent || "").trim();
+      if (ARROWS_PREV.has(t)) return true;
+
+      const cls = String(el.className || "").toLowerCase();
+      const aria = String(
+        (el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title"))) || ""
+      ).toLowerCase();
+      const data = String(
+        (el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "")) || ""
+      ).toLowerCase();
+
+      if (data === "prev" || data === "previous" || data === "back") return true;
+      if (cls.includes("prev") || cls.includes("previous") || cls.includes("back") || cls.includes("left")) return true;
+      if (aria.includes("prev") || aria.includes("previous") || aria.includes("back") || aria.includes("left")) return true;
+      return false;
+    }
+
+    function looksLikeNext(el) {
+      const t = String(el.textContent || "").trim();
+      if (ARROWS_NEXT.has(t)) return true;
+
+      const cls = String(el.className || "").toLowerCase();
+      const aria = String(
+        (el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title"))) || ""
+      ).toLowerCase();
+      const data = String(
+        (el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "")) || ""
+      ).toLowerCase();
+
+      if (data === "next" || data === "forward") return true;
+      if (cls.includes("next") || cls.includes("forward") || cls.includes("right")) return true;
+      if (aria.includes("next") || aria.includes("forward") || aria.includes("right")) return true;
+      return false;
+    }
+
+    function findInHost(host) {
+      if (!host) return null;
+
+      const btns = Array.from(host.querySelectorAll("button,a,[role='button']"));
+
+      if (dir === "prev") {
+        for (const el of btns) if (looksLikePrev(el)) return el;
+        for (const el of btns) if (el.querySelector && el.querySelector("svg") && looksLikePrev(el)) return el;
+      } else {
+        for (const el of btns) if (looksLikeNext(el)) return el;
+        for (const el of btns) if (el.querySelector && el.querySelector("svg") && looksLikeNext(el)) return el;
+      }
+
+      const all = Array.from(host.querySelectorAll("*"));
+      if (dir === "prev") {
+        for (const el of all) if (looksLikePrev(el)) return el;
+      } else {
+        for (const el of all) if (looksLikeNext(el)) return el;
+      }
+
+      return null;
+    }
+
+    let host = dayNum;
+    for (let i = 0; i < 6 && host; i++) {
+      const found = findInHost(host.parentElement || host);
+      if (found) return found;
+      host = host.parentElement;
+    }
+    return null;
+  }
+
+  const prevBtn =
+    pickFirst([
+      "#matchday-prev",
+      "#md-prev",
+      ".matchday-prev",
+      ".md-prev",
+      '[data-md-nav="prev"]',
+      '[data-action="prev"]',
+    ]) || findArrowNearDayNumber("prev");
+
+  const nextBtn =
+    pickFirst([
+      "#matchday-next",
+      "#md-next",
+      ".matchday-next",
+      ".md-next",
+      '[data-md-nav="next"]',
+      '[data-action="next"]',
+    ]) || findArrowNearDayNumber("next");
+
+  function setDisabled(el, disabled) {
+    if (!el) return;
+    if ("disabled" in el) el.disabled = !!disabled;
+    el.style.opacity = disabled ? "0.35" : "";
+    el.style.pointerEvents = disabled ? "none" : "";
+    if (disabled) el.setAttribute("aria-disabled", "true");
+    else el.removeAttribute("aria-disabled");
+  }
+
+  // ✅ stable handler: reads BOTH current + target from dataset (no stale closure)
+  function attachStableHandler(el) {
+    if (!el) return;
+    if (el.dataset && el.dataset.fblNavHandler === "1") return;
+
+    if (el.dataset) el.dataset.fblNavHandler = "1";
+
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      const target = el.dataset ? String(el.dataset.fblNavKey || "") : "";
+      const cur = el.dataset ? String(el.dataset.fblCurrentKey || "") : "";
+      if (!target || target === cur) return;
+      if (typeof onChange === "function") onChange(target);
+    });
+  }
+
+  // Update datasets EACH render
+  if (prevBtn && prevBtn.dataset) {
+    prevBtn.dataset.fblNavKey = prevKey || "";
+    prevBtn.dataset.fblCurrentKey = String(currentKey || "");
+  }
+  if (nextBtn && nextBtn.dataset) {
+    nextBtn.dataset.fblNavKey = nextKey || "";
+    nextBtn.dataset.fblCurrentKey = String(currentKey || "");
+  }
+
+  attachStableHandler(prevBtn);
+  attachStableHandler(nextBtn);
+
+  setDisabled(prevBtn, !prevKey);
+  setDisabled(nextBtn, !nextKey);
+}
 
   // -------------------- THE REST OF YOUR FILE IS UNCHANGED --------------------
   // NOTE: Everything below is identical to what you pasted.
