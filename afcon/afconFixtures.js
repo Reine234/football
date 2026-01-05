@@ -441,6 +441,57 @@
           status: { short: "NS", long: "Not Started" }
         },
 
+        // ===== QUARTER-FINALS (Round 5) =====
+        // NOTE: Times are in UTC (displayed in local time by the UI)
+        {
+          id: "AFCON-QF-001",
+          group: "QF",
+          utcDate: "2026-01-09T16:00:00Z", // 17:00 (UTC+1)
+          roundNum: 5,
+          roundText: "Quarter-finals",
+          leagueId: "AFCON",
+          home: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
+          away: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
+          goals: { home: null, away: null },
+          status: { short: "NS", long: "Not Started" }
+        },
+        {
+          id: "AFCON-QF-002",
+          group: "QF",
+          utcDate: "2026-01-09T19:00:00Z", // 20:00 (UTC+1)
+          roundNum: 5,
+          roundText: "Quarter-finals",
+          leagueId: "AFCON",
+          home: { id: "MAR", name: "Morocco", logo: "../img/morocco.png" },
+          away: { id: "CMR", name: "Cameroon", logo: "../img/cameroon.png" },
+          goals: { home: null, away: null },
+          status: { short: "NS", long: "Not Started" }
+        },
+        {
+          id: "AFCON-QF-003",
+          group: "QF",
+          utcDate: "2026-01-10T16:00:00Z", // 17:00 (UTC+1)
+          roundNum: 5,
+          roundText: "Quarter-finals",
+          leagueId: "AFCON",
+          home: { id: "TBD1", name: "TBD", logo: "" },
+          away: { id: "TBD2", name: "TBD", logo: "" },
+          goals: { home: null, away: null },
+          status: { short: "TBD", long: "To Be Determined" }
+        },
+        {
+          id: "AFCON-QF-004",
+          group: "QF",
+          utcDate: "2026-01-10T19:00:00Z", // 20:00 (UTC+1)
+          roundNum: 5,
+          roundText: "Quarter-finals",
+          leagueId: "AFCON",
+          home: { id: "TBD3", name: "TBD", logo: "" },
+          away: { id: "TBD4", name: "TBD", logo: "" },
+          goals: { home: null, away: null },
+          status: { short: "TBD", long: "To Be Determined" }
+        }
+
     // ===== GROUP B =====
     // ❗TODO: copy fixtures from your groupB.html:
     // {
@@ -460,131 +511,6 @@
     // - id: "AFGC-1", "AFGD-2", etc.
     // - group: "C", "D", "E", "F"
     // - roundNum: 1/2/3
-
-    // -----------------------------
-    // Round of 16 (8es de finale) — RoundNum 4
-    // -----------------------------
-    {
-      id: "AFKO-1",
-      group: "KO",
-      utcDate: "2026-01-03T16:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
-      away: { id: "SUD", name: "Sudan", logo: "../img/sudan.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-2",
-      group: "KO",
-      utcDate: "2026-01-03T19:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
-      away: { id: "TUN", name: "Tunisia", logo: "../img/tunisia.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-3",
-      group: "KO",
-      utcDate: "2026-01-04T16:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "MAR", name: "Morocco", logo: "../img/morocco.png" },
-      away: { id: "TAN", name: "Tanzania", logo: "../img/tanzania.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-4",
-      group: "KO",
-      utcDate: "2026-01-04T19:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "RSA", name: "South Africa", logo: "../img/southafrica.png" },
-      away: { id: "CMR", name: "Cameroon", logo: "../img/cameroon.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-5",
-      group: "KO",
-      utcDate: "2026-01-05T16:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "EGY", name: "Egypt", logo: "../img/egypt.png" },
-      away: { id: "BEN", name: "Benin", logo: "../img/benin.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-6",
-      group: "KO",
-      utcDate: "2026-01-05T19:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "NGA", name: "Nigeria", logo: "../img/nigeria.png" },
-      away: { id: "MOZ", name: "Mozambique", logo: "../img/mozambique.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-7",
-      group: "KO",
-      utcDate: "2026-01-06T16:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "ALG", name: "Algeria", logo: "../img/algeria.png" },
-      away: { id: "COD", name: "DR Congo", logo: "../img/drcongo.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    {
-      id: "AFKO-8",
-      group: "KO",
-      utcDate: "2026-01-06T19:00:00Z",
-      roundNum: 4,
-      roundText: "Round of 16",
-      leagueId: "AFCON",
-      home: { id: "BFA", name: "Burkina Faso", logo: "../img/burkinafaso.png" },
-      away: { id: "CIV", name: "Côte d’Ivoire", logo: "../img/cotedivoire.png" },
-      goals: { home: null, away: null },
-      status: { short: "NS", long: "Not Started" }
-    },
-    // Quarter-finals (roundNum = 5)
-{
-  id: "AFCON-QF-001",
-  roundNum: 5,
-  kickoff: "2026-01-09T17:00:00+01:00",
-  roundNum: 5,
-  leagueId: "AFCON",
-    home: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
-    away: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
-    goals: { home: null, away: null },
-    status: { short: "NS", long: "Not Started" }
-  },
-{
-  id: "AFCON-QF-002",
-  roundNum: 5,
-  kickoff: "2026-01-09T20:00:00+01:00",
-  leagueId: "AFCON",
-  roundNum: 5,
-    home: { id: "MAR", name: "Morocco", logo: "../img/morocco.png" },
-    away: { id: "CMR", name: "Cameroon", logo: "../img/cameroon.png" },
-    goals: { home: null, away: null },
-    status: { short: "NS", long: "Not Started" }
-  },
-
-
   ];
 
   // Helper: get all fixtures for a matchday (any group)

@@ -1,5 +1,4 @@
-<doctype>
-    
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -92,91 +91,87 @@
     <button class="tab" onclick="window.location.href='groupD.html'" data-i18n="afcon.groupD.tab">Group D</button>
     <button class="tab" onclick="window.location.href='groupE.html'" data-i18n="afcon.groupE.tab">Group E</button>
     <button class="tab" onclick="window.location.href='groupF.html'" data-i18n="afcon.groupF.tab">Group F</button>
-
   </div>
-
 
   <section class="matches">
-  <div class="matches-header">
-    <h3>AFCON — Quarter-finals</h3>
-  </div>
+    <div class="matches-header">
+      <h3>AFCON — Quarter-finals</h3>
+    </div>
 
-  <div class="day">
-    <h4>Friday, 9 Jan 2026</h4>
+    <div class="day">
+      <h4>Friday, 9 Jan 2026</h4>
 
-    <div class="match-card cyan" data-fixture-id="AFCON-QF-001">
-      <div class="match-info">
-        <p class="time">17:00</p>
-        <div class="teams">
-          <div class="team">
-            <img src="/img/mali.png" alt="Mali" />
-            <p>Mali</p>
+      <div class="match-card cyan" data-fixture-id="AFCON-QF-001">
+        <div class="match-info">
+          <p class="time">17:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="/img/mali.png" alt="Mali" />
+              <p>Mali</p>
+            </div>
+            <div class="team">
+              <img src="/img/senegal.png" alt="Senegal" />
+              <p>Senegal</p>
+            </div>
           </div>
-          <div class="team">
-            <img src="/img/senegal.png" alt="Senegal" />
-            <p>Senegal</p>
+        </div>
+      </div>
+
+      <div class="match-card blue" data-fixture-id="AFCON-QF-002">
+        <div class="match-info">
+          <p class="time">20:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="/img/morocco.png" alt="Morocco" />
+              <p>Morocco</p>
+            </div>
+            <div class="team">
+              <img src="/img/cameroon.png" alt="Cameroon" />
+              <p>Cameroon</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h4>Saturday, 10 Jan 2026</h4>
+
+      <div class="match-card blue" data-fixture-id="AFCON-QF-003">
+        <div class="match-info">
+          <p class="time">17:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="" alt="" />
+              <p>TBD</p>
+            </div>
+            <div class="team">
+              <img src="" alt="" />
+              <p>TBD</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-card blue" data-fixture-id="AFCON-QF-004">
+        <div class="match-info">
+          <p class="time">20:00</p>
+          <div class="teams">
+            <div class="team">
+              <img src="" alt="" />
+              <p>TBD</p>
+            </div>
+            <div class="team">
+              <img src="" alt="" />
+              <p>TBD</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="match-card blue" data-fixture-id="AFCON-QF-002">
-      <div class="match-info">
-        <p class="time">20:00</p>
-        <div class="teams">
-          <div class="team">
-            <img src="/img/morocco.png" alt="Morocco" />
-            <p>Morocco</p>
-          </div>
-          <div class="team">
-            <img src="/img/cameroon.png" alt="Cameroon" />
-            <p>Cameroon</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-<h4>Saturday, 10 Jan 2026</h4>
+    <a id="bet-button-main" class="fixed-button" href="predictions.html" data-i18n="common.betPlus">Bet +</a>
+  </section>
 
-<div class="match-card blue" data-fixture-id="AFCON-QF-002">
-      <div class="match-info">
-        <p class="time">17:00</p>
-        <div class="teams">
-          <div class="team">
-            <img src="/img/.png" alt="" />
-            <p>TBD</p>
-          </div>
-          <div class="team">
-            <img src="/img/.png" alt="" />
-            <p>TBD</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="match-card blue" data-fixture-id="AFCON-QF-002">
-      <div class="match-info">
-        <p class="time">20:00</p>
-        <div class="teams">
-          <div class="team">
-            <img src="/img/.png" alt="" />
-            <p>TBD</p>
-          </div>
-          <div class="team">
-            <img src="/img/.png" alt="" />
-            <p>TBD</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-   <a id="bet-button-main" class="fixed-button" href="predictions.html" data-i18n="common.betPlus">Bet +</a>
-</section>
-
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
 
@@ -191,55 +186,84 @@
   <script src="../scripts/translations.en.js"></script>
   <script src="../scripts/i18n.js"></script>
   <script>
-    // Apply saved language across all pages
     if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
       window.FBL_I18N.apply();
     }
-    </script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const ROUND_NUM = 5; // Quarter-finals internal round id
+  </script>
 
-    function goToAfconQuarterfinalPredictions() {
-      const fixturesForRound = window.getAfconFixturesForMatchday(ROUND_NUM) || [];
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const ROUND_NUM = 5; // Quarter-finals internal round id
 
-      // Ensure matchday is set consistently (some scripts rely on p.matchday)
-      const fixturesNormalized = fixturesForRound.map((f) => ({
-        ...f,
-        matchday: String(ROUND_NUM),
-      }));
-
-      const payload = {
-        leagueKey: "AFCON",
-        roundNum: ROUND_NUM,
-        fixtures: fixturesNormalized,
+      // ✅ Authoritative kickoff times for QF (Cameroon time = +01:00)
+      const QF_UTC = {
+        "AFCON-QF-001": "2026-01-09T17:00:00+01:00",
+        "AFCON-QF-002": "2026-01-09T20:00:00+01:00",
+        "AFCON-QF-003": "2026-01-10T17:00:00+01:00",
+        "AFCON-QF-004": "2026-01-10T20:00:00+01:00",
       };
 
-      sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
-      sessionStorage.setItem("FBL_leagueKey", "AFCON");
-      sessionStorage.setItem("FBL_mode", "all");
+      function buildQuarterfinalFixturesPayload() {
+        // We build fixtures from THIS page so predictions always gets correct logos + kickoff
+        const fixtures = Array.from(document.querySelectorAll(".match-card")).map((card) => {
+          const id = card.getAttribute("data-fixture-id") || "";
+          const teams = card.querySelectorAll(".team");
+          const homeTeamEl = teams[0];
+          const awayTeamEl = teams[1];
 
-      // ✅ these help results/winners scripts stay aligned
-      sessionStorage.setItem("FBL_selectedMatchday", String(ROUND_NUM));
-      sessionStorage.setItem("FBL_selectedRoundNum", String(ROUND_NUM));
+          const homeName = homeTeamEl ? (homeTeamEl.querySelector("p")?.textContent || "").trim() : "";
+          const awayName = awayTeamEl ? (awayTeamEl.querySelector("p")?.textContent || "").trim() : "";
 
-      window.location.href = "predictions.html";
-    }
+          const homeLogo = homeTeamEl ? (homeTeamEl.querySelector("img")?.getAttribute("src") || "") : "";
+          const awayLogo = awayTeamEl ? (awayTeamEl.querySelector("img")?.getAttribute("src") || "") : "";
 
-    document.querySelectorAll(".match-card").forEach((card) => {
-      card.style.cursor = "pointer";
-      card.addEventListener("click", goToAfconQuarterfinalPredictions);
-    });
+          return {
+            id,
+            roundNum: ROUND_NUM,
+            matchday: String(ROUND_NUM),
+            utcDate: QF_UTC[id] || "",
 
-    const betBtn = document.getElementById("bet-button-main");
-    if (betBtn) {
-      betBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        goToAfconQuarterfinalPredictions();
+            // shape compatible with your predictions page helpers
+            teams: {
+              home: { name: homeName || "TBD", logo: homeLogo || "" },
+              away: { name: awayName || "TBD", logo: awayLogo || "" },
+            },
+          };
+        });
+
+        return {
+          leagueKey: "AFCON",
+          roundNum: ROUND_NUM,
+          fixtures,
+        };
+      }
+
+      function goToAfconQuarterfinalPredictions() {
+        const payload = buildQuarterfinalFixturesPayload();
+
+        sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+        sessionStorage.setItem("FBL_leagueKey", "AFCON");
+        sessionStorage.setItem("FBL_mode", "all");
+
+        sessionStorage.setItem("FBL_selectedMatchday", String(ROUND_NUM));
+        sessionStorage.setItem("FBL_selectedRoundNum", String(ROUND_NUM));
+
+        window.location.href = "predictions.html";
+      }
+
+      document.querySelectorAll(".match-card").forEach((card) => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", goToAfconQuarterfinalPredictions);
       });
-    }
-  });
 
-
-</script>
+      const betBtn = document.getElementById("bet-button-main");
+      if (betBtn) {
+        betBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          goToAfconQuarterfinalPredictions();
+        });
+      }
+    });
+  </script>
 </body>
+</html>
