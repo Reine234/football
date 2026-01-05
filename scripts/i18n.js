@@ -106,6 +106,9 @@
       "afcon.groupD.heading": "CAN 2025 — Groupe D",
       "afcon.groupE.heading": "CAN 2025 — Groupe E",
       "afcon.groupF.heading": "CAN 2025 — Groupe F",
+       // AFCON
+"afcon.quarterfinal.tab": "Quarts de finale",
+"afcon.quarterfinal.title": "Quarts de finale",
 
       "afcon.groupA.tab": "Groupe A",
       "afcon.groupB.tab": "Groupe B",
@@ -546,6 +549,9 @@ Decisions follow official league sources.`,
       "predictions.enterPredictionScore": "Enter your prediction score",
       "predictions.matchdayWord": "Matchday",
       "predictions.groupHeader": "{group} - Matchday {n}",
+       // AFCON
+"afcon.quarterfinal.tab": "Quarter-finals",
+"afcon.quarterfinal.title": "Quarter-finals",
 
       // (Keep your old flat keys too in case some pages still use them)
       matches: "Matches",

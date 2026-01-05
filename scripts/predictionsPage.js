@@ -352,7 +352,7 @@
     if (typeof f.matchDay === "number") return f.matchDay;
     if (typeof f.roundNum === "number") return f.roundNum;
     if (typeof f.round === "number") return f.round;
-
+ 
     const candidates = [];
     if (f.matchday)  candidates.push(f.matchday);
     if (f.matchDay)  candidates.push(f.matchDay);
@@ -371,7 +371,7 @@
       }
     }
     return null;
-  }
+  } 
 
   function getAfconGroupLabel(f) {
     const raw =

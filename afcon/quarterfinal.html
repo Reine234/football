@@ -1,0 +1,245 @@
+<doctype>
+    
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FansBetLiga — AFCON Quarter-finals</title>
+
+  <link rel="stylesheet" href="../afcon/styleindex.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap">
+  <style>
+    body { font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+  </style>
+</head>
+
+<body data-league="AFCON">
+  <header class="topbar">
+    <h1 class="logo">FANSBETLIGA</h1>
+
+    <button class="bell-btn has-unread" id="bellBtn" aria-expanded="false">
+      <img src="/img/Doorbell.png" alt="" class="bell-icon" />
+    </button>
+  </header>
+
+  <section class="bell-page" id="bellPage" aria-hidden="true">
+    <div class="bell-page__inner">
+      <div class="bell-page__top">
+        <h2 class="bell-page__title">Notifications</h2>
+        <button class="bell-close" id="bellClose" aria-label="Close">✕</button>
+      </div>
+
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label">Withdraw Bonus</span>
+          <span class="tab-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="tab-row">
+        <a class="tab-card" href="/afcon/wallet.html">
+          <span class="tab-label">Wallet</span>
+          <span class="tab-arrow">›</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const bellBtn = document.getElementById("bellBtn");
+    const bellPage = document.getElementById("bellPage");
+    const bellClose = document.getElementById("bellClose");
+
+    function openBellPage() {
+      bellPage.classList.add("open");
+      bellPage.setAttribute("aria-hidden", "false");
+      bellBtn.setAttribute("aria-expanded", "true");
+    }
+    function closeBellPage() {
+      bellPage.classList.remove("open");
+      bellPage.setAttribute("aria-hidden", "true");
+      bellBtn.setAttribute("aria-expanded", "false");
+    }
+
+    bellBtn.addEventListener("click", () => {
+      const isOpen = bellPage.classList.contains("open");
+      if (isOpen) closeBellPage();
+      else openBellPage();
+    });
+
+    bellClose.addEventListener("click", closeBellPage);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeBellPage(); });
+  </script>
+
+  <nav class="nav">
+    <div class="nav-item"><img src="../img/home.png" alt="Home"><span>Home</span></div>
+    <div class="nav-item"><img src="../img/results.png" alt="Results"><span>Results</span></div>
+    <div class="nav-item"><img src="../img/winners.png" alt="Winners"><span>Winners</span></div>
+    <div class="nav-item"><img src="../img/rules.png" alt="Rules"><span>Rules</span></div>
+  </nav>
+
+  <div class="season-title">
+    <span class="back-arrow"></span>
+    <h2>AFCON 2025 — Quarter-finals</h2>
+  </div>
+
+  <div class="league-tabs">
+    <button class="tab" onclick="window.location.href='round16.html'" data-i18n="afcon.round16.tab">8es de finale</button>
+    <button class="tab active" onclick="window.location.href='quarterfinal.html'" data-i18n="afcon.quarterfinal.tab">Quarter-finals</button>
+    <button class="tab" onclick="window.location.href='index.html'" data-i18n="afcon.groupA.tab">Group A</button>
+    <button class="tab" onclick="window.location.href='groupB.html'" data-i18n="afcon.groupB.tab">Group B</button>
+    <button class="tab" onclick="window.location.href='groupC.html'" data-i18n="afcon.groupC.tab">Group C</button>
+    <button class="tab" onclick="window.location.href='groupD.html'" data-i18n="afcon.groupD.tab">Group D</button>
+    <button class="tab" onclick="window.location.href='groupE.html'" data-i18n="afcon.groupE.tab">Group E</button>
+    <button class="tab" onclick="window.location.href='groupF.html'" data-i18n="afcon.groupF.tab">Group F</button>
+
+  </div>
+
+
+  <section class="matches">
+  <div class="matches-header">
+    <h3>AFCON — Quarter-finals</h3>
+  </div>
+
+  <div class="day">
+    <h4>Friday, 9 Jan 2026</h4>
+
+    <div class="match-card cyan" data-fixture-id="AFCON-QF-001">
+      <div class="match-info">
+        <p class="time">17:00</p>
+        <div class="teams">
+          <div class="team">
+            <img src="/img/mali.png" alt="Mali" />
+            <p>Mali</p>
+          </div>
+          <div class="team">
+            <img src="/img/senegal.png" alt="Senegal" />
+            <p>Senegal</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="match-card blue" data-fixture-id="AFCON-QF-002">
+      <div class="match-info">
+        <p class="time">20:00</p>
+        <div class="teams">
+          <div class="team">
+            <img src="/img/morocco.png" alt="Morocco" />
+            <p>Morocco</p>
+          </div>
+          <div class="team">
+            <img src="/img/cameroon.png" alt="Cameroon" />
+            <p>Cameroon</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<h4>Saturday, 10 Jan 2026</h4>
+
+<div class="match-card blue" data-fixture-id="AFCON-QF-002">
+      <div class="match-info">
+        <p class="time">17:00</p>
+        <div class="teams">
+          <div class="team">
+            <img src="/img/.png" alt="" />
+            <p>TBD</p>
+          </div>
+          <div class="team">
+            <img src="/img/.png" alt="" />
+            <p>TBD</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="match-card blue" data-fixture-id="AFCON-QF-002">
+      <div class="match-info">
+        <p class="time">20:00</p>
+        <div class="teams">
+          <div class="team">
+            <img src="/img/.png" alt="" />
+            <p>TBD</p>
+          </div>
+          <div class="team">
+            <img src="/img/.png" alt="" />
+            <p>TBD</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+   <a id="bet-button-main" class="fixed-button" href="predictions.html" data-i18n="common.betPlus">Bet +</a>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+
+  <script src="../scripts/firebase-init.js"></script>
+  <script src="../scripts/config.js"></script>
+  <script src="../scripts/api.js"></script>
+  <script src="afconFixtures.js"></script>
+  <script src="../scripts/winnersPage.js"></script>
+
+  <!-- ✅ i18n (LOAD ONCE) -->
+  <script src="../scripts/translations.fr.js"></script>
+  <script src="../scripts/translations.en.js"></script>
+  <script src="../scripts/i18n.js"></script>
+  <script>
+    // Apply saved language across all pages
+    if (window.FBL_I18N && typeof window.FBL_I18N.apply === "function") {
+      window.FBL_I18N.apply();
+    }
+    </script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const ROUND_NUM = 5; // Quarter-finals internal round id
+
+    function goToAfconQuarterfinalPredictions() {
+      const fixturesForRound = window.getAfconFixturesForMatchday(ROUND_NUM) || [];
+
+      // Ensure matchday is set consistently (some scripts rely on p.matchday)
+      const fixturesNormalized = fixturesForRound.map((f) => ({
+        ...f,
+        matchday: String(ROUND_NUM),
+      }));
+
+      const payload = {
+        leagueKey: "AFCON",
+        roundNum: ROUND_NUM,
+        fixtures: fixturesNormalized,
+      };
+
+      sessionStorage.setItem("FBL_selectedRound", JSON.stringify(payload));
+      sessionStorage.setItem("FBL_leagueKey", "AFCON");
+      sessionStorage.setItem("FBL_mode", "all");
+
+      // ✅ these help results/winners scripts stay aligned
+      sessionStorage.setItem("FBL_selectedMatchday", String(ROUND_NUM));
+      sessionStorage.setItem("FBL_selectedRoundNum", String(ROUND_NUM));
+
+      window.location.href = "predictions.html";
+    }
+
+    document.querySelectorAll(".match-card").forEach((card) => {
+      card.style.cursor = "pointer";
+      card.addEventListener("click", goToAfconQuarterfinalPredictions);
+    });
+
+    const betBtn = document.getElementById("bet-button-main");
+    if (betBtn) {
+      betBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        goToAfconQuarterfinalPredictions();
+      });
+    }
+  });
+
+
+</script>
+</body>

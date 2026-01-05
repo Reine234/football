@@ -560,6 +560,31 @@
       goals: { home: null, away: null },
       status: { short: "NS", long: "Not Started" }
     },
+    // Quarter-finals (roundNum = 5)
+{
+  id: "AFCON-QF-001",
+  roundNum: 5,
+  kickoff: "2026-01-09T17:00:00+01:00",
+  roundNum: 5,
+  leagueId: "AFCON",
+    home: { id: "MLI", name: "Mali", logo: "../img/mali.png" },
+    away: { id: "SEN", name: "Senegal", logo: "../img/senegal.png" },
+    goals: { home: null, away: null },
+    status: { short: "NS", long: "Not Started" }
+  },
+{
+  id: "AFCON-QF-002",
+  roundNum: 5,
+  kickoff: "2026-01-09T20:00:00+01:00",
+  leagueId: "AFCON",
+  roundNum: 5,
+    home: { id: "MAR", name: "Morocco", logo: "../img/morocco.png" },
+    away: { id: "CMR", name: "Cameroon", logo: "../img/cameroon.png" },
+    goals: { home: null, away: null },
+    status: { short: "NS", long: "Not Started" }
+  },
+
+
   ];
 
   // Helper: get all fixtures for a matchday (any group)

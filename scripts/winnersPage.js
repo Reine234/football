@@ -232,8 +232,9 @@
   // ✅ helper: fetch predictions without scanning everything (AFCON uses matchday queries)
   async function fetchPredictionsForLeagueMatchdays(db, leagueKey) {
     const wantedLeagues = leagueSynonyms(leagueKey);
-    // ✅ AFCON: include Round of 16 (stored as matchday "4") + group matchdays 1..3
-    const wantedMatchdays = leagueKey === "AFCON" ? ["4", "1", "2", "3"] : null;
+    // ✅ AFCON: Group matchdays 1..3 + Round of 16 (4) + Quarter-finals (5)
+    // NOTE: quarterfinal.html stores it as matchday "5".
+    const wantedMatchdays = leagueKey === "AFCON" ? ["5", "4", "1", "2", "3"] : null;
 
     // Keep previous behavior for non-AFCON leagues
     if (leagueKey !== "AFCON") {
@@ -265,7 +266,7 @@
 
 
   // ---------- Matchday "status" strip (WhatsApp-style) ----------
-  // ✅ AFCON: show Round of 16 + Matchday 1,2,3 and rank across ALL groups per tab.
+  // ✅ CHANGE (AFCON): show ONLY 3 tabs (Matchday 1,2,3) and rank across ALL groups per matchday.
   function ensureMatchdayStrip(matchdays, currentKey, leagueKey, onSelectMatchday) {
     if (!matchdays || !matchdays.length) return;
 
@@ -299,10 +300,14 @@
         const isActive = key === currentKey;
         let labelText = "";
 
-        // ✅ AFCON: key is "4" (Round of 16) or "1","2","3"
+        // ✅ AFCON: include special knockout labels + group matchdays
         if (leagueKey === "AFCON") {
           if (String(key) === "4") {
-            labelText = tr("afcon.round16.tab") || "Round of 16";
+            const t = tr("afcon.round16.tab");
+            labelText = t && t !== "afcon.round16.tab" ? t : "Round of 16";
+          } else if (String(key) === "5") {
+            const t = tr("afcon.quarterfinal.tab");
+            labelText = t && t !== "afcon.quarterfinal.tab" ? t : "Quarter-finals";
           } else {
             const md = parseInt(key, 10);
             labelText = tr("winners.matchdayLabel", { n: Number.isFinite(md) ? md : key });
@@ -376,8 +381,9 @@
         const mdNum = parseInt(mdRaw, 10);
         if (!Number.isFinite(mdNum)) return; // ignore docs without matchday
 
-        // ✅ AFCON: allow Round of 16 (4) + matchdays 1..3
-        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 4)) return;
+        // ✅ AFCON: only show matchdays 1..3 in the UI (still compute points normally)
+        // ✅ AFCON: Group matchdays 1..3 + Round of 16 (4) + Quarter-finals (5)
+        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 5)) return;
 
         const fixture = fixturesById[fixtureId];
 
@@ -440,9 +446,9 @@
 
       let matchdays = Array.from(keySet);
 
-      // ✅ AFCON: force tabs: Round of 16 + 1,2,3 (in that order)
+      // ✅ AFCON: force tabs: Round of 16 (4) + Quarter-finals (5) + Matchday 1,2,3
       if (leagueKey === "AFCON") {
-        matchdays = ["4", "1", "2", "3"];
+        matchdays = ["4", "5", "1", "2", "3"];
       } else {
         matchdays.sort((a, b) => {
           const nA = parseInt(a, 10);
@@ -464,14 +470,12 @@
       // Default selection
       if (!selectedMatchdayKey) {
         if (leagueKey === "AFCON") {
-          // default: Round of 16 if available; else latest among 1..3; else 1
+          // pick the latest available among 1..3 (falls back to 1)
           const available = Array.from(keySet).filter((k) => matchdays.includes(k));
-          if (available.includes("4")) {
-            selectedMatchdayKey = "4";
-          } else if (available.length) {
+          if (available.length) {
             const best = available
               .map((k) => parseInt(k, 10))
-              .filter((n) => Number.isFinite(n) && n >= 1 && n <= 3)
+              .filter(Number.isFinite)
               .sort((a, b) => a - b)
               .pop();
             selectedMatchdayKey = best ? String(best) : "1";

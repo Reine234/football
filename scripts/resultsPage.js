@@ -308,30 +308,38 @@
   }
 
   // ✅ FIXED: header + day number (AFCON Round of 16 shows "16" not "4")
+  
   function updateMatchdayHeader(matchdayStr) {
-    const headerEl = document.querySelector(".matches-header h3");
-    const dayNumSpan = document.getElementById("day-number");
+  const headerEl = document.querySelector(".matches-header h3");
+  const dayNumSpan = document.getElementById("day-number");
 
-    const md = String(matchdayStr || "?").trim();
-    const total = String(leagueInfo.totalRounds || "?");
+  const md = String(matchdayStr || "?").trim();
+  const total = String(leagueInfo.totalRounds || "?");
 
-    const isAfconR16 = leagueKey === "AFCON" && md === "4";
-    const displayMd = isAfconR16 ? "16" : md;
+  const isAfcon = leagueKey === "AFCON";
+  const isR16 = isAfcon && md === "4";
+  const isQF  = isAfcon && md === "5";
 
-    if (headerEl) {
-      if (isAfconR16) {
-        headerEl.textContent = `${tr("common.matches")} - Round of 16`;
-      } else {
-        headerEl.textContent =
-          `${tr("common.matches")} - ` +
-          tr("predictions.matchdayOf", { n: displayMd, total: total });
-      }
+  // what appears in the center "day-number"
+  const displayMd = isR16 ? "16" : isQF ? "QF" : md;
+
+  if (headerEl) {
+    if (isR16) {
+      headerEl.textContent = `${tr("common.matches")} - Round of 16`;
+    } else if (isQF) {
+      headerEl.textContent = `${tr("common.matches")} - Quarter-finals`;
+    } else {
+      headerEl.textContent =
+        `${tr("common.matches")} - ` +
+        tr("predictions.matchdayOf", { n: displayMd, total });
     }
-
-    if (dayNumSpan) dayNumSpan.textContent = displayMd === "?" ? "" : displayMd;
-
-    fixMatchdayTitleNode();
   }
+
+  if (dayNumSpan) dayNumSpan.textContent = displayMd === "?" ? "" : displayMd;
+
+  fixMatchdayTitleNode();
+}
+
 
   // ✅ Matchday navigation: DO NOT create new buttons.
   // We only "activate" the arrows/buttons that already exist in your HTML (the green ones).
@@ -1122,9 +1130,22 @@ if (leagueKey === "AFCON") {
     });
 
     const maxMd = matchdays.length ? matchdays[matchdays.length - 1] : "?";
-    if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATCHDAY__))) {
-      __FBL_SELECTED_MATCHDAY__ = maxMd || "?";
-    }
+
+// If user previously chose a matchday (from other pages), respect it first:
+const storedMd = String(sessionStorage.getItem("FBL_selectedMatchday") || "").trim();
+
+// Default behavior:
+// - AFCON: start on Round of 16 ("4") if it exists, so ">" can take you to QF ("5")
+// - Otherwise: default to latest
+if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATCHDAY__))) {
+  if (storedMd && matchdays.includes(storedMd)) {
+    __FBL_SELECTED_MATCHDAY__ = storedMd;
+  } else if (leagueKey === "AFCON" && matchdays.includes("4")) {
+    __FBL_SELECTED_MATCHDAY__ = "4";
+  } else {
+    __FBL_SELECTED_MATCHDAY__ = maxMd || "?";
+  }
+}
 
     ensureMatchdayNav(matchdays, String(__FBL_SELECTED_MATCHDAY__), (newKey) => {
       __FBL_SELECTED_MATCHDAY__ = String(newKey);
