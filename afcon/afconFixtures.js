@@ -474,7 +474,7 @@
           roundNum: 5,
           roundText: "Quarter-finals",
           leagueId: "AFCON",
-          home: { id: "TBD1", name: "TBD", logo: "" },
+          home: { id: "ALG", name: "Algeria", logo: "../img/algeria.png" },
           away: { id: "NIG", name: "Nigeria", logo: "../img/nigeria.png" },
           goals: { home: null, away: null },
           status: { short: "TBD", long: "To Be Determined" }
@@ -487,7 +487,7 @@
           roundText: "Quarter-finals",
           leagueId: "AFCON",
           home: { id: "EGY", name: "Egypt", logo: "../img/egypt.png" },
-          away: { id: "TBD4", name: "TBD", logo: "" },
+          away: { id: "CIV", name: "Cote d’Ivoire", logo: "../img/cotedivoire.png" },
           goals: { home: null, away: null },
           status: { short: "TBD", long: "To Be Determined" }
         }
