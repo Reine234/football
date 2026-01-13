@@ -497,7 +497,7 @@
           group: "SF",
           // Semi-finals: Wed 14 Jan 2026 (Cameroon time = UTC+1)
           // 17:00 (UTC+1) => 16:00Z
-          utcDate: "2026-01-13T16:00:00Z",
+          utcDate: "2026-01-14T17:00:00Z",
           roundNum: 6,
           roundText: "Semi-finals",
           leagueId: "AFCON",
@@ -510,7 +510,7 @@
           id: "AFCON-SF-002",
           group: "SF",
           // 20:00 (UTC+1) => 19:00Z
-          utcDate: "2026-01-13T19:00:00Z",
+          utcDate: "2026-01-14T20:00:00Z",
           roundNum: 6,
           roundText: "Semi-finals",
           leagueId: "AFCON",
