@@ -308,206 +308,193 @@
   }
 
   // ✅ FIXED: header + day number (AFCON Round of 16 shows "16" not "4")
-  
   function updateMatchdayHeader(matchdayStr) {
-  const headerEl = document.querySelector(".matches-header h3");
-  const dayNumSpan = document.getElementById("day-number");
+    const headerEl = document.querySelector(".matches-header h3");
+    const dayNumSpan = document.getElementById("day-number");
 
-  const md = String(matchdayStr || "?").trim();
-  const total = String(leagueInfo.totalRounds || "?");
+    const md = String(matchdayStr || "?").trim();
+    const total = String(leagueInfo.totalRounds || "?");
 
-  const isAfcon = leagueKey === "AFCON";
-  const isR16 = isAfcon && md === "4";
-  const isQF  = isAfcon && md === "5";
+    const isAfcon = leagueKey === "AFCON";
+    const isR16 = isAfcon && md === "4";
+    const isQF  = isAfcon && md === "5";
+    const isSF  = isAfcon && md === "6";
 
-  // what appears in the center "day-number"
-  const displayMd = isR16 ? "16" : isQF ? "QF" : md;
+    // what appears in the center "day-number"
+    const displayMd = isR16 ? "16" : isQF ? "QF" : isSF ? "SF" : md;
 
-  if (headerEl) {
-    if (isR16) {
-      headerEl.textContent = `${tr("common.matches")} - Round of 16`;
-    } else if (isQF) {
-      headerEl.textContent = `${tr("common.matches")} - Quarter-finals`;
-    } else {
-      headerEl.textContent =
-        `${tr("common.matches")} - ` +
-        tr("predictions.matchdayOf", { n: displayMd, total });
+    if (headerEl) {
+      if (isR16) {
+        headerEl.textContent = `${tr("common.matches")} - Round of 16`;
+      } else if (isQF) {
+        headerEl.textContent = `${tr("common.matches")} - Quarter-finals`;
+      } else if (isSF) {
+        headerEl.textContent = `${tr("common.matches")} - Semi-finals`;
+      } else {
+        headerEl.textContent =
+          `${tr("common.matches")} - ` +
+          tr("predictions.matchdayOf", { n: displayMd, total });
+      }
     }
+
+    if (dayNumSpan) dayNumSpan.textContent = displayMd === "?" ? "" : displayMd;
+
+    fixMatchdayTitleNode();
   }
-
-  if (dayNumSpan) dayNumSpan.textContent = displayMd === "?" ? "" : displayMd;
-
-  fixMatchdayTitleNode();
-}
-
 
   // ✅ Matchday navigation: DO NOT create new buttons.
   // We only "activate" the arrows/buttons that already exist in your HTML (the green ones).
   function ensureMatchdayNav(matchdays, currentKey, onChange) {
-  if (!matchdays || !matchdays.length) return;
+    if (!matchdays || !matchdays.length) return;
 
-  const idx = matchdays.indexOf(String(currentKey));
-  const prevKey = idx > 0 ? matchdays[idx - 1] : null;
-  const nextKey = idx >= 0 && idx < matchdays.length - 1 ? matchdays[idx + 1] : null;
+    const idx = matchdays.indexOf(String(currentKey));
+    const prevKey = idx > 0 ? matchdays[idx - 1] : null;
+    const nextKey = idx >= 0 && idx < matchdays.length - 1 ? matchdays[idx + 1] : null;
 
-  function pickFirst(selectors) {
-    for (const sel of selectors) {
-      const el = document.querySelector(sel);
-      if (el) return el;
-    }
-    return null;
-  }
-
-  function findArrowNearDayNumber(dir) {
-    const dayNum = document.getElementById("day-number");
-    if (!dayNum) return null;
-
-    const ARROWS_PREV = new Set(["<", "‹", "❮", "«"]);
-    const ARROWS_NEXT = new Set([">", "›", "❯", "»"]);
-
-    function looksLikePrev(el) {
-      const t = String(el.textContent || "").trim();
-      if (ARROWS_PREV.has(t)) return true;
-
-      const cls = String(el.className || "").toLowerCase();
-      const aria = String(
-        (el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title"))) || ""
-      ).toLowerCase();
-      const data = String(
-        (el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "")) || ""
-      ).toLowerCase();
-
-      if (data === "prev" || data === "previous" || data === "back") return true;
-      if (cls.includes("prev") || cls.includes("previous") || cls.includes("back") || cls.includes("left")) return true;
-      if (aria.includes("prev") || aria.includes("previous") || aria.includes("back") || aria.includes("left")) return true;
-      return false;
-    }
-
-    function looksLikeNext(el) {
-      const t = String(el.textContent || "").trim();
-      if (ARROWS_NEXT.has(t)) return true;
-
-      const cls = String(el.className || "").toLowerCase();
-      const aria = String(
-        (el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title"))) || ""
-      ).toLowerCase();
-      const data = String(
-        (el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "")) || ""
-      ).toLowerCase();
-
-      if (data === "next" || data === "forward") return true;
-      if (cls.includes("next") || cls.includes("forward") || cls.includes("right")) return true;
-      if (aria.includes("next") || aria.includes("forward") || aria.includes("right")) return true;
-      return false;
-    }
-
-    function findInHost(host) {
-      if (!host) return null;
-
-      const btns = Array.from(host.querySelectorAll("button,a,[role='button']"));
-
-      if (dir === "prev") {
-        for (const el of btns) if (looksLikePrev(el)) return el;
-        for (const el of btns) if (el.querySelector && el.querySelector("svg") && looksLikePrev(el)) return el;
-      } else {
-        for (const el of btns) if (looksLikeNext(el)) return el;
-        for (const el of btns) if (el.querySelector && el.querySelector("svg") && looksLikeNext(el)) return el;
+    function pickFirst(selectors) {
+      for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (el) return el;
       }
-
-      const all = Array.from(host.querySelectorAll("*"));
-      if (dir === "prev") {
-        for (const el of all) if (looksLikePrev(el)) return el;
-      } else {
-        for (const el of all) if (looksLikeNext(el)) return el;
-      }
-
       return null;
     }
 
-    let host = dayNum;
-    for (let i = 0; i < 6 && host; i++) {
-      const found = findInHost(host.parentElement || host);
-      if (found) return found;
-      host = host.parentElement;
+    function findArrowNearDayNumber(dir) {
+      const dayNum = document.getElementById("day-number");
+      if (!dayNum) return null;
+
+      const ARROWS_PREV = new Set(["<", "‹", "❮", "«"]);
+      const ARROWS_NEXT = new Set([">", "›", "❯", "»"]);
+
+      function looksLikePrev(el) {
+        const t = String(el.textContent || "").trim();
+        if (ARROWS_PREV.has(t)) return true;
+
+        const cls = String(el.className || "").toLowerCase();
+        const aria = String(
+          (el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title"))) || ""
+        ).toLowerCase();
+        const data = String(
+          (el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "")) || ""
+        ).toLowerCase();
+
+        if (data === "prev" || data === "previous" || data === "back") return true;
+        if (cls.includes("prev") || cls.includes("previous") || cls.includes("back") || cls.includes("left")) return true;
+        if (aria.includes("prev") || aria.includes("previous") || aria.includes("back") || aria.includes("left")) return true;
+        return false;
+      }
+
+      function looksLikeNext(el) {
+        const t = String(el.textContent || "").trim();
+        if (ARROWS_NEXT.has(t)) return true;
+
+        const cls = String(el.className || "").toLowerCase();
+        const aria = String(
+          (el.getAttribute && (el.getAttribute("aria-label") || el.getAttribute("title"))) || ""
+        ).toLowerCase();
+        const data = String(
+          (el.getAttribute && (el.getAttribute("data-md-nav") || el.getAttribute("data-nav") || "")) || ""
+        ).toLowerCase();
+
+        if (data === "next" || data === "forward") return true;
+        if (cls.includes("next") || cls.includes("forward") || cls.includes("right")) return true;
+        if (aria.includes("next") || aria.includes("forward") || aria.includes("right")) return true;
+        return false;
+      }
+
+      function findInHost(host) {
+        if (!host) return null;
+
+        const btns = Array.from(host.querySelectorAll("button,a,[role='button']"));
+
+        if (dir === "prev") {
+          for (const el of btns) if (looksLikePrev(el)) return el;
+          for (const el of btns) if (el.querySelector && el.querySelector("svg") && looksLikePrev(el)) return el;
+        } else {
+          for (const el of btns) if (looksLikeNext(el)) return el;
+          for (const el of btns) if (el.querySelector && el.querySelector("svg") && looksLikeNext(el)) return el;
+        }
+
+        const all = Array.from(host.querySelectorAll("*"));
+        if (dir === "prev") {
+          for (const el of all) if (looksLikePrev(el)) return el;
+        } else {
+          for (const el of all) if (looksLikeNext(el)) return el;
+        }
+
+        return null;
+      }
+
+      let host = dayNum;
+      for (let i = 0; i < 6 && host; i++) {
+        const found = findInHost(host.parentElement || host);
+        if (found) return found;
+        host = host.parentElement;
+      }
+      return null;
     }
-    return null;
+
+    const prevBtn =
+      pickFirst([
+        "#matchday-prev",
+        "#md-prev",
+        ".matchday-prev",
+        ".md-prev",
+        '[data-md-nav="prev"]',
+        '[data-action="prev"]',
+      ]) || findArrowNearDayNumber("prev");
+
+    const nextBtn =
+      pickFirst([
+        "#matchday-next",
+        "#md-next",
+        ".matchday-next",
+        ".md-next",
+        '[data-md-nav="next"]',
+        '[data-action="next"]',
+      ]) || findArrowNearDayNumber("next");
+
+    function setDisabled(el, disabled) {
+      if (!el) return;
+      if ("disabled" in el) el.disabled = !!disabled;
+      el.style.opacity = disabled ? "0.35" : "";
+      el.style.pointerEvents = disabled ? "none" : "";
+      if (disabled) el.setAttribute("aria-disabled", "true");
+      else el.removeAttribute("aria-disabled");
+    }
+
+    // ✅ stable handler: reads BOTH current + target from dataset (no stale closure)
+    function attachStableHandler(el) {
+      if (!el) return;
+      if (el.dataset && el.dataset.fblNavHandler === "1") return;
+
+      if (el.dataset) el.dataset.fblNavHandler = "1";
+
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const target = el.dataset ? String(el.dataset.fblNavKey || "") : "";
+        const cur = el.dataset ? String(el.dataset.fblCurrentKey || "") : "";
+        if (!target || target === cur) return;
+        if (typeof onChange === "function") onChange(target);
+      });
+    }
+
+    // Update datasets EACH render
+    if (prevBtn && prevBtn.dataset) {
+      prevBtn.dataset.fblNavKey = prevKey || "";
+      prevBtn.dataset.fblCurrentKey = String(currentKey || "");
+    }
+    if (nextBtn && nextBtn.dataset) {
+      nextBtn.dataset.fblNavKey = nextKey || "";
+      nextBtn.dataset.fblCurrentKey = String(currentKey || "");
+    }
+
+    attachStableHandler(prevBtn);
+    attachStableHandler(nextBtn);
+
+    setDisabled(prevBtn, !prevKey);
+    setDisabled(nextBtn, !nextKey);
   }
-
-  const prevBtn =
-    pickFirst([
-      "#matchday-prev",
-      "#md-prev",
-      ".matchday-prev",
-      ".md-prev",
-      '[data-md-nav="prev"]',
-      '[data-action="prev"]',
-    ]) || findArrowNearDayNumber("prev");
-
-  const nextBtn =
-    pickFirst([
-      "#matchday-next",
-      "#md-next",
-      ".matchday-next",
-      ".md-next",
-      '[data-md-nav="next"]',
-      '[data-action="next"]',
-    ]) || findArrowNearDayNumber("next");
-
-  function setDisabled(el, disabled) {
-    if (!el) return;
-    if ("disabled" in el) el.disabled = !!disabled;
-    el.style.opacity = disabled ? "0.35" : "";
-    el.style.pointerEvents = disabled ? "none" : "";
-    if (disabled) el.setAttribute("aria-disabled", "true");
-    else el.removeAttribute("aria-disabled");
-  }
-
-  // ✅ stable handler: reads BOTH current + target from dataset (no stale closure)
-  function attachStableHandler(el) {
-    if (!el) return;
-    if (el.dataset && el.dataset.fblNavHandler === "1") return;
-
-    if (el.dataset) el.dataset.fblNavHandler = "1";
-
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      const target = el.dataset ? String(el.dataset.fblNavKey || "") : "";
-      const cur = el.dataset ? String(el.dataset.fblCurrentKey || "") : "";
-      if (!target || target === cur) return;
-      if (typeof onChange === "function") onChange(target);
-    });
-  }
-
-  // Update datasets EACH render
-  if (prevBtn && prevBtn.dataset) {
-    prevBtn.dataset.fblNavKey = prevKey || "";
-    prevBtn.dataset.fblCurrentKey = String(currentKey || "");
-  }
-  if (nextBtn && nextBtn.dataset) {
-    nextBtn.dataset.fblNavKey = nextKey || "";
-    nextBtn.dataset.fblCurrentKey = String(currentKey || "");
-  }
-
-  attachStableHandler(prevBtn);
-  attachStableHandler(nextBtn);
-
-  setDisabled(prevBtn, !prevKey);
-  setDisabled(nextBtn, !nextKey);
-}
-
-  // -------------------- THE REST OF YOUR FILE IS UNCHANGED --------------------
-  // NOTE: Everything below is identical to what you pasted.
-  // (I am not re-pasting the remaining ~1000 lines here in this message because it will exceed chat limits.)
-  // ✅ To avoid that, do this:
-  // 1) Keep your existing file
-  // 2) Replace ONLY the two functions above:
-  //    - updateMatchdayHeader(...)
-  //    - ensureMatchdayNav(...)
-  //
-  // If you want the FULL file output here anyway, say: "paste full file"
-  // and I will output the whole thing in one go.
-
-
 
   function kickoffMsForPred(pred, fixturesById, fixturesList) {
     let fixture = fixturesById[String(pred.fixtureId)] || null;
@@ -670,6 +657,47 @@
       .trim();
   }
 
+  // ✅ ADDED: normalize AFCON matchday key from prediction (minimal + safe)
+  function afconMatchdayKeyFromPred(p) {
+    // Return one of: "1","2","3","4","5","6"
+    // Accepts many possible field names & labels from Firestore.
+
+    const pick = (...keys) => {
+      for (const k of keys) {
+        const v = p && p[k];
+        if (v != null && v !== "") return v;
+      }
+      return null;
+    };
+
+    // First: numeric-ish fields
+    const mdRaw = pick("matchday", "md", "day", "roundNumber");
+    if (mdRaw != null) {
+      const s = String(mdRaw).trim();
+      if (/^[1-6]$/.test(s)) return s;
+
+      const m = s.match(/([1-6])$/);
+      if (m) return m[1];
+    }
+
+    // Second: stage/phase text fields
+    const stageRaw = pick("stage", "phase", "round", "group", "matchdayLabel", "matchdayName");
+    const t = String(stageRaw || "").trim().toLowerCase();
+    if (!t) return null;
+
+    // Group stages
+    if (t.includes("matchday 1") || t.includes("journée 1") || t === "1") return "1";
+    if (t.includes("matchday 2") || t.includes("journée 2") || t === "2") return "2";
+    if (t.includes("matchday 3") || t.includes("journée 3") || t === "3") return "3";
+
+    // Knockout
+    if (t.includes("round of 16") || t.includes("round-of-16") || t.includes("r16") || t.includes("1/8")) return "4";
+    if (t.includes("quarter") || t.includes("qf") || t.includes("1/4")) return "5";
+    if (t.includes("semi") || t.includes("sf") || t.includes("1/2")) return "6";
+
+    return null;
+  }
+
   // ✅ NEW helper: always compute YYYY-MM-DD in UTC safely
   function toYMD_UTC(input) {
     if (input == null || input === "") return "";
@@ -733,59 +761,60 @@
 
     return best;
   }
-async function fetchAfconFinalScore(home, away, dateYMD) {
-  try {
-    if (!home || !away || !dateYMD) return null;
 
-    // ✅ AFCON name aliases (minimal fix for Côte d’Ivoire / Ivory Coast variants)
-    const alias = (name) => {
-      const raw = String(name || "").trim();
+  async function fetchAfconFinalScore(home, away, dateYMD) {
+    try {
+      if (!home || !away || !dateYMD) return null;
 
-      // normalize apostrophes for matching
-      const n = raw.replace(/’/g, "'");
+      // ✅ AFCON name aliases (minimal fix for Côte d’Ivoire / Ivory Coast variants)
+      const alias = (name) => {
+        const raw = String(name || "").trim();
 
-      // Côte d’Ivoire variants
-      if (/^c(ô|o)te d'?ivoire$/i.test(n.replace(/\s+/g, " "))) return "Cote d'Ivoire";
-      if (/^ivory coast$/i.test(n)) return "Cote d'Ivoire";
+        // normalize apostrophes for matching
+        const n = raw.replace(/’/g, "'");
 
-      return raw;
-    };
+        // Côte d’Ivoire variants
+        if (/^c(ô|o)te d'?ivoire$/i.test(n.replace(/\s+/g, " "))) return "Cote d'Ivoire";
+        if (/^ivory coast$/i.test(n)) return "Cote d'Ivoire";
 
-    const H = alias(home);
-    const A = alias(away);
+        return raw;
+      };
 
-    // try primary
-    const makeUrl = (h, a) =>
-      `/afcon/finalScore?home=${encodeURIComponent(h)}&away=${encodeURIComponent(a)}&date=${encodeURIComponent(dateYMD)}`;
+      const H = alias(home);
+      const A = alias(away);
 
-    let r = await fetch(makeUrl(H, A), { credentials: "same-origin" });
-    if (r.ok) {
-      const data = await r.json();
-      if (data && data.found) return data;
+      // try primary
+      const makeUrl = (h, a) =>
+        `/afcon/finalScore?home=${encodeURIComponent(h)}&away=${encodeURIComponent(a)}&date=${encodeURIComponent(dateYMD)}`;
+
+      let r = await fetch(makeUrl(H, A), { credentials: "same-origin" });
+      if (r.ok) {
+        const data = await r.json();
+        if (data && data.found) return data;
+      }
+
+      // ✅ fallback: try swapping home/away (some APIs store reversed)
+      r = await fetch(makeUrl(A, H), { credentials: "same-origin" });
+      if (!r.ok) return null;
+
+      const data2 = await r.json();
+      if (!data2 || !data2.found) return null;
+      return data2;
+    } catch (_e) {
+      return null;
     }
-
-    // ✅ fallback: try swapping home/away (some APIs store reversed)
-    r = await fetch(makeUrl(A, H), { credentials: "same-origin" });
-    if (!r.ok) return null;
-
-    const data2 = await r.json();
-    if (!data2 || !data2.found) return null;
-    return data2;
-  } catch (_e) {
-    return null;
   }
-}
 
-async function getFirestoreFixtureById(fixtureId) {
-  try {
-    if (!window.firebase || !firebase.firestore) return null;
-    const doc = await firebase.firestore().collection("fixtures").doc(String(fixtureId)).get();
-    return doc.exists ? doc.data() : null;
-  } catch (e) {
-    console.warn("[resultsPage] Firestore fixture lookup failed:", e);
-    return null;
+  async function getFirestoreFixtureById(fixtureId) {
+    try {
+      if (!window.firebase || !firebase.firestore) return null;
+      const doc = await firebase.firestore().collection("fixtures").doc(String(fixtureId)).get();
+      return doc.exists ? doc.data() : null;
+    } catch (e) {
+      console.warn("[resultsPage] Firestore fixture lookup failed:", e);
+      return null;
+    }
   }
-}
 
   function isAfconScoreFinal(score) {
     if (!score) return false;
@@ -803,23 +832,23 @@ async function getFirestoreFixtureById(fixtureId) {
   async function hydrateAfconFinalScores(preds, fixturesById, fixturesList) {
     const finalScoreCache = {};
     // ✅ Firestore hard-override for AFCON final scores (authoritative)
-if (leagueKey === "AFCON") {
-  for (const p of preds) {
-    const fid = String(p.fixtureId || "");
-    if (!fid) continue;
+    if (leagueKey === "AFCON") {
+      for (const p of preds) {
+        const fid = String(p.fixtureId || "");
+        if (!fid) continue;
 
-    const fsFx = await getFirestoreFixtureById(fid);
-    if (!fsFx) continue;
+        const fsFx = await getFirestoreFixtureById(fid);
+        if (!fsFx) continue;
 
-    // Merge Firestore fixture as authoritative
-    fixturesById[fid] = { ...(fixturesById[fid] || {}), ...fsFx };
+        // Merge Firestore fixture as authoritative
+        fixturesById[fid] = { ...(fixturesById[fid] || {}), ...fsFx };
 
-    // Also keep fixturesList consistent (optional but helps findAfconFixture)
-    const idx = (fixturesList || []).findIndex(x => String(x?.id) === fid);
-    if (idx >= 0) fixturesList[idx] = { ...(fixturesList[idx] || {}), ...fsFx };
-    else (fixturesList || []).push(fsFx);
-  }
-}
+        // Also keep fixturesList consistent (optional but helps findAfconFixture)
+        const idx = (fixturesList || []).findIndex(x => String(x?.id) === fid);
+        if (idx >= 0) fixturesList[idx] = { ...(fixturesList[idx] || {}), ...fsFx };
+        else (fixturesList || []).push(fsFx);
+      }
+    }
     const seen = new Set();
     for (const p of preds) {
       const homeFromPred = p.home && p.home.name ? p.home.name : "";
@@ -873,30 +902,46 @@ if (leagueKey === "AFCON") {
     return finalScoreCache;
   }
 
+  
   function dedupeFirstPredictionPerFixture(preds) {
-    const byFixture = new Map();
-    (preds || []).forEach((p) => {
+    // ✅ Keep at most one prediction per (fixtureId + matchday).
+    // IMPORTANT: Some older docs may miss matchday; do NOT drop them.
+    const byKey = new Map();
+
+    (preds || []).forEach((p, idx) => {
       const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
+      let md = "";
+      if (p && p.matchday != null) md = String(p.matchday);
+      else if (p && p.roundNum != null) md = String(p.roundNum);
+      else if (p && p.round != null) md = String(p.round);
+
+      // If we still can't find md, keep it under a unique bucket so it won't be lost.
+      if (!md) md = "__unknown__";
+
       if (!fid) return;
 
+      const key = fid + "|" + md;
+
       const ts = Date.parse(p.timestamp || "");
-      const cur = byFixture.get(fid);
+      const cur = byKey.get(key);
 
       if (!cur) {
-        byFixture.set(fid, p);
+        byKey.set(key, p);
         return;
       }
 
       const curTs = Date.parse(cur.timestamp || "");
+      // keep the earliest submission for that fixture+matchday
       if (Number.isFinite(ts) && Number.isFinite(curTs)) {
-        if (ts < curTs) byFixture.set(fid, p);
+        if (ts < curTs) byKey.set(key, p);
       } else if (Number.isFinite(ts) && !Number.isFinite(curTs)) {
-        byFixture.set(fid, p);
+        byKey.set(key, p);
       }
     });
 
-    return Array.from(byFixture.values());
+    return Array.from(byKey.values());
   }
+
 
   function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
     return (preds || []).filter((p) => {
@@ -1114,50 +1159,66 @@ if (leagueKey === "AFCON") {
     // ✅ get final score cache here
     const finalScoreCache = await hydrateAfconFinalScores(preds, fixturesById, fixturesList);
 
-
     // ✅ Matchday navigation: show one matchday at a time (with < >)
-    const matchdays = Array.from(
-      new Set(
-        preds
-          .map((p) => String(p.matchday || "").trim())
-          .filter((x) => x && x !== "undefined" && x !== "null")
-      )
-    ).sort((a, b) => {
-      const nA = parseInt(a, 10);
-      const nB = parseInt(b, 10);
-      if (Number.isFinite(nA) && Number.isFinite(nB)) return nA - nB;
-      return String(a).localeCompare(String(b));
-    });
+    // AFCON has fixed phases: 1,2,3, Round of 16 (4), Quarter-finals (5), Semi-finals (6).
+    // Do NOT derive the navigation list only from existing predictions, otherwise the arrows can
+    // deactivate early (e.g. only 1 & 2 exist in the dataset) and users cannot browse phases.
+    let matchdays = [];
+
+    if (leagueKey === "AFCON") {
+      matchdays = ["1", "2", "3", "4", "5", "6"];
+    } else {
+      matchdays = Array.from(
+        new Set(
+          preds
+            .map((p) => String(p.matchday || "").trim())
+            .filter((x) => x && x !== "undefined" && x !== "null")
+        )
+      ).sort((a, b) => {
+        const nA = parseInt(a, 10);
+        const nB = parseInt(b, 10);
+        if (Number.isFinite(nA) && Number.isFinite(nB)) return nA - nB;
+        return String(a).localeCompare(String(b));
+      });
+    }
 
     const maxMd = matchdays.length ? matchdays[matchdays.length - 1] : "?";
 
-// If user previously chose a matchday (from other pages), respect it first:
-const storedMd = String(sessionStorage.getItem("FBL_selectedMatchday") || "").trim();
+    // If user previously chose a matchday (from other pages), respect it first:
+    const storedMd = String(sessionStorage.getItem("FBL_selectedMatchday") || "").trim();
 
-// Default behavior:
-// - AFCON: start on Round of 16 ("4") if it exists, so ">" can take you to QF ("5")
-// - Otherwise: default to latest
-if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATCHDAY__))) {
-  if (storedMd && matchdays.includes(storedMd)) {
-    __FBL_SELECTED_MATCHDAY__ = storedMd;
-  } else if (leagueKey === "AFCON" && matchdays.includes("4")) {
-    __FBL_SELECTED_MATCHDAY__ = "4";
-  } else {
-    __FBL_SELECTED_MATCHDAY__ = maxMd || "?";
-  }
-}
+    // Default behavior:
+    // - AFCON: start at Matchday 1 by default (then > goes 1→2→3→R16→QF→SF).
+    // - Others: default to latest available.
+    if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATCHDAY__))) {
+      if (storedMd && matchdays.includes(storedMd)) {
+        __FBL_SELECTED_MATCHDAY__ = storedMd;
+      } else if (leagueKey === "AFCON") {
+        __FBL_SELECTED_MATCHDAY__ = "1";
+      } else {
+        __FBL_SELECTED_MATCHDAY__ = maxMd || "?";
+      }
+    }
 
     ensureMatchdayNav(matchdays, String(__FBL_SELECTED_MATCHDAY__), (newKey) => {
       __FBL_SELECTED_MATCHDAY__ = String(newKey);
+      try { sessionStorage.setItem("FBL_selectedMatchday", String(__FBL_SELECTED_MATCHDAY__)); } catch (_) {}
       renderResultsPage();
     });
 
     updateMatchdayHeader(__FBL_SELECTED_MATCHDAY__ || "?");
 
     // ✅ Render only the selected matchday (still displaying late predictions)
-    let predsForMd = preds.filter(
-      (p) => String(p.matchday || "").trim() === String(__FBL_SELECTED_MATCHDAY__ || "").trim()
-    );
+    let predsForMd = preds.filter((p) => {
+      const selected = String(__FBL_SELECTED_MATCHDAY__ || "").trim();
+
+      if (leagueKey !== "AFCON") {
+        return String(p.matchday || "").trim() === selected;
+      }
+
+      const key = afconMatchdayKeyFromPred(p);
+      return String(key || "").trim() === selected;
+    });
 
     // order by kickoff time so the date order is clear
     predsForMd.sort(
@@ -1166,7 +1227,6 @@ if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATC
 
     let totalPts = 0;
     const predictionsWithPoints = [];
-
 
     // ✅ If the selected matchday has no predictions, show a simple message
     if (!predsForMd.length) {
@@ -1217,7 +1277,6 @@ if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATC
         return dateHeader + html;
       })
       .join("");
-
 
     container.innerHTML =
       cardsHtml || `<p style="padding:12px;">${esc(tr("results.noResultsYet"))}</p>`;
@@ -1297,7 +1356,6 @@ if (!__FBL_SELECTED_MATCHDAY__ || !matchdays.includes(String(__FBL_SELECTED_MATC
       el.style.display = "none";
     });
   }
-
 
   (function bootResultsWithAuth() {
     if (!window.firebase || !firebase.auth) {

@@ -495,8 +495,10 @@
          {
           id: "AFCON-SF-001",
           group: "SF",
-          utcDate: "2026-01-10T19:00:00Z", // 20:00 (UTC+1)
-          roundNum: 5,
+          // Semi-finals: Wed 14 Jan 2026 (Cameroon time = UTC+1)
+          // 17:00 (UTC+1) => 16:00Z
+          utcDate: "2026-01-13T16:00:00Z",
+          roundNum: 6,
           roundText: "Semi-finals",
           leagueId: "AFCON",
           home: { id: "SE", name: "Senegal", logo: "../img/senegal.png" },
@@ -507,8 +509,9 @@
         {
           id: "AFCON-SF-002",
           group: "SF",
-          utcDate: "2026-01-10T19:00:00Z", // 20:00 (UTC+1)
-          roundNum: 5,
+          // 20:00 (UTC+1) => 19:00Z
+          utcDate: "2026-01-13T19:00:00Z",
+          roundNum: 6,
           roundText: "Semi-finals",
           leagueId: "AFCON",
           home: { id: "MO", name: "Morocco", logo: "../img/morocco.png" },
