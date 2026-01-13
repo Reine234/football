@@ -491,6 +491,32 @@
           goals: { home: null, away: null },
           status: { short: "TBD", long: "To Be Determined" }
         }
+    ,
+         {
+          id: "AFCON-SF-001",
+          group: "SF",
+          utcDate: "2026-01-10T19:00:00Z", // 20:00 (UTC+1)
+          roundNum: 5,
+          roundText: "Semi-finals",
+          leagueId: "AFCON",
+          home: { id: "SE", name: "Senegal", logo: "../img/senegal.png" },
+          away: { id: "EGY", name: "Egypt", logo: "../img/egypt.png" },
+          goals: { home: null, away: null },
+          status: { short: "TBD", long: "To Be Determined" }
+        },
+        {
+          id: "AFCON-SF-002",
+          group: "SF",
+          utcDate: "2026-01-10T19:00:00Z", // 20:00 (UTC+1)
+          roundNum: 5,
+          roundText: "Semi-finals",
+          leagueId: "AFCON",
+          home: { id: "MO", name: "Morocco", logo: "../img/morocco.png" },
+          away: { id: "NIG", name: "Nigeria", logo: "../img/nigeria.png" },
+          goals: { home: null, away: null },
+          status: { short: "TBD", long: "To Be Determined" }
+        }
+
 
     // ===== GROUP B =====
     // ❗TODO: copy fixtures from your groupB.html:

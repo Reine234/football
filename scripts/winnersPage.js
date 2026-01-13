@@ -308,7 +308,11 @@
           } else if (String(key) === "5") {
             const t = tr("afcon.quarterfinal.tab");
             labelText = t && t !== "afcon.quarterfinal.tab" ? t : "Quarter-finals";
+          } else if (String(key) === "6") {
+            const t = tr("afcon.semifinal.tab");
+            labelText = t && t !== "afcon.semifinal.tab" ? t : "Semi-finals";
           } else {
+            
             const md = parseInt(key, 10);
             labelText = tr("winners.matchdayLabel", { n: Number.isFinite(md) ? md : key });
           }
@@ -383,7 +387,7 @@
 
         // ✅ AFCON: only show matchdays 1..3 in the UI (still compute points normally)
         // ✅ AFCON: Group matchdays 1..3 + Round of 16 (4) + Quarter-finals (5)
-        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 5)) return;
+        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 6)) return;
 
         const fixture = fixturesById[fixtureId];
 
@@ -448,7 +452,7 @@
 
       // ✅ AFCON: force tabs: Round of 16 (4) + Quarter-finals (5) + Matchday 1,2,3
       if (leagueKey === "AFCON") {
-        matchdays = ["4", "5", "1", "2", "3"];
+        matchdays = ["4", "5","6", "1", "2", "3"];
       } else {
         matchdays.sort((a, b) => {
           const nA = parseInt(a, 10);
