@@ -10,7 +10,7 @@
       PREMIER_LEAGUE: { name: "Premier League", totalRounds: 38 },
       BUNDESLIGA:     { name: "Bundesliga",     totalRounds: 34 },
       LALIGA:         { name: "La Liga",        totalRounds: 38 },
-      AFCON:          { name: "Afcon",          totalRounds: 6 },
+      AFCON:          { name: "Afcon",          totalRounds: 8 },
     };
 
   // --- TEAM I18N HELPERS (AFCON) ---
@@ -319,9 +319,11 @@
     const isR16 = isAfcon && md === "4";
     const isQF  = isAfcon && md === "5";
     const isSF  = isAfcon && md === "6";
+    const is3P  = isAfcon && md === "7";
+    const isF   = isAfcon && md === "8";
 
     // what appears in the center "day-number"
-    const displayMd = isR16 ? "16" : isQF ? "QF" : isSF ? "SF" : md;
+    const displayMd = isR16 ? "16" : isQF ? "QF" : isSF ? "SF" : is3P ? "3P" : isF ? "F" : md;
 
     if (headerEl) {
       if (isR16) {
@@ -330,6 +332,10 @@
         headerEl.textContent = `${tr("common.matches")} - Quarter-finals`;
       } else if (isSF) {
         headerEl.textContent = `${tr("common.matches")} - Semi-finals`;
+      } else if (is3P) {
+        headerEl.textContent = `${tr("common.matches")} - 3rd place`;
+      } else if (isF) {
+        headerEl.textContent = `${tr("common.matches")} - Final`;
       } else {
         headerEl.textContent =
           `${tr("common.matches")} - ` +
@@ -902,23 +908,15 @@
     return finalScoreCache;
   }
 
-  
   function dedupeFirstPredictionPerFixture(preds) {
     // ✅ Keep at most one prediction per (fixtureId + matchday).
-    // IMPORTANT: Some older docs may miss matchday; do NOT drop them.
+    // AFCON reuses/overlaps fixtureId patterns across phases in some datasets,
+    // so deduping by fixtureId alone can accidentally drop Matchday 3 / R16 / QF / SF.
     const byKey = new Map();
-
-    (preds || []).forEach((p, idx) => {
+    (preds || []).forEach((p) => {
       const fid = p && p.fixtureId != null ? String(p.fixtureId) : "";
-      let md = "";
-      if (p && p.matchday != null) md = String(p.matchday);
-      else if (p && p.roundNum != null) md = String(p.roundNum);
-      else if (p && p.round != null) md = String(p.round);
-
-      // If we still can't find md, keep it under a unique bucket so it won't be lost.
-      if (!md) md = "__unknown__";
-
-      if (!fid) return;
+      const md  = p && p.matchday != null ? String(p.matchday) : "";
+      if (!fid || !md) return;
 
       const key = fid + "|" + md;
 
@@ -941,7 +939,6 @@
 
     return Array.from(byKey.values());
   }
-
 
   function filterPredictionsAfterKickoff(preds, fixturesById, fixturesList) {
     return (preds || []).filter((p) => {
@@ -1166,7 +1163,7 @@
     let matchdays = [];
 
     if (leagueKey === "AFCON") {
-      matchdays = ["1", "2", "3", "4", "5", "6"];
+      matchdays = ["1", "2", "3", "4", "5", "6", "7", "8"];
     } else {
       matchdays = Array.from(
         new Set(

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FansBetLiga — AFCON Semi-finals</title>
+  <title>FansBetLiga — AFCON Final</title>
 
   <link rel="stylesheet" href="../afcon/styleindex.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap">
@@ -79,61 +79,47 @@
 
   <div class="season-title">
     <span class="back-arrow"></span>
-    <h2>AFCON 2025 — Semi-finals</h2>
+    <h2>AFCON 2025 — Final</h2>
   </div>
 
   <div class="league-tabs">
-    <button class="tab" onclick="window.location.href='final.html'" data-i18n="afcon.final.tab">Final</button>
+    <button class="tab active" onclick="window.location.href='final.html'" data-i18n="afcon.final.tab">Final</button>
     <button class="tab" onclick="window.location.href='thirdplace.html'" data-i18n="afcon.thirdplace.tab">3rd place</button>
-    <button class="tab active" onclick="window.location.href='semifinal.html'" data-i18n="afcon.semifinal.tab">Semi Finals</button>
-    <button class="tab " onclick="window.location.href='quarterfinal.html'" data-i18n="afcon.quarterfinal.tab">Quarter-finals</button>
+    <button class="tab" onclick="window.location.href='semifinal.html'" data-i18n="afcon.semifinal.tab">Semi Finals</button>
+    <button class="tab" onclick="window.location.href='quarterfinal.html'" data-i18n="afcon.quarterfinal.tab">Quarter-finals</button>
     <button class="tab" onclick="window.location.href='index.html'" data-i18n="afcon.groupA.tab">Group A</button>
     <button class="tab" onclick="window.location.href='groupB.html'" data-i18n="afcon.groupB.tab">Group B</button>
     <button class="tab" onclick="window.location.href='groupC.html'" data-i18n="afcon.groupC.tab">Group C</button>
     <button class="tab" onclick="window.location.href='groupD.html'" data-i18n="afcon.groupD.tab">Group D</button>
     <button class="tab" onclick="window.location.href='groupE.html'" data-i18n="afcon.groupE.tab">Group E</button>
     <button class="tab" onclick="window.location.href='groupF.html'" data-i18n="afcon.groupF.tab">Group F</button>
-    <button class="tab" onclick="window.location.href='round16.html'" data-i18n="afcon.round16.tab">Round of 16</button> 
+    <button class="tab" onclick="window.location.href='round16.html'" data-i18n="afcon.round16.tab">Round of 16</button>
   </div>
-
   <section class="matches">
     <div class="matches-header">
-      <h3>AFCON — Semi Finals</h3>
+      <h3>AFCON — Final</h3>
     </div>
 
     <div class="day">
-      <h4>Wednesady, 14 Jan 2026</h4>
+      <h4>Sunday, 18 Jan 2026</h4>
 
-      <div class="match-card cyan" data-fixture-id="AFCON-SF-001">
+      <div class="match-card cyan" data-fixture-id="AFCON-F-001">
         <div class="match-info">
-          <p class="time">18:00</p>
+          <p class="time">19:00</p>
           <div class="teams">
             <div class="team">
-              <img src="/img/senegal.png" alt="senegal" />
-              <p>Senegal</p>
+              <img src="/img/morocco.png" alt="morocco" />
+              <p>Morocco</p>
             </div>
             <div class="team">
-              <img src="/img/egypt.png" alt="Egypt" />
-              <p>Egypt</p>
+              <img src="/img/senegal.png" alt="Senegal" />
+              <p>Senegal</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="match-card blue" data-fixture-id="AFCON-SF-002">
-        <div class="match-info">
-          <p class="time">21:00</p>
-          <div class="teams">
-            <div class="team">
-              <img src="/img/morocco.png" alt="Morocco" />
-              <p>Morocco</p>
-            </div>
-            <div class="team">
-              <img src="/img/nigeria.png" alt="Nigeria" />
-              <p>Nigeria</p>
-            </div>
-          </div>
-        </div>
+    </div>
       </div>
 
     </div>
@@ -163,12 +149,11 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const ROUND_NUM = 6; // Semi-finals internal round id
+      const ROUND_NUM = 8; // internal round idnals internal round id
 
       // ✅ Authoritative kickoff times for SF (Cameroon time = +01:00)
-      const SF_UTC = {
-        "AFCON-SF-001": "2026-01-13T17:00:00+01:00",
-        "AFCON-SF-002": "2026-01-13T20:00:00+01:00",
+      const KO_UTC = {
+        "AFCON-F-001": "2026-01-18T21:00:00+01:00",
       };
 
       function buildSemifinalFixturesPayload() {
@@ -189,7 +174,7 @@
             id,
             roundNum: ROUND_NUM,
             matchday: String(ROUND_NUM),
-            utcDate: SF_UTC[id] || "",
+            utcDate: KO_UTC[id] || "",
 
             // shape compatible with your predictions page helpers
             teams: {

@@ -518,7 +518,32 @@
           away: { id: "NIG", name: "Nigeria", logo: "../img/nigeria.png" },
           goals: { home: null, away: null },
           status: { short: "TBD", long: "To Be Determined" }
-        }
+        },
+         {
+      id: "AFCON-3P-001",
+      group: "3P",
+      utcDate: "2026-01-17T16:00:00Z", // 18:00 (UTC+1)
+      roundNum: 7,
+      leagueId: "AFCON",
+      home: { id: "EGY", name: "Egypt", logo: "../img/egypt.png" },
+      away: { id: "NIG", name: "Nigeria", logo: "../img/nigeria.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" },
+    },
+
+    // --- Final ---
+    {
+      id: "AFCON-F-001",
+      group: "F",
+      utcDate: "2026-01-18T19:00:00Z", // 21:00 (UTC+1)
+      roundNum: 8,
+      leagueId: "AFCON",
+      home: { id: "MO", name: "Morocco", logo: "../img/morocco.png" },
+      away: { id: "SE", name: "Senegal", logo: "../img/senegal.png" },
+      goals: { home: null, away: null },
+      status: { short: "NS", long: "Not Started" },
+    },
+
 
 
     // ===== GROUP B =====

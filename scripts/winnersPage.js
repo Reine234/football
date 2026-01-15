@@ -20,11 +20,6 @@
     } catch (_) {}
     if (vars && typeof vars === "object") {
       let s = key;
-      Object.keys(vars).forEach((k) => (s = s.replaceAll(`{k}`, String(vars[k]))));
-      // ^ note: keep original behavior? We'll do safe replacement below instead:
-    }
-    if (vars && typeof vars === "object") {
-      let s = key;
       Object.keys(vars).forEach((k) => (s = s.replaceAll(`{${k}}`, String(vars[k]))));
       return s;
     }
@@ -90,10 +85,18 @@
 
   function leagueSynonyms(leagueKey) {
     const k = String(leagueKey || "").toUpperCase();
-    if (k === "PREMIER_LEAGUE") return ["premierleague", "premier", "epl"];
-    if (k === "BUNDESLIGA") return ["bundesliga"];
-    if (k === "LALIGA") return ["laliga", "laligasantander", "laligaes", "laligaea", "laligas"];
-    if (k === "AFCON") return ["afcon", "can", "coupeafriquedesnations"];
+    if (k === "PREMIER_LEAGUE") {
+      return ["premierleague", "premier", "epl"];
+    }
+    if (k === "BUNDESLIGA") {
+      return ["bundesliga"];
+    }
+    if (k === "LALIGA") {
+      return ["laliga", "laligasantander", "laligaes", "laligaea", "laligas"];
+    }
+    if (k === "AFCON") {
+      return ["afcon", "can", "coupeafriquedesnations"];
+    }
     return [normalizeLeagueString(k)];
   }
 
@@ -142,21 +145,33 @@
       items.forEach((item) => {
         const dataNav = (item.dataset.nav || "").toLowerCase();
 
+        // fallback to old label logic if data-nav is missing
         const labelEl = item.querySelector("span");
         const labelFallback = labelEl ? (labelEl.textContent || "").trim().toLowerCase() : "";
         const key = dataNav || labelFallback;
 
-        if (key === "home" && path.includes("/index")) item.classList.add("nav-active");
-        else if (key === "results" && path.includes("/results")) item.classList.add("nav-active");
-        else if (key === "winners" && path.includes("/winners")) item.classList.add("nav-active");
-        else if (key === "rules" && path.includes("/rules")) item.classList.add("nav-active");
+        // set active state based on current path
+        if (key === "home" && path.includes("/index")) {
+          item.classList.add("nav-active");
+        } else if (key === "results" && path.includes("/results")) {
+          item.classList.add("nav-active");
+        } else if (key === "winners" && path.includes("/winners")) {
+          item.classList.add("nav-active");
+        } else if (key === "rules" && path.includes("/rules")) {
+          item.classList.add("nav-active");
+        }
 
         item.addEventListener("click", (e) => {
           e.preventDefault();
-          if (key === "home") window.location.href = `../${leagueSlug}/index.html`;
-          else if (key === "results") window.location.href = `../${leagueSlug}/results.html`;
-          else if (key === "winners") window.location.href = `../${leagueSlug}/winners.html`;
-          else if (key === "rules") window.location.href = `../${leagueSlug}/rules.html`;
+          if (key === "home") {
+            window.location.href = `../${leagueSlug}/index.html`;
+          } else if (key === "results") {
+            window.location.href = `../${leagueSlug}/results.html`;
+          } else if (key === "winners") {
+            window.location.href = `../${leagueSlug}/winners.html`;
+          } else if (key === "rules") {
+            window.location.href = `../${leagueSlug}/rules.html`;
+          }
         });
       });
     }
@@ -165,7 +180,10 @@
     if (tabs.length) {
       tabs.forEach((tab) => {
         const href = (tab.getAttribute("data-href") || "").toLowerCase();
-        if (href && path.endsWith(href.split("../").pop())) tab.classList.add("active");
+        // mark active if this href matches the end of the current path
+        if (href && path.endsWith(href.split("../").pop())) {
+          tab.classList.add("active");
+        }
         tab.addEventListener("click", () => {
           const target = tab.getAttribute("data-href");
           if (target) window.location.href = target;
@@ -185,8 +203,10 @@
         uids.map(async (uid) => {
           try {
             const snap = await db.collection("users").doc(uid).get();
-            if (!snap.exists) return;
-
+            if (!snap.exists) {
+              // If the user does not exist, skip
+              return;
+            }
             const data = snap.data() || {};
             const email = data.email || data.userEmail || null;
             const bestName =
@@ -196,10 +216,11 @@
               (email ? email.split("@")[0] : null);
 
             if (bestName && bestName !== tr("common.player")) {
-              scoresByUid[uid].username = bestName;
+              scoresByUid[uid].username = bestName; // Only assign if the name is valid
             }
           } catch (e) {
             console.warn("[Winners] user lookup failed for", uid, e);
+            // Skip user if lookup fails
           }
         })
       );
@@ -211,10 +232,9 @@
   // ✅ helper: fetch predictions without scanning everything (AFCON uses matchday queries)
   async function fetchPredictionsForLeagueMatchdays(db, leagueKey) {
     const wantedLeagues = leagueSynonyms(leagueKey);
+    const wantedMatchdays = leagueKey === "AFCON" ? ["8", "7", "6", "5", "4", "1", "2", "3"] : null;
 
-    // ✅ AFCON: include 1..3 + R16(4) + QF(5) + SF(6)
-    const wantedMatchdays = leagueKey === "AFCON" ? ["6", "5", "4", "1", "2", "3"] : null;
-
+    // Keep previous behavior for non-AFCON leagues
     if (leagueKey !== "AFCON") {
       const snap = await db.collection("predictions").get();
       const out = [];
@@ -222,13 +242,15 @@
       return out;
     }
 
+    // AFCON: query by matchday only (small read set) then filter by league synonyms.
     const out = [];
     for (const md of wantedMatchdays) {
       try {
         const snap = await db.collection("predictions").where("matchday", "==", md).get();
         snap.forEach((doc) => {
           const data = doc.data() || {};
-          const rawLeague = data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+          const rawLeague =
+            data.league || data.leagueKey || data.leagueSlug || data.leagueName;
           const normLeague = normalizeLeagueString(rawLeague);
           if (wantedLeagues.includes(normLeague)) out.push(data);
         });
@@ -239,7 +261,7 @@
     return out;
   }
 
-  // ---------- Matchday "status" strip ----------
+  // ---------- Matchday "status" strip (WhatsApp-style) ----------
   function ensureMatchdayStrip(matchdays, currentKey, leagueKey, onSelectMatchday) {
     if (!matchdays || !matchdays.length) return;
 
@@ -253,13 +275,19 @@
       strip = document.createElement("div");
       strip.className = "matchday-strip";
 
+      // 🔹 Find the direct child of .card that contains the table
       let target = tableEl;
       while (target && target.parentNode !== card) {
         target = target.parentNode;
       }
 
-      if (target && target.parentNode === card) card.insertBefore(strip, target);
-      else card.appendChild(strip);
+      if (target && target.parentNode === card) {
+        // strip ABOVE the block that holds the table
+        card.insertBefore(strip, target);
+      } else {
+        // fallback if structure is weird
+        card.appendChild(strip);
+      }
     }
 
     strip.innerHTML = matchdays
@@ -267,6 +295,7 @@
         const isActive = key === currentKey;
         let labelText = "";
 
+        // ✅ AFCON: include special knockout labels + group matchdays
         if (leagueKey === "AFCON") {
           if (String(key) === "4") {
             const t = tr("afcon.round16.tab");
@@ -277,6 +306,12 @@
           } else if (String(key) === "6") {
             const t = tr("afcon.semifinal.tab");
             labelText = t && t !== "afcon.semifinal.tab" ? t : "Semi-finals";
+          } else if (String(key) === "7") {
+            const t = tr("afcon.thirdplace.tab");
+            labelText = t && t !== "afcon.thirdplace.tab" ? t : "3rd place";
+          } else if (String(key) === "8") {
+            const t = tr("afcon.final.tab");
+            labelText = t && t !== "afcon.final.tab" ? t : "Final";
           } else {
             const md = parseInt(key, 10);
             labelText = tr("winners.matchdayLabel", { n: Number.isFinite(md) ? md : key });
@@ -299,19 +334,27 @@
       btn.addEventListener("click", () => {
         const key = btn.getAttribute("data-md-key");
         if (!key || key === currentKey) return;
-        if (typeof onSelectMatchday === "function") onSelectMatchday(key);
+        if (typeof onSelectMatchday === "function") {
+          onSelectMatchday(key);
+        }
       });
     });
   }
 
-  // ---------- Daily Rankings ----------
-  async function loadDailyRankings(db, leagueKey, currentUser, tbody, userPointsEl, selectedMatchdayKey) {
+  // ---------- Daily Rankings from Firestore ----------
+  async function loadDailyRankings(
+    db,
+    leagueKey,
+    currentUser,
+    tbody,
+    userPointsEl,
+    selectedMatchdayKey
+  ) {
     if (!tbody) return;
     tbody.innerHTML = `<tr><td colspan="3">${esc(tr("winners.loadingRankings"))}</td></tr>`;
 
     try {
       const { byId: fixturesById } = await fetchFixturesForCurrentLeague(leagueKey);
-
       const snap = await db.collection("predictions").get();
       const wantedLeagues = leagueSynonyms(leagueKey);
 
@@ -323,7 +366,8 @@
         const uid = data.uid;
         if (!uid) return;
 
-        const rawLeague = data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+        const rawLeague =
+          data.league || data.leagueKey || data.leagueSlug || data.leagueName;
         const normLeague = normalizeLeagueString(rawLeague);
         if (!wantedLeagues.includes(normLeague)) return;
 
@@ -334,23 +378,34 @@
         const mdNum = parseInt(mdRaw, 10);
         if (!Number.isFinite(mdNum)) return;
 
-        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 6)) return;
+        if (leagueKey === "AFCON" && (mdNum < 1 || mdNum > 8)) return;
 
         const fixture = fixturesById[fixtureId];
 
-        const predHome = Number(data.home && data.home.score != null ? data.home.score : NaN);
-        const predAway = Number(data.away && data.away.score != null ? data.away.score : NaN);
+        const predHome = Number(
+          data.home && data.home.score != null ? data.home.score : NaN
+        );
+        const predAway = Number(
+          data.away && data.away.score != null ? data.away.score : NaN
+        );
 
         let finHome = NaN;
         let finAway = NaN;
         if (fixture && fixture.goals) {
-          if (fixture.goals.home !== null && fixture.goals.home !== undefined) finHome = Number(fixture.goals.home);
-          if (fixture.goals.away !== null && fixture.goals.away !== undefined) finAway = Number(fixture.goals.away);
+          if (fixture.goals.home !== null && fixture.goals.home !== undefined) {
+            finHome = Number(fixture.goals.home);
+          }
+          if (fixture.goals.away !== null && fixture.goals.away !== undefined) {
+            finAway = Number(fixture.goals.away);
+          }
         }
 
         let pts = null;
-        if (typeof data.points === "number" && Number.isFinite(data.points)) pts = data.points;
-        else pts = computePoints(predHome, predAway, finHome, finAway);
+        if (typeof data.points === "number" && Number.isFinite(data.points)) {
+          pts = data.points;
+        } else {
+          pts = computePoints(predHome, predAway, finHome, finAway);
+        }
 
         const key = String(mdNum);
         keySet.add(key);
@@ -363,13 +418,15 @@
             points: 0,
           };
         }
-        if (pts != null) scoresByKey[key][uid].points += pts;
+        if (pts != null) {
+          scoresByKey[key][uid].points += pts;
+        }
       });
 
       let matchdays = Array.from(keySet);
 
       if (leagueKey === "AFCON") {
-        matchdays = ["4", "5", "6", "1", "2", "3"];
+        matchdays = ["8", "7", "6", "5", "4", "1", "2", "3"];
       } else {
         matchdays.sort((a, b) => {
           const nA = parseInt(a, 10);
@@ -408,7 +465,6 @@
       });
 
       const scoresByUid = scoresByKey[selectedMatchdayKey] || {};
-
       await enrichUsernamesFromUsersCollection(db, scoresByUid);
 
       const rows = Object.values(scoresByUid);
@@ -435,7 +491,8 @@
 
       if (currentUser && userPointsEl) {
         const myRow = scoresByUid[currentUser.uid];
-        userPointsEl.textContent = String(myRow ? myRow.points : 0);
+        const myPoints = myRow ? myRow.points : 0;
+        userPointsEl.textContent = String(myPoints);
       }
     } catch (err) {
       console.error("[Winners] Failed to load rankings", err);
@@ -443,7 +500,7 @@
     }
   }
 
-  // ✅ AFCON “First Round Winners” section: now includes 1..3 + R16(4) + QF(5) + SF(6)
+  // ---------- First Round Winners (AFCON): winner of Matchdays 1-3 ----------
   async function loadFirstRoundWinners(db, leagueKey, tbody, userPointsEl) {
     if (!tbody) return;
 
@@ -463,40 +520,52 @@
       const { byId: fixturesById } = await fetchFixturesForCurrentLeague(leagueKey);
 
       const allPreds = await fetchPredictionsForLeagueMatchdays(db, leagueKey);
+
       const wantedLeagues = leagueSynonyms(leagueKey);
 
-      // ✅ compute for 1..6
-      const scoresByKey = { "1": {}, "2": {}, "3": {}, "4": {}, "5": {}, "6": {} };
+      const scoresByKey = { "1": {}, "2": {}, "3": {} };
 
       (allPreds || []).forEach((data) => {
         const uid = data.uid;
         if (!uid) return;
 
-        const rawLeague = data.league || data.leagueKey || data.leagueSlug || data.leagueName;
+        const rawLeague =
+          data.league || data.leagueKey || data.leagueSlug || data.leagueName;
         const normLeague = normalizeLeagueString(rawLeague);
         if (!wantedLeagues.includes(normLeague)) return;
 
         const mdNum = parseInt(data.matchday, 10);
-        if (!Number.isFinite(mdNum) || mdNum < 1 || mdNum > 6) return;
+        if (!Number.isFinite(mdNum) || mdNum < 1 || mdNum > 3) return;
 
         const fixtureId = String(data.fixtureId || "");
         if (!fixtureId) return;
 
         const fixture = fixturesById[fixtureId];
 
-        const predHome = Number(data.home && data.home.score != null ? data.home.score : NaN);
-        const predAway = Number(data.away && data.away.score != null ? data.away.score : NaN);
+        const predHome = Number(
+          data.home && data.home.score != null ? data.home.score : NaN
+        );
+        const predAway = Number(
+          data.away && data.away.score != null ? data.away.score : NaN
+        );
 
         let finHome = NaN;
         let finAway = NaN;
         if (fixture && fixture.goals) {
-          if (fixture.goals.home !== null && fixture.goals.home !== undefined) finHome = Number(fixture.goals.home);
-          if (fixture.goals.away !== null && fixture.goals.away !== undefined) finAway = Number(fixture.goals.away);
+          if (fixture.goals.home !== null && fixture.goals.home !== undefined) {
+            finHome = Number(fixture.goals.home);
+          }
+          if (fixture.goals.away !== null && fixture.goals.away !== undefined) {
+            finAway = Number(fixture.goals.away);
+          }
         }
 
         let pts = null;
-        if (typeof data.points === "number" && Number.isFinite(data.points)) pts = data.points;
-        else pts = computePoints(predHome, predAway, finHome, finAway);
+        if (typeof data.points === "number" && Number.isFinite(data.points)) {
+          pts = data.points;
+        } else {
+          pts = computePoints(predHome, predAway, finHome, finAway);
+        }
 
         const key = String(mdNum);
         if (!scoresByKey[key][uid]) {
@@ -506,12 +575,12 @@
             points: 0,
           };
         }
-        if (pts != null) scoresByKey[key][uid].points += pts;
+        if (pts != null) {
+          scoresByKey[key][uid].points += pts;
+        }
       });
 
-      // pick winner per stage (top points)
-      const STAGES = ["1", "2", "3", "4", "5", "6"];
-      const winners = STAGES.map((k) => {
+      const winners = ["1", "2", "3"].map((k) => {
         const rows = Object.values(scoresByKey[k] || {});
         rows.sort((a, b) => {
           if (b.points !== a.points) return b.points - a.points;
@@ -525,32 +594,11 @@
         if (w && w.uid) winnerMap[w.uid] = w;
       });
 
-      // ✅ fix: do NOT pass extra args (your function only accepts 2 args)
-      await enrichUsernamesFromUsersCollection(db, winnerMap);
-
-      // label helper (same labels as your daily strip)
-      function stageLabel(mdKey) {
-        if (String(mdKey) === "4") {
-          const t = tr("afcon.round16.tab");
-          return t && t !== "afcon.round16.tab" ? t : "Round of 16";
-        }
-        if (String(mdKey) === "5") {
-          const t = tr("afcon.quarterfinal.tab");
-          return t && t !== "afcon.quarterfinal.tab" ? t : "Quarter-finals";
-        }
-        if (String(mdKey) === "6") {
-          const t = tr("afcon.semifinal.tab");
-          return t && t !== "afcon.semifinal.tab" ? t : "Semi-finals";
-        }
-        const n = parseInt(mdKey, 10);
-        return tr("winners.matchdayLabel", { n: Number.isFinite(n) ? n : mdKey });
-      }
+      await enrichUsernamesFromUsersCollection(db, winnerMap, 25);
 
       tbody.innerHTML = winners
         .map((w, i) => {
-          const mdKey = STAGES[i];
-          const labelText = stageLabel(mdKey);
-
+          const labelText = tr("winners.matchdayLabel", { n: i + 1 });
           if (!w) {
             return `
               <tr>
@@ -560,17 +608,8 @@
               </tr>
             `;
           }
-
-          const name =
-            winnerMap[w.uid] && winnerMap[w.uid].username
-              ? winnerMap[w.uid].username
-              : w.username;
-
-          const pts =
-            winnerMap[w.uid] && typeof winnerMap[w.uid].points === "number"
-              ? winnerMap[w.uid].points
-              : w.points;
-
+          const name = (winnerMap[w.uid] && winnerMap[w.uid].username) ? winnerMap[w.uid].username : w.username;
+          const pts = (winnerMap[w.uid] && typeof winnerMap[w.uid].points === "number") ? winnerMap[w.uid].points : w.points;
           return `
             <tr>
               <td>${esc(labelText)}</td>
@@ -643,7 +682,9 @@
     const userPointsEl = document.querySelector(".user-strip .user-points .value");
 
     if (user) {
-      const name = user.displayName || (user.email ? user.email.split("@")[0] : tr("common.player"));
+      const name =
+        user.displayName ||
+        (user.email ? user.email.split("@")[0] : tr("common.player"));
       if (userNameEl) userNameEl.textContent = name;
       if (userPointsEl) userPointsEl.textContent = "--";
     } else {

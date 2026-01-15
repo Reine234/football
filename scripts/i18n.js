@@ -121,6 +121,9 @@
       "afcon.round16.title": "FansBetLiga — CAN 8es de finale",
       "afcon.round16.matchdayHeader": "8es de finale",
       "afcon.round16.day1.date": "8es de finale",
+      "afcon.quarterfinal.heading": "CAN 2025 — Quarts de finale",
+      "afcon.final.tab": "Finale",
+      "afcon.thirdplace.tab": "Match pour la 3e place",
       
 
       "afcon.groupA.day1.date": "Dimache, 21 Déc 2025",
@@ -627,6 +630,8 @@ Decisions follow official league sources.`,
       "afcon.round16.day1.date": "Round of 16",
        "afcon.semifinal.tab": "Semi-finals",
       "afcon.semifinal.title": "Semi-finals",
+      "afcon.final.tab": "Final",
+      "afcon.thirdplace.title": "Match of 3rd Place",
       "afcon.groupA.day1.date": "Sunday, 21 Dec 2025",
       "afcon.groupA.day2.date": "Friday, 26 Dec 2025",
       "afcon.groupA.day3.date": "Tuesday, 29 Dec 2025",
