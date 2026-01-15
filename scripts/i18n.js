@@ -159,7 +159,7 @@
       "afcon.groupF.matchdayHeader": "Groupe F - Journée {n} sur {total}",
 
       "afcon.predictions.badge": "Pronostics CAN",
-      "afcon.predictions.matchdayShort": "J {n}/{total}",
+      "afcon.predictions.matchdayShort": "",
 
       // --- WINNERS (winners.html + winnersPage.js) ---
       "winners.preseasonTitle": "Pré-saison 2025 - 2026",
@@ -659,7 +659,7 @@ Decisions follow official league sources.`,
       "afcon.groupF.day2.date": "Sunday, 28 Dec 2025",
       "afcon.groupF.day3.date": "Wednesday, 31 Dec 2025",
       "afcon.predictions.badge": "AFCON Predictions",
-      "afcon.predictions.matchdayShort": "MD {n}/{total}",
+      "afcon.predictions.matchdayShort": "",
 
       // ✅ matchday headers MUST be FLAT keys (strings)
       "afcon.groupA.matchdayHeader": "Group A - Matchday {n} of {total}",
